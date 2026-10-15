@@ -288,8 +288,8 @@
       layout() {
         const tf = world.style.transform;
         world.style.transform = "none";
-        camera.layout();
         for (const fn of layoutFns) fn();
+        camera.layout();
         world.style.transform = tf;
         tl.seek(tl.t);
       },
