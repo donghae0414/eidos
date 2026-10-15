@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 시퀀스 메시지 (Sequence Message)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  #seq { flex: 1; min-height: 0; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">OAuth 2.0 Authorization Code</div>
+        <h1 class="eidos-title">"구글로 로그인"을 누르면 오가는 메시지 8개</h1>
+      </header>
+      <section id="seq"></section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" });
+  s.fx("sequence-message", {
+    el: "#seq",
+    at: "<+=0.2",
+    intro: "등장인물은 넷: 사용자 브라우저, 우리 서비스, 구글 인증 서버, 구글 API",
+    actors: [
+      { id: "user", label: "브라우저" },
+      { id: "client", label: "우리 서비스" },
+      { id: "auth", label: "인증 서버" },
+      { id: "api", label: "리소스 서버" },
+    ],
+    messages: [
+      { from: "user", to: "client", label: "로그인 클릭", note: "1. 사용자가 \"구글로 로그인\"을 누릅니다" },
+      { from: "client", to: "user", label: "인증 서버로 리다이렉트", reply: true, note: "2. 서비스는 client_id와 state를 붙여 구글로 보냅니다" },
+      { from: "user", to: "auth", label: "로그인 + 권한 동의", note: "3. 비밀번호는 구글에만 입력합니다. 우리 서비스는 보지 못합니다" },
+      { from: "auth", to: "client", label: "code 전달 (리다이렉트)", reply: true, note: "4. 구글이 일회용 authorization code를 돌려줍니다" },
+      { from: "client", to: "auth", label: "code + secret으로 토큰 요청", note: "5. 서버끼리 직접, client_secret과 함께 code를 교환합니다" },
+      { from: "auth", to: "client", label: "access token", reply: true, note: "6. 브라우저를 거치지 않으므로 토큰이 노출되지 않습니다" },
+      { from: "client", to: "api", label: "token으로 API 호출", note: "7. Authorization: Bearer 헤더에 토큰을 실어 보냅니다" },
+      { from: "api", to: "client", label: "프로필 데이터", reply: true, note: "8. 서비스는 이름과 이메일을 받아 로그인을 마칩니다" },
+    ],
+  });
+  s.start();
+</script>
+</body>
+</html>

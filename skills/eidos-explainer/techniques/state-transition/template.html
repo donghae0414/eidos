@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 상태 전이 (State Transition)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  #fsm { flex: 1; min-height: 0; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">상태 머신</div>
+        <h1 class="eidos-title">주문 하나가 거치는 상태</h1>
+      </header>
+      <section id="fsm"></section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" });
+  const st = s.fx("state-transition", {
+    el: "#fsm",
+    at: "<+=0.2",
+    states: [
+      { id: "created", label: "생성", x: 8, y: 38, px: 28, py: 6 },
+      { id: "pending", label: "결제대기", x: 29, y: 38, px: 28, py: 26 },
+      { id: "paid", label: "결제완료", x: 51, y: 38, px: 28, py: 48 },
+      { id: "shipping", label: "배송중", x: 72, y: 38, px: 28, py: 70 },
+      { id: "delivered", label: "배송완료", x: 92, y: 38, px: 28, py: 92, kind: "end" },
+      { id: "canceled", label: "취소", x: 40, y: 86, px: 76, py: 37, kind: "end" },
+    ],
+    edges: [
+      { from: "created", to: "pending", label: "주문서 제출" },
+      { from: "pending", to: "paid", label: "PG 승인" },
+      { from: "paid", to: "shipping", label: "송장 등록" },
+      { from: "shipping", to: "delivered", label: "수령 확인" },
+      { from: "pending", to: "canceled", label: "30분 미결제", tone: "danger" },
+      { from: "paid", to: "canceled", label: "환불", tone: "danger" },
+    ],
+    walk: ["created", "pending", "paid", "shipping", "delivered"],
+    captions: [
+      "주문은 '생성'에서 시작합니다",
+      "결제대기: 30분 안에 결제하지 않으면 자동으로 취소됩니다",
+      "결제완료: PG가 승인하면 넘어오고, 여기서도 환불로 취소될 수 있습니다",
+      "배송중: 송장이 등록되면 넘어갑니다",
+      "배송완료는 끝 상태입니다. 여기서는 어디로도 갈 수 없습니다",
+    ],
+  });
+  s.tl.tween([st.edge("pending", "canceled").base, st.edge("paid", "canceled").base], { style: (p) => ({ strokeWidth: `${1.8 + 1.4 * p}` }) }, { dur: 0.5 });
+  s.tl.tween(st.glow("canceled"), { opacity: [0, 1] }, { at: "<", dur: 0.5 });
+  s.tl.stop("취소로 가는 길은 두 곳뿐: 결제대기와 결제완료. 배송이 시작되면 취소가 아니라 반품입니다");
+  s.start();
+</script>
+</body>
+</html>
