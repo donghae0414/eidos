@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 랙 포커스 (Rack Focus)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .layers { position: relative; flex: 1; min-height: 0; }
+  .panel { position: absolute; width: 58%; padding: 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 12px; }
+  #sync { left: 0; top: 4%; z-index: 2; border-color: var(--eidos-cat-1); }
+  #async { right: 0; top: 49%; z-index: 1; border-color: var(--eidos-cat-2); }
+  .panel .kind { font-size: 0.78rem; font-weight: 600; }
+  #sync .kind { color: var(--eidos-cat-1); }
+  #async .kind { color: var(--eidos-cat-2); }
+  .panel h2 { margin: 0; font-size: clamp(1.1rem, 2.6vw, 1.75rem); }
+  .panel pre { margin: 0; padding: 0.6rem 0.8rem; border-radius: var(--eidos-radius-sm); background: var(--eidos-bg); font-family: var(--eidos-font-mono); font-size: clamp(0.72rem, 1.4vw, 0.98rem); white-space: pre-wrap; }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: clamp(0.78rem, 1.3vw, 0.9rem); }
+  .steps span { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--eidos-border); }
+  .steps .wait { border-color: var(--eidos-danger); color: var(--eidos-danger); }
+  .steps .fast { border-color: var(--eidos-success); color: var(--eidos-success); }
+  .panel p { margin: 0; font-size: clamp(0.88rem, 1.4vw, 1.02rem); }
+  @media (max-aspect-ratio: 1/1) {
+    .panel { width: 94%; padding: 1rem; }
+    #async { top: 46%; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">동기 vs 비동기</div>
+        <h1 class="eidos-title">주문 직후 결제를 어떻게 부를까</h1>
+      </header>
+      <section class="layers">
+        <article class="panel eidos-card" id="sync">
+          <span class="kind">동기 처리</span>
+          <h2>결제가 끝날 때까지 기다린다</h2>
+          <pre>const res = await payment.charge(order)
+return res.ok ? 201 : 402</pre>
+          <div class="steps"><span>주문 요청</span><span class="wait">PG 응답 대기 3초</span><span>201 응답</span></div>
+          <p>사용자는 3초 동안 로딩 화면을 봅니다. PG가 느려지면 주문 API도 같이 느려집니다.</p>
+        </article>
+        <article class="panel eidos-card" id="async">
+          <span class="kind">비동기 처리</span>
+          <h2>큐에 넣고 바로 답한다</h2>
+          <pre>await queue.publish("order.created", order)
+return 202  // 결제는 워커가 처리</pre>
+          <div class="steps"><span>주문 요청</span><span class="fast">큐 적재 15ms</span><span>202 응답</span></div>
+          <p>사용자는 바로 다음 화면으로 갑니다. 대신 결제 실패를 나중에 알려줘야 합니다.</p>
+        </article>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".panel", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.2", dur: 0.5, ease: "out" })
+    .stop("같은 주문 API, 결제를 부르는 두 가지 방법");
+  const rf = s.fx("rack-focus", { subjects: ["#sync", "#async"], focus: "#sync" });
+  s.tl.stop("앞쪽에 초점: 동기 호출은 PG 응답을 3초 기다립니다");
+  rf.to("#async");
+  s.tl.stop("초점이 뒤로 넘어가면: 비동기는 큐에 넣고 15ms 만에 답합니다");
+  rf.all();
+  s.tl.stop("선택 기준: 즉시 결과가 필요하면 동기, 응답 속도가 중요하면 비동기");
+  s.start();
+</script>
+</body>
+</html>
