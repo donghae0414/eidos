@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 패닝 (Pan)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 5vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 4vh; word-break: keep-all; }
+  .strip { position: relative; display: flex; align-items: stretch; gap: 6vw; width: max-content; }
+  .strip::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed var(--eidos-border); z-index: -1; }
+  .st { width: min(64vw, 440px); padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: 8px; }
+  .st .no { font-family: var(--eidos-font-mono); font-size: 0.8rem; color: var(--eidos-muted-fg); }
+  .st h3 { margin: 0; font-size: clamp(1.15rem, 2.4vw, 1.5rem); }
+  .st p { margin: 0; font-size: clamp(0.85rem, 1.6vw, 1rem); color: var(--eidos-fg); }
+  .st code { font-family: var(--eidos-font-mono); font-size: 0.85em; color: var(--eidos-cat-2); }
+  .st .time { margin-top: auto; font-family: var(--eidos-font-mono); font-size: 0.8rem; color: var(--eidos-muted-fg); }
+  .st.fail { border-color: var(--eidos-danger); }
+  .st.fail .no { color: var(--eidos-danger); }
+  @media (max-aspect-ratio: 1/1) {
+    .strip { flex-direction: column; width: auto; gap: 5vh; align-items: center; }
+    .strip::before { left: 50%; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 2px dashed var(--eidos-border); }
+    .st { width: min(84vw, 440px); }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">CI/CD 파이프라인</div>
+        <h1 class="eidos-title">커밋 하나가 운영에 닿기까지 6단계</h1>
+      </header>
+      <section class="strip">
+        <article class="st eidos-card"><span class="no">1 / 6</span><h3>Push</h3><p><code>main</code>에 머지되면 파이프라인이 시작됩니다.</p><span class="time">0s</span></article>
+        <article class="st eidos-card"><span class="no">2 / 6</span><h3>빌드</h3><p>의존성을 캐시에서 받고 Docker 이미지를 만듭니다.</p><span class="time">+2m 10s</span></article>
+        <article class="st eidos-card"><span class="no">3 / 6</span><h3>테스트</h3><p>단위 1,240개와 통합 86개. 하나라도 실패하면 여기서 멈춥니다.</p><span class="time">+6m 40s</span></article>
+        <article class="st eidos-card"><span class="no">4 / 6</span><h3>스테이징 배포</h3><p>운영과 같은 구성의 환경에 먼저 올립니다.</p><span class="time">+9m 05s</span></article>
+        <article class="st eidos-card fail"><span class="no">5 / 6 · 승인</span><h3>수동 승인</h3><p>QA 담당자가 스모크 테스트 후 버튼을 누릅니다. 사람이 끼는 유일한 단계.</p><span class="time">+평균 40m</span></article>
+        <article class="st eidos-card"><span class="no">6 / 6</span><h3>운영 배포</h3><p>카나리 5% → 50% → 100%로 나눠 내보냅니다.</p><span class="time">+58m</span></article>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.camera.to(".strip", { at: 0, dur: 0, pad: 24 });
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".st", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.4, each: 0.08 })
+    .stop("전체 파이프라인은 6단계, 한 화면에 다 담으면 글씨가 읽히지 않습니다");
+  const portrait = matchMedia("(max-aspect-ratio: 1/1)").matches;
+  s.fx("pan", {
+    items: ".st",
+    axis: portrait ? "y" : "x",
+    active: true,
+    captions: [
+      portrait ? "틸트: 같은 배율로 위아래를 훑으며 한 단계씩 읽습니다. 1. Push" : "패닝: 같은 배율로 옆으로 훑으며 한 단계씩 읽습니다. 1. Push",
+      "2. 빌드는 캐시 덕분에 2분",
+      "3. 테스트에서 실패하면 여기서 멈춥니다",
+      "4. 스테이징에 먼저 올리고",
+      "5. 병목은 사람이 끼는 승인 단계, 평균 40분",
+      "6. 카나리로 나눠 운영에 배포",
+    ],
+  });
+  s.camera.to(".strip", { dur: 1.4, pad: 24 });
+  s.tl.tween(".st:not(:last-child)", { opacity: [0.45, 1] }, { at: "<", dur: 0.6 });
+  s.tl.stop("전체를 다시 보면, 58분 중 40분이 승인 대기입니다");
+  s.start();
+</script>
+</body>
+</html>

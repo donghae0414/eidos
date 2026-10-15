@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 설정숏 (Establishing Shot)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  .map { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+  .edge { display: flex; gap: 12px; align-items: center; justify-content: center; }
+  .edge .eidos-card { padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+  .arrow { color: var(--eidos-muted-fg); font-size: 1.1rem; }
+  .vpc { position: relative; flex: 1; min-height: 0; border: 2px dashed var(--eidos-cat-4); border-radius: var(--eidos-radius); padding: 34px 14px 14px; display: grid; grid-template-columns: 1fr 1.3fr 1.1fr; gap: 14px; }
+  .subnet { position: relative; border-radius: var(--eidos-radius-sm); padding: 30px 10px 10px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .subnet.public { background: color-mix(in oklch, var(--eidos-cat-3) 12%, transparent); }
+  .subnet.private { background: color-mix(in oklch, var(--eidos-cat-2) 10%, transparent); }
+  .subnet.data { background: color-mix(in oklch, var(--eidos-accent) 10%, transparent); }
+  .tag { position: absolute; left: 10px; top: 8px; font-size: 0.72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; color: var(--eidos-accent-fg); }
+  .vpc > .tag { background: var(--eidos-cat-4); }
+  .public .tag { background: var(--eidos-cat-3); }
+  .private .tag { background: var(--eidos-cat-2); }
+  .data .tag { background: var(--eidos-accent); }
+  .box { padding: 0.5rem 0.7rem; min-width: 0; }
+  .box b { display: block; font-size: 0.92rem; }
+  .box span { font-size: 0.74rem; color: var(--eidos-muted-fg); }
+  .detail { margin-top: 4px; font-size: 6.5px; line-height: 1.5; color: var(--eidos-fg); }
+  .detail code { font-family: var(--eidos-font-mono); }
+  @media (max-width: 640px) {
+    .vpc { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding-top: 30px; gap: 10px; }
+    .subnet { padding: 26px 8px 8px; flex-direction: row; flex-wrap: wrap; }
+    .subnet .box { flex: 1 1 40%; }
+    .edge .eidos-card { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header class="ctx">
+        <div class="eidos-label">AWS 인프라</div>
+        <h1 class="eidos-title">주문 API 서버는 어디에 있을까요</h1>
+      </header>
+      <section class="map">
+        <div class="edge ctx"><div class="eidos-card">사용자</div><span class="arrow">→</span><div class="eidos-card">CloudFront (CDN)</div><span class="arrow">→</span><div class="eidos-card">Route 53</div></div>
+        <div class="vpc">
+          <span class="tag label">VPC 10.0.0.0/16</span>
+          <div class="subnet public"><span class="tag label">퍼블릭 서브넷</span>
+            <div class="box eidos-card ctx"><b>ALB</b><span>로드 밸런서</span></div>
+            <div class="box eidos-card ctx"><b>NAT Gateway</b><span>외부 호출 출구</span></div>
+          </div>
+          <div class="subnet private"><span class="tag label">프라이빗 서브넷</span>
+            <div class="box eidos-card" id="api"><b>주문 API #1</b><span>ECS 컨테이너</span>
+              <div class="detail"><code>orders-api:2.4.1</code> · CPU 0.5 · 메모리 1GB<br>포트 8080, ALB 헬스체크 <code>/healthz</code></div></div>
+            <div class="box eidos-card ctx"><b>주문 API #2</b><span>ECS 컨테이너</span></div>
+          </div>
+          <div class="subnet data" id="data"><span class="tag label">데이터 서브넷</span>
+            <div class="box eidos-card ctx"><b>RDS Primary</b><span>PostgreSQL</span></div>
+            <div class="box eidos-card ctx"><b>RDS Replica</b><span>읽기 전용</span></div>
+            <div class="box eidos-card ctx"><b>ElastiCache</b><span>Redis</span></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const shot = s.fx("establishing-shot", { from: "#api", context: ".ctx" });
+  s.tl.stop("컨테이너 하나만 보면, 이것이 어디에서 돌고 있는지 알 수 없습니다");
+  shot.pullBack({ labels: ".label" });
+  s.tl.stop("물러서면 보입니다: VPC 안 프라이빗 서브넷에 있고, 앞에는 ALB, 뒤에는 DB가 있습니다");
+  shot.focus("#data", { dim: ".edge, .public, .private, header" });
+  s.tl.stop("데이터는 가장 안쪽 서브넷에 두고, 인터넷에서 직접 닿지 않게 합니다");
+  s.start();
+</script>
+</body>
+</html>
