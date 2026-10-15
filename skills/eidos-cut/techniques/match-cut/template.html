@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 매치컷 (Match Cut)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .body { display: flex; flex-direction: column; }
+  .mono { width: min(480px, 100%); margin: 2vh auto 0; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 10px; background: var(--eidos-surface); color: var(--eidos-surface-fg); border: 2px solid var(--eidos-accent); border-radius: var(--eidos-radius); box-shadow: var(--eidos-shadow); }
+  .mono .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .mono .head b { font-size: 1.05rem; }
+  .mono .head code { font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); }
+  .mods { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .mod { padding: 6px 10px; border-radius: var(--eidos-radius-sm); background: var(--eidos-fill-warm); font-size: 0.9rem; font-weight: 500; }
+  .mono .foot { padding-top: 8px; border-top: 1px dashed var(--eidos-border); font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  .cluster { position: relative; margin-top: 2vh; padding: 1.5rem 1rem 1rem; }
+  .outline { position: absolute; inset: 0; border: 2px dashed var(--eidos-accent); border-radius: var(--eidos-radius); }
+  .tag { position: absolute; top: -0.75em; left: 1rem; padding: 0 8px; background: var(--eidos-bg); color: var(--eidos-accent); font-size: 0.8rem; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .svc { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .svc b { font-size: 0.98rem; }
+  .svc .detail { font-size: 0.78rem; line-height: 1.45; color: var(--eidos-muted-fg); }
+  .bus { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .bus .line { flex: 1; height: 2px; background: var(--eidos-cat-4); transform-origin: left center; }
+  .bus .lbl { font-family: var(--eidos-font-mono); font-size: 0.78rem; color: var(--eidos-cat-4); white-space: nowrap; }
+  .note { margin: 3vh 0 0; font-size: 1.05rem; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 14vh; gap: 2.5vh; }
+    .mono { padding: 0.8rem 0.9rem; }
+    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .svc { padding: 0.7rem 0.8rem; }
+    .svc b { font-size: 0.9rem; }
+    .svc .detail { font-size: 0.72rem; }
+    .cluster { padding: 1.3rem 0.7rem 0.8rem; }
+    .note { font-size: 0.92rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">Before · 모놀리스</div>
+        <h1 class="eidos-title">주문 시스템은 하나의 모놀리스였다</h1>
+      </header>
+      <div class="body">
+        <div class="mono">
+          <div class="head"><b>order-system</b><code>프로세스 1개 · 배포 단위 1개</code></div>
+          <div class="mods">
+            <div class="mod">주문</div>
+            <div class="mod">결제</div>
+            <div class="mod">재고</div>
+            <div class="mod">알림</div>
+          </div>
+          <div class="foot">모듈끼리는 함수 호출 · DB 하나를 같이 쓴다 · 결제가 죽으면 전부 죽는다</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">After · 마이크로서비스</div>
+        <h1 class="eidos-title">같은 경계가 서비스 4개의 묶음이 된다</h1>
+      </header>
+      <div class="body">
+        <div class="cluster">
+          <div class="outline"></div>
+          <div class="tag">order-system · 서비스 4개</div>
+          <div class="grid">
+            <article class="svc eidos-card"><b>주문 서비스</b><div class="detail">orders DB · 하루 10번 배포</div></article>
+            <article class="svc eidos-card"><b>결제 서비스</b><div class="detail">payments DB · PCI 범위 격리</div></article>
+            <article class="svc eidos-card"><b>재고 서비스</b><div class="detail">inventory DB · 주문 이벤트 소비</div></article>
+            <article class="svc eidos-card"><b>알림 서비스</b><div class="detail">notify DB · 큐에서 꺼내 발송</div></article>
+          </div>
+          <div class="bus"><div class="line"></div><div class="lbl">HTTP · 메시지 큐</div></div>
+        </div>
+        <p class="note">경계는 그대로지만 경계 안의 함수 호출은 네트워크 호출이 된다. 타임아웃, 재시도, 장애 전파를 따로 설계해야 한다.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#a .mono", { opacity: [0, 1], scale: [0.96, 1] }, { at: "<+=0.2", dur: 0.5, ease: "out" })
+    .stagger("#a .mod", { opacity: [0, 1], y: [6, 0] }, { at: "<+=0.25", dur: 0.35, each: 0.08, ease: "out" })
+    .tween("#a .foot", { opacity: [0, 1] }, { dur: 0.4 })
+    .stop("모놀리스: 주문·결제·재고·알림이 한 프로세스, 한 배포 단위 안에 있다");
+
+  const m = s.fx("match-cut", { from: "#a", to: "#b", match: ["#a .mono", "#b .outline"], dur: 1.2 });
+  tl.stagger("#b .svc", { opacity: [0, 1], y: [10, 0] }, { at: m.end - 0.2, dur: 0.45, each: 0.1, ease: "out" })
+    .tween("#b .tag", { opacity: [0, 1] }, { at: m.end, dur: 0.3 })
+    .stop("매치컷: 모놀리스의 경계가 그대로 서비스 묶음의 경계가 된다");
+
+  tl.stagger("#b .svc .detail", { opacity: [0, 1], y: [4, 0] }, { dur: 0.35, each: 0.08, ease: "out" })
+    .stop("서비스마다 자체 DB를 갖고 따로 배포한다");
+
+  tl.tween("#b .bus .line", { scaleX: [0, 1] }, { dur: 0.6, ease: "inOut" })
+    .tween("#b .bus .lbl", { opacity: [0, 1] }, { at: "<+=0.4", dur: 0.3 })
+    .tween("#b .note", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.5, ease: "out" })
+    .stop("함수 호출이 네트워크 호출로 바뀐다: 타임아웃과 장애 전파를 따로 설계한다");
+  s.start();
+</script>
+</body>
+</html>

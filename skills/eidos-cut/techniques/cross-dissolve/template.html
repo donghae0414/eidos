@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 크로스디졸브 (Cross Dissolve)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .body { display: flex; flex-direction: column; gap: 3.5vh; }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  .node .who code { font-family: var(--eidos-font-mono); font-size: 0.74rem; }
+  .badge { align-self: flex-start; margin-top: auto; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; }
+  .badge.auto { border-color: transparent; background: var(--eidos-success); color: var(--eidos-accent-fg); }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .summary { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--eidos-accent); }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 14vh; gap: 2.5vh; }
+    .body { gap: 2.5vh; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { flex-direction: row; align-items: center; gap: 10px; padding: 0.55rem 0.8rem; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { flex: 1; text-align: right; font-size: 0.74rem; }
+    .node .who code { font-size: 0.68rem; }
+    .badge { margin-top: 0; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .summary { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">배포의 진화 · 1 / 3</div>
+        <h1 class="eidos-title">수동 배포: 사람이 서버에 들어가 명령을 친다</h1>
+      </header>
+      <div class="body">
+        <div class="flow">
+          <article class="node eidos-card"><div class="name">코드 작성</div><div class="who">개발자 로컬</div><span class="badge">수동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">서버 접속</div><div class="who"><code>ssh deploy@prod-01</code></div><span class="badge">수동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">빌드 · 재시작</div><div class="who"><code>git pull &amp;&amp; npm run build &amp;&amp; pm2 restart</code></div><span class="badge">수동</span></article>
+        </div>
+        <ul class="notes">
+          <li>절차를 담당자 한 명이 외우고 있다</li>
+          <li>명령 하나 틀리면 바로 장애</li>
+          <li>배포하는 날은 다들 퇴근을 못 한다</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">배포의 진화 · 2 / 3</div>
+        <h1 class="eidos-title">CI: 커밋마다 빌드와 테스트가 자동으로 돈다</h1>
+      </header>
+      <div class="body">
+        <div class="flow">
+          <article class="node eidos-card"><div class="name">커밋</div><div class="who">개발자</div><span class="badge">수동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">빌드</div><div class="who">CI 서버</div><span class="badge auto">자동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">테스트</div><div class="who">CI 서버</div><span class="badge auto">자동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">배포</div><div class="who">배포 담당자</div><span class="badge">수동</span></article>
+        </div>
+        <ul class="notes">
+          <li>깨진 코드는 main에 들어오지 못한다</li>
+          <li>빌드 결과가 PR에 바로 보인다</li>
+          <li>배포는 아직 사람 손을 탄다</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">배포의 진화 · 3 / 3</div>
+        <h1 class="eidos-title">CD: 통과하면 프로덕션까지 자동으로 나간다</h1>
+      </header>
+      <div class="body">
+        <div class="flow">
+          <article class="node eidos-card"><div class="name">커밋</div><div class="who">개발자</div><span class="badge">수동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">빌드</div><div class="who">파이프라인</div><span class="badge auto">자동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">테스트</div><div class="who">파이프라인</div><span class="badge auto">자동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">스테이징</div><div class="who">파이프라인</div><span class="badge auto">자동</span></article>
+          <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+          <article class="node eidos-card"><div class="name">프로덕션</div><div class="who">파이프라인</div><span class="badge auto">자동</span></article>
+        </div>
+        <ul class="notes">
+          <li>merge가 곧 배포다</li>
+          <li>하루에 수십 번 배포해도 절차는 같다</li>
+          <li>롤백도 파이프라인이 한다</li>
+        </ul>
+        <p class="summary">사람의 손이 닿는 곳은 코드 리뷰뿐이다.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .flow > *", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.2", dur: 0.45, each: 0.1, ease: "out" })
+    .stagger("#a .notes li", { opacity: [0, 1], x: [-6, 0] }, { dur: 0.4, each: 0.12, ease: "out" })
+    .stop("수동 배포: 담당자가 서버에 접속해 명령을 하나씩 친다");
+
+  s.fx("cross-dissolve", { from: "#a", to: "#b" });
+  tl.stagger("#b .badge.auto", { opacity: [0, 1], scale: [0.6, 1] }, { at: "-=0.25", dur: 0.4, each: 0.12, ease: "pop" })
+    .stop("크로스디졸브 → CI: 커밋마다 빌드와 테스트가 자동으로 돈다");
+
+  s.fx("cross-dissolve", { from: "#b", to: "#c", blur: true, dur: 1 });
+  tl.stagger("#c .badge.auto", { opacity: [0, 1], scale: [0.6, 1] }, { at: "-=0.25", dur: 0.4, each: 0.1, ease: "pop" })
+    .stop("블러 디졸브 → CD: 테스트를 통과하면 프로덕션까지 자동으로 나간다");
+
+  tl.tween("#c .summary", { opacity: [0, 1], y: [8, 0] }, { at: "+=0.1", dur: 0.5, ease: "out" })
+    .stop("사람의 손이 닿는 곳은 코드 리뷰뿐이다");
+  s.start();
+</script>
+</body>
+</html>

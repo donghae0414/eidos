@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 스플릿 스크린 (Split Screen)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; overflow-wrap: break-word; }
+  .layout header { display: flex; flex-direction: column; gap: 6px; }
+  .split { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr auto 1fr; gap: 0 3vw; }
+  .pane { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  .pane-head { display: flex; align-items: baseline; gap: 10px; }
+  .pane-head b { font-size: 1.2rem; }
+  .pane-head .sub { font-size: 0.85rem; color: var(--eidos-muted-fg); }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
+  #rest .swatch { background: var(--eidos-cat-1); }
+  #gql .swatch { background: var(--eidos-cat-2); }
+  .count { margin-left: auto; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--eidos-border); font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
+  .trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .trip { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "n req ms" "n res ms"; gap: 2px 10px; align-items: center; }
+  .trip .n { grid-area: n; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-cat-1); color: var(--eidos-accent-fg); font-size: 0.75rem; font-weight: 700; }
+  .trip code { grid-area: req; font-family: var(--eidos-font-mono); font-size: 0.9rem; color: var(--eidos-surface-fg); }
+  .trip .res { grid-area: res; font-family: var(--eidos-font-mono); font-size: 0.76rem; color: var(--eidos-muted-fg); }
+  .trip .ms { grid-area: ms; display: flex; align-items: center; gap: 4px; font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
+  .trip .ms svg { width: 14px; height: 14px; }
+  .divider-wrap { position: relative; width: 2px; }
+  .divider { width: 100%; height: 100%; background: var(--eidos-border); }
+  .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 999px; background: var(--eidos-surface); border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; white-space: nowrap; }
+  .query { font-family: var(--eidos-font-mono); font-size: 0.86rem; line-height: 1.55; }
+  .query .line { white-space: pre; }
+  .query .k { color: var(--eidos-cat-2); }
+  .summary { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 1rem; }
+  .summary .rest { color: var(--eidos-cat-1); }
+  .summary .gql { color: var(--eidos-cat-2); }
+  @media (max-width: 640px) {
+    .layout { padding: 5vh 5vw 14vh; gap: 2vh; }
+    .split { grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 14px 0; }
+    .divider-wrap { width: auto; height: 2px; }
+    .pane { gap: 8px; }
+    .pane-head b { font-size: 1.05rem; }
+    .trips { gap: 6px; }
+    .trip code { font-size: 0.8rem; }
+    .trip .res { font-size: 0.7rem; }
+    .trip .ms { font-size: 0.7rem; }
+    .query { font-size: 0.74rem; line-height: 1.5; padding: 0.7rem 0.8rem; }
+    .summary { flex-direction: column; gap: 2px; font-size: 0.88rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">REST vs GraphQL</div>
+        <h1 class="eidos-title">글 상세 화면 하나를 그리는 데 필요한 요청</h1>
+      </header>
+      <section class="split">
+        <div class="pane" id="rest">
+          <div class="pane-head"><span class="swatch"></span><b>REST</b><span class="sub">엔드포인트 3개</span><span class="count">왕복 0회</span></div>
+          <ol class="trips">
+            <li class="trip r1"><span class="n">1</span><code>GET /users/1</code><span class="res">→ { id, name, avatar }</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+            <li class="trip r2"><span class="n">2</span><code>GET /users/1/posts?limit=1</code><span class="res">→ [{ id: 9, title }]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+            <li class="trip r3"><span class="n">3</span><code>GET /posts/9/comments</code><span class="res">→ [{ author, text }, …]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+          </ol>
+        </div>
+        <div class="divider-wrap"><div class="divider"></div><span class="vs">VS</span></div>
+        <div class="pane" id="gql">
+          <div class="pane-head"><span class="swatch"></span><b>GraphQL</b><span class="sub">쿼리 1개</span><span class="count">왕복 0회</span></div>
+          <div class="query eidos-card">
+            <div class="line eidos-muted">POST /graphql</div>
+            <div class="line"><span class="k">query</span> {</div>
+            <div class="line q1">  user(id: 1) {</div>
+            <div class="line q1">    name</div>
+            <div class="line q1">    avatar</div>
+            <div class="line q2">    posts(first: 1) {</div>
+            <div class="line q2">      title</div>
+            <div class="line q3">      comments { author text }</div>
+            <div class="line q2">    }</div>
+            <div class="line q1">  }</div>
+            <div class="line">}</div>
+          </div>
+        </div>
+      </section>
+      <footer class="summary">
+        <span><b class="rest">REST</b> 왕복 3번 · 엔드포인트마다 응답 전체를 받는다</span>
+        <span><b class="gql">GraphQL</b> 왕복 1번 · 필요한 필드만 한 번에 받는다</span>
+      </footer>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween(".layout header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" });
+  const ss = s.fx("split-screen", {
+    left: "#rest",
+    right: "#gql",
+    divider: ".divider",
+    steps: [["#rest .r1", "#gql .q1"], ["#rest .r2", "#gql .q2"], ["#rest .r3", "#gql .q3"]],
+    ghost: 0.22,
+    at: "<+=0.2",
+  });
+  tl.tween(".vs", { opacity: [0, 1] }, { at: ss.end - 0.2, dur: 0.3 });
+  tl.stop("같은 글 상세 화면 하나를 그리기 위해 양쪽이 출발한다");
+
+  const count = (sel, from, to, st) =>
+    tl.tween(sel, { text: (p) => `왕복 ${Math.round(from + (to - from) * p)}회` }, { at: st.start, dur: st.end - st.start });
+
+  const s1 = ss.step();
+  count("#rest .count", 0, 1, s1);
+  count("#gql .count", 0, 1, s1);
+  tl.stop("1. 사용자 정보: REST는 /users/1 왕복, GraphQL은 user(id: 1) 블록");
+
+  const s2 = ss.step();
+  count("#rest .count", 1, 2, s2);
+  tl.stop("2. 글 목록: REST는 두 번째 왕복, GraphQL은 같은 쿼리 안의 posts");
+
+  const s3 = ss.step();
+  count("#rest .count", 2, 3, s3);
+  tl.stop("3. 댓글: REST는 세 번째 왕복, GraphQL은 comments 한 줄");
+
+  ss.focus("right");
+  tl.tween(".summary", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.5, ease: "out" });
+  tl.stop("왕복 3번 vs 1번: 지연이 큰 모바일 환경일수록 차이가 벌어진다");
+  s.start();
+</script>
+</body>
+</html>
