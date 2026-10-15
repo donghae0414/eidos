@@ -239,9 +239,13 @@ skills/
 ├── eidos-camera/             # 카메라 무브 + 시간 조작
 ├── eidos-cut/                # 전환·편집
 ├── eidos-motion/             # 모션그래픽·타이포·강조
-├── eidos-explainer/          # 원리 도해 + 데이터
-└── runtime/
-    └── eidos-stage.js        # 공통 런타임. 생성되는 HTML에 인라인으로 삽입
+└── eidos-explainer/          # 원리 도해 + 데이터
+runtime/
+├── eidos-stage.js            # 공통 런타임. 생성되는 HTML에 인라인으로 삽입
+└── eidos-stage.css           # 디자인 토큰과 공통 스타일
+scripts/
+├── inline.mjs                # 작업 HTML의 로컈 CSS/JS를 한 파일로 묶음
+└── qa.mjs                    # 브라우저 QA (오류, seek 결정성, reduced-motion, 스크린샷)
 ```
 
 각 그룹 Skill 안에서 기법은 카드 하나로 관리합니다.
@@ -249,9 +253,11 @@ skills/
 ```
 skills/eidos-camera/techniques/zoom-in/
 ├── card.md        # 정의, 전달 의미, 사용 시점, 피할 때, 파라미터, 이징
-├── template.html  # 단독으로 열리는 최소 예시
-└── example.html   # 실제 질문 하나에 대한 결과물
+├── technique.js   # Eidos.fx["zoom-in"]을 등록하는 기법 코드
+└── template.html  # 단독으로 열리는 실제 내용 예시 (실제 질문에 대한 결과물 역할도 겸함)
 ```
+
+여러 기법을 조합한 결과물 예시는 `skills/eidos-visualize/examples/`에 둡니다.
 
 ### 6.2 카드 스키마
 
