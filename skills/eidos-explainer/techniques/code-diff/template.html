@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 코드 디프 리빌 (Code Diff Reveal)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1020px; margin: 0 auto; padding: 5vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  .sub { color: var(--eidos-muted-fg); margin: 8px 0 0; font-size: clamp(13px, 1.4vw, 16px); }
+  .editor { border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); background: var(--eidos-surface); overflow: hidden; }
+  .file { padding: 10px 14px; border-bottom: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font: 12px var(--eidos-font-mono); display: flex; justify-content: space-between; }
+  #code { padding: 10px 0; color: var(--eidos-surface-fg); font-size: 14px; }
+  .result { margin: 0; border-left: 3px solid var(--eidos-success); padding: 0 14px; font-size: clamp(14px, 1.5vw, 18px); }
+  .result strong { display: block; font-size: 1.15em; }
+  .result span { color: var(--eidos-muted-fg); }
+  @media (max-width: 640px) {
+    .layout { padding: 4vh 5vw 14vh; gap: 2vh; }
+    .eidos-title { font-size: 25px; }
+    #code { font-size: 12px; padding: 8px 0; }
+    .file { padding: 9px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">성능 개선 · N+1 쿼리</div>
+        <h1 class="eidos-title">반복 조회를 한 번의 IN 쿼리로</h1>
+        <p class="sub">사용자 100명의 글 목록. 루프마다 DB를 부르지 않고 ID를 모아 조회합니다.</p>
+      </header>
+      <section class="editor" aria-label="사용자와 글을 조회하는 코드 변경">
+        <div class="file"><span>users-with-posts.js</span><span>− 삭제 / + 추가</span></div>
+        <div id="code"></div>
+      </section>
+      <p class="result" id="result"><strong>DB 왕복 101회 → 2회</strong><span>사용자 조회 1회 + 글 일괄 조회 1회.<br>사용자가 없으면 글 조회도 건너뜁니다.</span></p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const d = s.fx("code-diff", {
+    el: "#code",
+    lines: [
+      { t: "ctx", code: "const users = await db.query(" },
+      { t: "ctx", code: '  "SELECT id FROM users"' },
+      { t: "ctx", code: ");" },
+      { t: "del", code: "const posts = [];" },
+      { t: "del", code: "for (const user of users) {" },
+      { t: "del", code: "  const rows = await db.query(" },
+      { t: "del", code: '    "SELECT * FROM posts " +' },
+      { t: "del", code: '    "WHERE user_id = ?", [user.id]' },
+      { t: "del", code: "  );" },
+      { t: "del", code: "  posts.push(...rows);" },
+      { t: "del", code: "}" },
+      { t: "add", code: "const ids = users.map(u => u.id);" },
+      { t: "add", code: 'const marks = ids.map(() => "?").join(",");' },
+      { t: "add", code: "const posts = ids.length" },
+      { t: "add", code: "  ? await db.query(" },
+      { t: "add", code: '      "SELECT * FROM posts " +' },
+      { t: "add", code: "      `WHERE user_id IN (${marks})`, ids" },
+      { t: "add", code: "    )" },
+      { t: "add", code: "  : [];" },
+      { t: "ctx", code: "return { users, posts };" },
+    ],
+  });
+  d.highlight();
+  s.tl.stop("문제: 사용자 수만큼 글 조회가 반복되어 총 101번 왕복합니다");
+  d.remove();
+  s.tl.stop("사용자별로 DB를 부르던 반복문을 제거합니다");
+  d.insert();
+  s.tl.stop("ID를 모아 IN 쿼리 한 번으로 모든 글을 가져옵니다");
+  s.tl.tween("#result", { opacity: [0, 1] }, { dur: 0.5 });
+  s.tl.stop("사용자 100명이어도 DB 왕복은 2회로 줄어듭니다");
+  s.start();
+</script>
+</body>
+</html>

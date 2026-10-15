@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 차트 주석 (Chart Annotate)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1120px; margin: auto; padding: 6vh 6vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 2vh; word-break: keep-all; }
+  .subtitle { margin: 8px 0 0; color: var(--eidos-muted-fg); font-size: 0.9rem; }
+  header h1 br { display: none; }
+  .chart { flex-shrink: 0; padding: 12px; }
+  .chart svg { display: block; width: 100%; height: min(26vh, 208px); font-family: var(--eidos-font-sans); font-variant-numeric: tabular-nums; }
+  .slot { height: 64px; width: 280px; flex-shrink: 0; }
+  #recovery-note { align-self: flex-end; }
+  .summary { margin: 0; font-size: clamp(0.9rem, 1.6vw, 1.1rem); }
+  @media (max-width: 640px) {
+    header h1 br { display: initial; }
+    .layout { padding: 4vh 5vw 14vh; gap: 2vh; }
+    .chart { padding: 10px 4px; }
+    .chart svg { height: auto; }
+    .slot { width: 270px; height: 66px; }
+    #recovery-note { align-self: flex-end; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header><div class="eidos-label">인시던트 리뷰 · 결제 API</div><h1 class="eidos-title">에러율의 변곡점에 <br>운영 기록을 붙입니다</h1><p class="subtitle">24시간 요청 오류율 · 10월 14일 · 단위 %</p></header>
+    <div class="slot" id="peak-note"></div>
+    <section class="chart eidos-card" aria-label="24시간 결제 API 오류율">
+      <svg viewBox="0 0 600 270" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chart-title">
+        <title id="chart-title">00시부터 24시까지의 오류율. 10시 배포 직후 8%로 상승하고 14시 롤백 후 0.4%로 회복</title>
+        <g fill="none" stroke="var(--eidos-border)">
+          <path d="M 64 222 H 568 M 64 178 H 568 M 64 134 H 568 M 64 90 H 568 M 64 46 H 568"/>
+        </g>
+        <path d="M 64 32 V 222 H 568" fill="none" stroke="var(--eidos-muted-fg)"/>
+        <g fill="var(--eidos-fg)" font-size="21" text-anchor="end">
+          <text x="50" y="229">0</text><text x="50" y="185">2</text><text x="50" y="141">4</text><text x="50" y="97">6</text><text x="50" y="53">8</text>
+        </g>
+        <g fill="var(--eidos-fg)" font-size="21" text-anchor="middle">
+          <text x="64" y="256">00시</text><text x="190" y="256">06시</text><text x="316" y="256">12시</text><text x="442" y="256">18시</text><text x="568" y="256">24시</text>
+        </g>
+        <g class="chart-context">
+          <path id="error-line" d="M 64 213.2 L 106 215.4 L 148 213.2 L 190 211 L 232 213.2 L 274 46 L 316 72.4 L 358 213.2 L 400 211 L 442 213.2 L 484 215.4 L 526 213.2 L 568 213.2" fill="none" stroke="var(--eidos-cat-4)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle id="error-peak" cx="274" cy="46" r="4" fill="var(--eidos-cat-4)"/>
+          <circle id="recovered" cx="358" cy="213.2" r="4" fill="var(--eidos-cat-4)"/>
+        </g>
+      </svg>
+    </section>
+    <div class="slot" id="recovery-note"></div>
+    <p class="summary" id="summary">10:00 배포 → 14:00 롤백<br>급증 구간은 요청 로그와 변경 내역으로 원인을 확인합니다.</p>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header, .chart", { opacity: [0, 1] }, { dur: 0.45 })
+    .stop("24시간 오류율에서 평소 수준과 급증 구간을 먼저 봅니다");
+  s.fx("chart-annotate", { target: "#error-peak", text: "배포 v2.3 직후 에러율 급증", slot: "#peak-note", dim: ".chart-context" });
+  s.tl.stop("10시 배포 직후 오류율이 0.4%에서 8%로 급증했습니다");
+  s.fx("chart-annotate", { target: "#recovered", text: "롤백 후 정상화", slot: "#recovery-note", color: "var(--eidos-success)" });
+  s.tl.stop("14시 롤백 후 오류율이 0.4%로 돌아왔습니다");
+  s.tl.tween("#summary", { opacity: [0, 1], y: [6, 0] }, { dur: 0.4, ease: "out" })
+    .stop("주석은 사건의 시점을 연결합니다. 원인은 로그로 확인합니다");
+  s.start();
+</script>
+</body>
+</html>

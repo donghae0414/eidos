@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 차트 성장 (Chart Grow)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1180px; margin: auto; padding: 7vh 5vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 4vh; word-break: keep-all; }
+  h1 { max-width: 850px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .chart { min-width: 0; padding: 20px 12px 12px; }
+  h2 { margin: 0 12px 4px; font-size: clamp(1rem, 1.8vw, 1.35rem); }
+  .meta { margin: 0 12px 12px; color: var(--eidos-muted-fg); font-size: 0.85rem; }
+  .summary { margin: 0; font-size: clamp(1rem, 1.8vw, 1.3rem); }
+  @media (max-width: 640px) {
+    .layout { padding: 4vh 5vw 14vh; gap: 2vh; }
+    .charts { grid-template-columns: 1fr; gap: 14px; }
+    .chart { padding: 12px 6px 4px; }
+    .meta { margin-bottom: 0; font-size: 0.75rem; }
+    h2 { margin-bottom: 2px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header><div class="eidos-label">릴리스 자동화 · 상반기 운영 지표</div><h1 class="eidos-title">배포는 더 자주,<br>장애는 더 적게</h1></header>
+    <section class="charts">
+      <article class="chart eidos-card"><h2>월별 배포 횟수</h2><p class="meta">단위: 회 · 0–60 고정 축</p><div id="deploy"></div></article>
+      <article class="chart eidos-card"><h2>월별 장애 건수</h2><p class="meta">단위: 건 · 0–12 고정 축</p><div id="incidents"></div></article>
+    </section>
+    <p class="summary" id="summary">배포 <b>12 → 48회</b>, 장애 <b>9 → 2건</b>.<br>횟수뿐 아니라 변경 실패도 함께 봅니다.</p>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const categories = ["1월", "2월", "3월", "4월", "5월", "6월"];
+  s.tl.tween("header, .chart", { opacity: [0, 1] }, { dur: 0.45 })
+    .stop("상반기 배포와 장애를 각각의 고정 축에서 살펴봅니다");
+  s.fx("chart-grow", { el: "#deploy", kind: "bar", categories, values: [12, 18, 24, 32, 40, 48], max: 60, unit: "회" });
+  s.tl.stop("자동화 이후 월별 배포 횟수는 12회에서 48회로 늘었습니다");
+  s.fx("chart-grow", { el: "#incidents", kind: "line", categories, values: [9, 8, 6, 5, 3, 2], max: 12, unit: "건", color: "var(--eidos-cat-2)" });
+  s.tl.stop("같은 기간 월별 장애 건수는 9건에서 2건으로 줄었습니다");
+  s.tl.tween("#summary", { opacity: [0, 1], y: [8, 0] }, { dur: 0.4, ease: "out" })
+    .stop("배포는 4배, 장애는 감소. 두 지표를 함께 읽어야 합니다");
+  s.start();
+</script>
+</body>
+</html>

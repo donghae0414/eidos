@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 그래프 빌드 (Graph Build)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2vh; word-break: keep-all; }
+  .sub { color: var(--eidos-muted-fg); margin: 8px 0 0; font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .graph { position: relative; flex: 1; min-height: 0; }
+  .eidos-graph-node { width: 14%; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .eidos-graph-node b { font: 600 clamp(12px, 1.2vw, 16px) var(--eidos-font-mono); overflow-wrap: anywhere; }
+  .eidos-graph-node span { font-size: 12px; color: var(--eidos-muted-fg); }
+  .note { margin: 0; min-height: 3.4em; font-size: clamp(0.9rem, 1.5vw, 1.15rem); }
+  .note strong { color: var(--eidos-accent); }
+  @media (max-aspect-ratio: 1/1) {
+    .layout { padding: 5vh 5vw 14vh; gap: 3vh; }
+    .eidos-graph-node { width: 31%; padding: 10px 6px; }
+    .eidos-graph-node b { font-size: 11px; white-space: nowrap; letter-spacing: -0.03em; }
+    .eidos-title { font-size: 25px; }
+    .note { min-height: 5em; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">모노레포 · 패키지 의존성</div>
+        <h1 class="eidos-title">가장 긴 의존 경로가 빌드 시간을 정합니다</h1>
+        <p class="sub">화살표 A → B는 “A가 B에 의존한다”는 뜻입니다. 빌드는 반대 순서로 진행합니다.</p>
+      </header>
+      <section class="graph" id="graph" aria-label="일곱 패키지의 의존성 그래프"></section>
+      <p class="note" id="note"><strong>임계 경로 11초</strong> · crypto 2초 → auth 4초 → api 3초 → app 2초.<br>독립 패키지는 병렬 빌드해도 이 경로보다 먼저 끝납니다.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const g = s.fx("graph-build", {
+    el: "#graph",
+    nodes: [
+      { id: "app", label: "app", detail: "진입점 · 2초", pos: [0, 38], portrait: [32, 0] },
+      { id: "api", label: "api", detail: "서버 · 3초", pos: [28, 15], portrait: [0, 24] },
+      { id: "web-ui", label: "web-ui", detail: "화면 · 2초", pos: [28, 70], portrait: [64, 24] },
+      { id: "db-client", label: "db-client", detail: "데이터 · 2초", pos: [56, 0], portrait: [0, 49] },
+      { id: "auth", label: "auth", detail: "인증 · 4초", pos: [56, 38], portrait: [32, 49] },
+      { id: "design-system", label: "design-system", detail: "컴포넌트 · 1초", pos: [56, 75], portrait: [64, 49] },
+      { id: "crypto", label: "crypto", detail: "암호화 · 2초", pos: [84, 38], portrait: [32, 76] },
+    ],
+    edges: [["app", "api"], ["app", "web-ui"], ["api", "db-client"], ["api", "auth"], ["web-ui", "design-system"], ["auth", "crypto"]],
+  });
+  s.tl.stop("일곱 패키지의 역할과 개별 빌드 시간을 먼저 봅니다");
+  g.connect();
+  s.tl.stop("app에서 시작해 각 패키지가 무엇에 의존하는지 연결합니다");
+  g.highlight(["app", "api", "auth", "crypto"]);
+  s.tl.tween("#note", { opacity: [0, 1] }, { at: "<", dur: 0.6 });
+  s.tl.stop("임계 경로는 11초. 이 경로를 줄여야 전체 빌드가 빨라집니다");
+  s.start();
+</script>
+</body>
+</html>
