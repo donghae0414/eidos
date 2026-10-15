@@ -64,23 +64,25 @@ EIDOS는 Claude Code / Codex용 플러그인입니다. 사용자가 무언가를
 
 > 카탈로그는 출발점이며, 실제로 만들어 보면서 추가·통합한다.
 
-### Skill 구성 규칙
+### Skill 구성 (구현됨)
 
-각 Skill은 다음을 갖는다.
+진입 skill 하나와 그룹 skill 넷을 두고, 기법은 그룹 안의 카드로 관리한다. 자세한 근거는 [research/visual-techniques.md](research/visual-techniques.md) 6장.
 
 ```
-skills/<skill-name>/
-├── SKILL.md        # 언제 쓰는지, 어떤 질문에 맞는지, 만드는 방법
-├── template.html   # 기법이 적용된 최소 동작 예시
-└── examples/       # 실제 질문 → 결과물 예시
+skills/
+├── eidos-visualize/              # 진입: 의도 → 기법 선택 → HTML 한 파일
+│   ├── SKILL.md
+│   ├── references/{decision-table.md, principles.md}
+│   └── examples/{oauth-flow.html, rest-vs-graphql.html}
+├── eidos-camera/ eidos-cut/ eidos-motion/ eidos-explainer/
+│   ├── SKILL.md
+│   └── techniques/<id>/{card.md, technique.js, template.html}
+runtime/{eidos-stage.js, eidos-stage.css}   # 무의존 런타임
+scripts/{inline.mjs, qa.mjs}                # 한 파일로 묶기, 브라우저 QA
+.claude-plugin/ .codex-plugin/ .agents/plugins/   # Claude Code·Codex 매니페스트와 marketplace
 ```
 
-`SKILL.md`에 반드시 들어갈 내용:
-
-1. **When to use** — 어떤 종류의 질문/내용에 이 기법이 맞는가
-2. **When not to use** — 오히려 이해를 방해하는 경우
-3. **Recipe** — HTML/CSS/JS로 구현하는 방법과 핵심 파라미터 (속도, easing, 길이)
-4. **Example** — 질문 하나와 그에 대한 결과물
+`card.md`에는 전달하는 의미, 언제 쓰나, 피할 때, 사용법, 파라미터, 변형, reduced-motion, 같이 쓰기 좋은 기법이 들어간다.
 
 ### 공통 원칙
 
@@ -92,10 +94,10 @@ skills/<skill-name>/
 
 ### Phase 1 완료 기준
 
-- [ ] Claude Code 플러그인으로 설치되어 Skill이 로드된다
-- [ ] Codex에서도 같은 Skill을 사용할 수 있다
-- [ ] 영화 기법 N개, 모션그래픽 기법 N개 Skill이 각각 template과 example을 갖는다
-- [ ] 질문을 던지면 에이전트가 알맞은 Skill을 골라 HTML을 생성한다
+- [x] Claude Code 플러그인으로 설치되어 Skill이 로드된다 (`claude plugin validate .` 통과, `claude -p --plugin-dir`에서 로드 확인)
+- [x] Codex에서도 같은 Skill을 사용할 수 있다 (로컬 marketplace로 설치, `codex exec`에서 로드 확인)
+- [x] P0 기법 20개가 각각 card·technique·template을 갖고, `bun scripts/qa.mjs`가 20/20 통과한다 (오류, seek 결정성, reduced-motion)
+- [x] 질문을 던지면 에이전트가 알맞은 Skill을 골라 HTML을 생성한다 (Claude Code `claude -p`, Codex `codex exec` 각각 OAuth 질문에 skill을 스스로 골라 HTML을 만들었고, 두 결과물 모두 QA 통과)
 
 ---
 

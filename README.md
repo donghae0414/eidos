@@ -6,11 +6,23 @@ EIDOS is a Claude Code plugin that answers "how does this work?" with an animate
 
 ## Install
 
-Load the plugin from a local checkout:
+**Claude Code**
 
 ```bash
+# from the marketplace in this repository
+/plugin marketplace add donghae0414/eidos
+/plugin install eidos@eidos
+
+# or load a local checkout for one session
 git clone https://github.com/donghae0414/eidos.git
 claude --plugin-dir ./eidos
+```
+
+**Codex**
+
+```bash
+codex plugin marketplace add donghae0414/eidos   # or a local checkout path
+codex plugin add eidos@eidos
 ```
 
 Then ask for a visual explanation, for example: `OAuth 2.0 인증 흐름을 시각화해서 oauth.html로 저장해줘`.
