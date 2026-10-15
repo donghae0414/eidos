@@ -197,7 +197,6 @@ body {
   .fill.gql { background: var(--eidos-cat-2); }
   .conclusion { font-size: clamp(1.05rem, 2.4vw, 1.75rem); line-height: 1.95; margin: 0; word-break: keep-all; }
   .conclusion .kw { white-space: nowrap; }
-  #kw2 { margin: 0 1.5em; }
   @media (max-width: 640px) {
     .metrics { grid-template-columns: 1fr; gap: 10px; }
     .metric { gap: 6px; padding: 0.7rem 0.8rem; }
@@ -487,7 +486,8 @@ body {
       return this;
     }
     resolve(kf) {
-      const { target, o } = kf;
+      const { o } = kf;
+      const target = typeof kf.target === "function" ? kf.target(this) : kf.target;
       const roll = o.roll || 0;
       if (target == null || target === "world") return { ...this.home(), r: roll };
       if (typeof target === "object" && "s" in target && "x" in target) return { r: roll, ...target };
@@ -550,8 +550,8 @@ body {
       layout() {
         const tf = world.style.transform;
         world.style.transform = "none";
-        camera.layout();
         for (const fn of layoutFns) fn();
+        camera.layout();
         world.style.transform = tf;
         tl.seek(tl.t);
       },
@@ -856,6 +856,11 @@ body {
         stage.onLayout(() => {
           const r = svg.getBoundingClientRect();
           const fs = parseFloat(getComputedStyle(el).fontSize);
+          const ry = r.height / 2 + fs * 0.6;
+          const rx = r.width / 2 / Math.sqrt(1 - (r.height / 2 / ry) ** 2) + fs * 0.15;
+          const room = `${r3(Math.max(0, rx * 1.05 - r.width / 2 + 3))}px`;
+          el.style.marginLeft = room;
+          el.style.marginRight = room;
           mark.setAttribute("d", ring(r.width, r.height, fs * 0.15, fs * 0.6));
         });
         tl.tween(mark, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at, dur, ease });

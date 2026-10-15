@@ -41,6 +41,11 @@
         stage.onLayout(() => {
           const r = svg.getBoundingClientRect();
           const fs = parseFloat(getComputedStyle(el).fontSize);
+          const ry = r.height / 2 + fs * 0.6;
+          const rx = r.width / 2 / Math.sqrt(1 - (r.height / 2 / ry) ** 2) + fs * 0.15;
+          const room = `${r3(Math.max(0, rx * 1.05 - r.width / 2 + 3))}px`;
+          el.style.marginLeft = room;
+          el.style.marginRight = room;
           mark.setAttribute("d", ring(r.width, r.height, fs * 0.15, fs * 0.6));
         });
         tl.tween(mark, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at, dur, ease });
