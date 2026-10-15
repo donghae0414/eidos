@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REST vs GraphQL · EIDOS</title>
+<style>
+:root {
+  color-scheme: light;
+  --eidos-bg: oklch(0.9818 0.0054 95.0986);
+  --eidos-fg: oklch(0.3438 0.0269 95.7226);
+  --eidos-surface: oklch(0.9665 0.0067 97.3521);
+  --eidos-surface-fg: oklch(0.1908 0.0020 106.5859);
+  --eidos-muted-fg: oklch(0.5341 0.0078 97.4503);
+  --eidos-border: oklch(0.8847 0.0069 97.3627);
+  --eidos-accent: oklch(0.6171 0.1375 39.0427);
+  --eidos-accent-fg: oklch(1 0 0);
+  --eidos-cat-1: var(--eidos-accent);
+  --eidos-cat-2: oklch(0.56 0.16 290);
+  --eidos-cat-3: oklch(0.58 0.09 195);
+  --eidos-cat-4: oklch(0.56 0.13 255);
+  --eidos-cat-5: oklch(0.60 0.11 115);
+  --eidos-fill-warm: oklch(0.8816 0.0276 93.1280);
+  --eidos-fill-cool: oklch(0.8822 0.0403 298.1792);
+  --eidos-success: oklch(0.56 0.13 150);
+  --eidos-danger: oklch(0.56 0.19 27);
+  --eidos-warning: oklch(0.60 0.13 70);
+  --eidos-radius: 1rem;
+  --eidos-radius-sm: 0.5rem;
+  --eidos-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --eidos-font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --eidos-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Dark tokens: system preference unless ?theme=light, or forced with ?theme=dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --eidos-bg: oklch(0.2679 0.0036 106.6427);
+    --eidos-fg: oklch(0.9576 0.0027 106.4494);
+    --eidos-surface: oklch(0.2928 0.0018 106.5092);
+    --eidos-surface-fg: oklch(0.9818 0.0054 95.0986);
+    --eidos-muted-fg: oklch(0.7713 0.0169 99.0657);
+    --eidos-border: oklch(0.3618 0.0101 106.8928);
+    --eidos-accent: oklch(0.6724 0.1308 38.7559);
+    --eidos-accent-fg: oklch(0.1908 0.0020 106.5859);
+    --eidos-cat-2: oklch(0.6898 0.1581 290.4107);
+    --eidos-cat-3: oklch(0.72 0.10 195);
+    --eidos-cat-4: oklch(0.72 0.12 255);
+    --eidos-cat-5: oklch(0.74 0.11 115);
+    --eidos-fill-warm: oklch(0.2130 0.0078 95.4245);
+    --eidos-fill-cool: oklch(0.3074 0.0516 289.3230);
+    --eidos-success: oklch(0.72 0.14 150);
+    --eidos-danger: oklch(0.68 0.19 27);
+    --eidos-warning: oklch(0.80 0.14 75);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --eidos-bg: oklch(0.2679 0.0036 106.6427);
+  --eidos-fg: oklch(0.9576 0.0027 106.4494);
+  --eidos-surface: oklch(0.2928 0.0018 106.5092);
+  --eidos-surface-fg: oklch(0.9818 0.0054 95.0986);
+  --eidos-muted-fg: oklch(0.7713 0.0169 99.0657);
+  --eidos-border: oklch(0.3618 0.0101 106.8928);
+  --eidos-accent: oklch(0.6724 0.1308 38.7559);
+  --eidos-accent-fg: oklch(0.1908 0.0020 106.5859);
+  --eidos-cat-2: oklch(0.6898 0.1581 290.4107);
+  --eidos-cat-3: oklch(0.72 0.10 195);
+  --eidos-cat-4: oklch(0.72 0.12 255);
+  --eidos-cat-5: oklch(0.74 0.11 115);
+  --eidos-fill-warm: oklch(0.2130 0.0078 95.4245);
+  --eidos-fill-cool: oklch(0.3074 0.0516 289.3230);
+  --eidos-success: oklch(0.72 0.14 150);
+  --eidos-danger: oklch(0.68 0.19 27);
+  --eidos-warning: oklch(0.80 0.14 75);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--eidos-bg);
+  color: var(--eidos-fg);
+  font-family: var(--eidos-font-sans);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.eidos-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+.eidos-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.eidos-world svg * { transform-box: fill-box; transform-origin: center; }
+.eidos-world.eidos-fade { animation: eidos-fade 200ms ease-out; }
+@keyframes eidos-fade { from { opacity: 0.35; } to { opacity: 1; } }
+
+.eidos-hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.75rem 1.25rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1rem;
+  align-items: end;
+  pointer-events: none;
+  font-size: 0.9rem;
+  background: linear-gradient(to top, var(--eidos-bg) 55%, transparent);
+}
+.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; }
+.eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--eidos-border); overflow: hidden; }
+.eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
+.eidos-hud[hidden] { display: none; }
+
+.eidos-card {
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  box-shadow: var(--eidos-shadow);
+  padding: 0.9rem 1rem;
+}
+.eidos-title { font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.eidos-label { font-size: 0.8rem; color: var(--eidos-muted-fg); text-transform: uppercase; letter-spacing: 0.06em; }
+.eidos-muted { color: var(--eidos-muted-fg); }
+.eidos-accent { color: var(--eidos-accent); }
+.eidos-mono { font-family: var(--eidos-font-mono); }
+
+</style>
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
+  .layout header { display: flex; flex-direction: column; gap: 6px; }
+  .split { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr auto 1fr; gap: 0 3vw; }
+  .pane { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  .pane-head { display: flex; align-items: baseline; gap: 10px; }
+  .pane-head b { font-size: 1.2rem; }
+  .pane-head .sub { font-size: 0.85rem; color: var(--eidos-muted-fg); }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
+  #rest .swatch { background: var(--eidos-cat-1); }
+  #gql .swatch { background: var(--eidos-cat-2); }
+  .count { margin-left: auto; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--eidos-border); font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
+  .trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .trip { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "n req ms" "n res ms"; gap: 2px 10px; align-items: center; }
+  .trip .n { grid-area: n; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-cat-1); color: var(--eidos-accent-fg); font-size: 0.75rem; font-weight: 700; }
+  .trip code { grid-area: req; font-family: var(--eidos-font-mono); font-size: 0.9rem; color: var(--eidos-surface-fg); }
+  .trip .res { grid-area: res; font-family: var(--eidos-font-mono); font-size: 0.76rem; color: var(--eidos-muted-fg); }
+  .trip .ms { grid-area: ms; display: flex; align-items: center; gap: 4px; font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
+  .trip .ms svg { width: 14px; height: 14px; }
+  .divider-wrap { position: relative; width: 2px; }
+  .divider { width: 100%; height: 100%; background: var(--eidos-border); }
+  .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 999px; background: var(--eidos-surface); border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; }
+  .query { font-family: var(--eidos-font-mono); font-size: 0.86rem; line-height: 1.55; }
+  .query .line { white-space: pre; }
+  .query .k { color: var(--eidos-cat-2); }
+  .summary { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 1rem; }
+  .summary b { color: var(--eidos-accent); }
+  @media (max-width: 640px) {
+    .layout { padding: 5vh 5vw 14vh; gap: 2vh; }
+    .split { grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 14px 0; }
+    .divider-wrap { width: auto; height: 2px; }
+    .pane { gap: 8px; }
+    .pane-head b { font-size: 1.05rem; }
+    .trips { gap: 6px; }
+    .trip code { font-size: 0.8rem; }
+    .trip .res { font-size: 0.7rem; }
+    .trip .ms { font-size: 0.7rem; }
+    .query { font-size: 0.74rem; line-height: 1.5; padding: 0.7rem 0.8rem; }
+    .summary { flex-direction: column; gap: 2px; font-size: 0.88rem; }
+  }
+
+  .scene { position: absolute; inset: 0; }
+  #scene-b { justify-content: center; gap: 4vh; }
+  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .metric { display: flex; flex-direction: column; gap: 10px; }
+  .metric .name { font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .metric .row { display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 10px; font-size: 0.95rem; }
+  .metric .row b { font-weight: 600; }
+  .metric .num { font-family: var(--eidos-font-mono); font-size: clamp(1.05rem, 2vw, 1.5rem); font-weight: 700; text-align: right; }
+  .track { height: 8px; border-radius: 4px; background: var(--eidos-border); overflow: hidden; }
+  .fill { height: 100%; width: 100%; transform-origin: left; }
+  .fill.rest { background: var(--eidos-cat-1); }
+  .fill.gql { background: var(--eidos-cat-2); }
+  .conclusion { font-size: clamp(1.05rem, 2.4vw, 1.75rem); line-height: 1.95; margin: 0; word-break: keep-all; }
+  .conclusion .kw { white-space: nowrap; }
+  #kw2 { margin: 0 1.5em; }
+  @media (max-width: 640px) {
+    .metrics { grid-template-columns: 1fr; gap: 10px; }
+    .metric { gap: 6px; padding: 0.7rem 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout scene" id="scene-a">
+      <header>
+        <div class="eidos-label">REST vs GraphQL</div>
+        <h1 class="eidos-title">글 상세 화면 하나를 그리는 데 필요한 요청</h1>
+      </header>
+      <section class="split">
+        <div class="pane" id="rest">
+          <div class="pane-head"><span class="swatch"></span><b>REST</b><span class="sub">엔드포인트 3개</span><span class="count">왕복 0회</span></div>
+          <ol class="trips">
+            <li class="trip r1"><span class="n">1</span><code>GET /users/1</code><span class="res">→ { id, name, avatar }</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+            <li class="trip r2"><span class="n">2</span><code>GET /users/1/posts?limit=1</code><span class="res">→ [{ id: 9, title }]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+            <li class="trip r3"><span class="n">3</span><code>GET /posts/9/comments</code><span class="res">→ [{ author, text }, …]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+          </ol>
+        </div>
+        <div class="divider-wrap"><div class="divider"></div><span class="vs">VS</span></div>
+        <div class="pane" id="gql">
+          <div class="pane-head"><span class="swatch"></span><b>GraphQL</b><span class="sub">쿼리 1개</span><span class="count">왕복 0회</span></div>
+          <div class="query eidos-card">
+            <div class="line eidos-muted">POST /graphql</div>
+            <div class="line"><span class="k">query</span> {</div>
+            <div class="line q1">  user(id: 1) {</div>
+            <div class="line q1">    name</div>
+            <div class="line q1">    avatar</div>
+            <div class="line q2">    posts(first: 1) {</div>
+            <div class="line q2">      title</div>
+            <div class="line q3">      comments { author text }</div>
+            <div class="line q2">    }</div>
+            <div class="line q1">  }</div>
+            <div class="line">}</div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <main class="layout scene" id="scene-b">
+      <header>
+        <div class="eidos-label">REST vs GraphQL · 결과</div>
+        <h1 class="eidos-title">같은 화면, 다른 비용</h1>
+      </header>
+      <section class="metrics">
+        <div class="metric eidos-card"><div class="name">왕복 횟수</div>
+          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-rt-r"></div></div><span class="num" id="rt-r" data-from="0" data-to="3" data-bar="#b-rt-r" data-bar-from="0" data-bar-to="1">0</span></div>
+          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-rt-g"></div></div><span class="num" id="rt-g" data-from="0" data-to="1" data-bar="#b-rt-g" data-bar-from="0" data-bar-to="0.333">0</span></div></div>
+        <div class="metric eidos-card"><div class="name">화면이 뜨기까지 (모바일 4G 기준)</div>
+          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-ms-r"></div></div><span class="num" id="ms-r" data-from="0" data-to="240" data-unit="ms" data-bar="#b-ms-r" data-bar-from="0" data-bar-to="1">0ms</span></div>
+          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-ms-g"></div></div><span class="num" id="ms-g" data-from="0" data-to="95" data-unit="ms" data-bar="#b-ms-g" data-bar-from="0" data-bar-to="0.396">0ms</span></div></div>
+        <div class="metric eidos-card"><div class="name">내려받은 응답 크기</div>
+          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-kb-r"></div></div><span class="num" id="kb-r" data-from="0" data-to="18.4" data-decimals="1" data-unit="KB" data-bar="#b-kb-r" data-bar-from="0" data-bar-to="1">0.0KB</span></div>
+          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-kb-g"></div></div><span class="num" id="kb-g" data-from="0" data-to="2.1" data-decimals="1" data-unit="KB" data-bar="#b-kb-g" data-bar-from="0" data-bar-to="0.114">0.0KB</span></div></div>
+      </section>
+      <p class="conclusion">GraphQL은 <span class="kw" id="kw1">필요한 필드만 한 번에</span> 가져와 화면이 많은 앱에서 유리합니다. 대신 <span class="kw" id="kw2">HTTP 캐시를 쓰기 어렵다</span>는 대가가 있어, 공개 API는 여전히 REST가 흔합니다.</p>
+    </main>
+  </div>
+</div>
+<script >
+(() => {
+  const E = (window.Eidos = window.Eidos || {});
+  E.version = "0.1.0";
+  E.fx = E.fx || {};
+
+  const errors = (window.__eidosErrors = []);
+  addEventListener("error", (e) => {
+    errors.push(String(e.message));
+    console.error("[eidos]", e.message);
+  });
+  addEventListener("unhandledrejection", (e) => {
+    errors.push(String(e.reason));
+    console.error("[eidos]", String(e.reason));
+  });
+
+  const params = new URLSearchParams(location.search);
+  const theme = params.get("theme");
+  if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+  const motion = params.get("motion");
+  E.reduced = motion === "reduce" || (motion !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const r3 = (v) => Math.round(v * 1000) / 1000;
+  E.util = { clamp01, lerp, r3 };
+
+  function bezier(x1, y1, x2, y2) {
+    const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+    const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+    const sx = (t) => ((ax * t + bx) * t + cx) * t;
+    const sy = (t) => ((ay * t + by) * t + cy) * t;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let lo = 0, hi = 1, t = x;
+      for (let i = 0; i < 30; i++) {
+        const v = sx(t);
+        if (Math.abs(v - x) < 1e-6) break;
+        if (v < x) lo = t; else hi = t;
+        t = (lo + hi) / 2;
+      }
+      return sy(t);
+    };
+  }
+  E.bezier = bezier;
+  E.ease = {
+    linear: (p) => p,
+    in: bezier(0.4, 0, 1, 1),
+    out: bezier(0, 0, 0.2, 1),
+    inOut: bezier(0.65, 0, 0.35, 1),
+    camera: bezier(0.7, 0, 0.2, 1),
+    pop: bezier(0.34, 1.56, 0.64, 1),
+    soft: bezier(0.25, 0.1, 0.25, 1),
+  };
+  const easeOf = (e) => (typeof e === "function" ? e : E.ease[e || "inOut"] || E.ease.inOut);
+
+  E.rng = (seed = 1) => {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  const $all = (t, root = document) =>
+    t == null ? [] : typeof t === "string" ? [...root.querySelectorAll(t)] : t instanceof Element ? [t] : [...t];
+  E.$all = $all;
+
+  function writeStyle(el, st) {
+    const tf = [];
+    if (st.x != null || st.y != null) tf.push(`translate(${r3(st.x || 0)}px, ${r3(st.y || 0)}px)`);
+    if (st.rotate != null) tf.push(`rotate(${r3(st.rotate)}deg)`);
+    if (!E.reduced && st.rotateX != null) tf.push(`perspective(900px) rotateX(${r3(st.rotateX)}deg)`);
+    if (!E.reduced && st.rotateY != null) tf.push(`perspective(900px) rotateY(${r3(st.rotateY)}deg)`);
+    if (st.scale != null) tf.push(`scale(${r3(st.scale)})`);
+    if (st.scaleX != null || st.scaleY != null) tf.push(`scale(${r3(st.scaleX ?? 1)}, ${r3(st.scaleY ?? 1)})`);
+    if (tf.length) el.style.transform = tf.join(" ");
+    if (st.opacity != null) el.style.opacity = String(r3(st.opacity));
+    if (st.blur != null) el.style.filter = !E.reduced && st.blur > 0.01 ? `blur(${r3(st.blur)}px)` : "none";
+    if (st.draw != null) {
+      const len = r3(el.getTotalLength());
+      el.style.strokeDasharray = `${len}`;
+      el.style.strokeDashoffset = `${r3(len * (1 - st.draw))}`;
+      el.style.visibility = st.draw <= 0.0005 ? "hidden" : "visible";
+    }
+  }
+
+  function applyProps(el, props, p) {
+    const st = el.__eidos || (el.__eidos = {});
+    for (const k in props) {
+      const v = props[k];
+      if (k === "style") Object.assign(el.style, v(p));
+      else if (k === "attr") {
+        const a = v(p);
+        for (const n in a) el.setAttribute(n, a[n]);
+      } else if (k === "text") el.textContent = v(p);
+      else st[k] = typeof v === "function" ? v(p) : Array.isArray(v) ? lerp(v[0], v[1], p) : v;
+    }
+    writeStyle(el, st);
+  }
+
+  E.tween = (targets, props) => {
+    const els = $all(targets);
+    return (p) => {
+      for (const el of els) applyProps(el, props, p);
+    };
+  };
+
+  class Timeline {
+    constructor() {
+      this.tracks = [];
+      this.hooks = [];
+      this.stops = [{ t: 0, label: "" }];
+      this.end = 0;
+      this.t = 0;
+      this.prevStart = 0;
+    }
+    resolveAt(at) {
+      if (at == null) return this.end;
+      if (typeof at === "number") return at;
+      const s = String(at);
+      if (s.startsWith("<")) return this.prevStart + (parseFloat(s.slice(1).replace("+=", "")) || 0);
+      if (s.startsWith("+=")) return this.end + parseFloat(s.slice(2));
+      if (s.startsWith("-=")) return Math.max(0, this.end - parseFloat(s.slice(2)));
+      return parseFloat(s) || 0;
+    }
+    extend(t) {
+      if (t > this.end) this.end = t;
+    }
+    add(fn, o = {}) {
+      const at = this.resolveAt(o.at);
+      const dur = o.dur ?? 0.6;
+      const ease = easeOf(o.ease);
+      for (const f of Array.isArray(fn) ? fn : [fn]) this.tracks.push({ at, dur, ease, fn: f, i: this.tracks.length });
+      this.prevStart = at;
+      this.extend(at + dur);
+      return this;
+    }
+    tween(targets, props, o = {}) {
+      return this.add(E.tween(targets, props), o);
+    }
+    stagger(targets, props, o = {}) {
+      const els = $all(targets);
+      const base = this.resolveAt(o.at);
+      const each = o.each ?? 0.08;
+      els.forEach((el, i) => this.add(E.tween(el, props), { ...o, at: base + i * each }));
+      this.prevStart = base;
+      return this;
+    }
+    wait(d) {
+      this.end += d;
+      return this;
+    }
+    stop(label = "") {
+      const last = this.stops[this.stops.length - 1];
+      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) last.label = label || last.label;
+      else this.stops.push({ t: this.end, label });
+      return this;
+    }
+    onSeek(fn) {
+      this.hooks.push(fn);
+      return this;
+    }
+    // Tracks that have not started are applied first, latest-start first, at p=0;
+    // started tracks are then applied in start order. The result depends only on t,
+    // so seeking forward, backward or directly to t always yields the same state.
+    seek(t) {
+      t = Math.min(Math.max(t, 0), this.end);
+      this.t = t;
+      const future = [], started = [];
+      for (const tr of this.tracks) (tr.at > t + 1e-9 ? future : started).push(tr);
+      future.sort((a, b) => b.at - a.at || b.i - a.i);
+      for (const tr of future) tr.fn(tr.ease(0));
+      started.sort((a, b) => a.at - b.at || a.i - b.i);
+      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1));
+      for (const h of this.hooks) h(t);
+      return this;
+    }
+  }
+  E.Timeline = Timeline;
+
+  function rectIn(el, world) {
+    if (el instanceof HTMLElement) {
+      let x = 0, y = 0, n = el;
+      while (n && n !== world) {
+        x += n.offsetLeft;
+        y += n.offsetTop;
+        n = n.offsetParent;
+      }
+      if (n === world) return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+    }
+    const a = el.getBoundingClientRect(), b = world.getBoundingClientRect();
+    return { x: a.left - b.left, y: a.top - b.top, w: a.width, h: a.height };
+  }
+
+  function unionRect(rs) {
+    const x0 = Math.min(...rs.map((r) => r.x)), y0 = Math.min(...rs.map((r) => r.y));
+    const x1 = Math.max(...rs.map((r) => r.x + r.w)), y1 = Math.max(...rs.map((r) => r.y + r.h));
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+
+  class Camera {
+    constructor(stage, world, tl) {
+      this.stage = stage;
+      this.world = world;
+      this.tl = tl;
+      this.kfs = [];
+      this.W = 0;
+      this.H = 0;
+      this.state = null;
+    }
+    home() {
+      return { x: this.W / 2, y: this.H / 2, s: 1, r: 0 };
+    }
+    to(target, o = {}) {
+      const at = this.tl.resolveAt(o.at);
+      const dur = o.dur ?? 1.2;
+      this.kfs.push({ target, o, at, dur, ease: easeOf(o.ease || "camera"), resolved: null });
+      this.kfs.sort((a, b) => a.at - b.at);
+      this.tl.prevStart = at;
+      this.tl.extend(at + dur);
+      return this;
+    }
+    resolve(kf) {
+      const { target, o } = kf;
+      const roll = o.roll || 0;
+      if (target == null || target === "world") return { ...this.home(), r: roll };
+      if (typeof target === "object" && "s" in target && "x" in target) return { r: roll, ...target };
+      const rect =
+        typeof target === "object" && "w" in target ? target : unionRect($all(target, this.world).map((el) => rectIn(el, this.world)));
+      const pad = o.pad ?? Math.min(this.W, this.H) * 0.08;
+      let s = o.zoom ?? Math.min((this.W - 2 * pad) / Math.max(rect.w, 1), (this.H - 2 * pad - 48) / Math.max(rect.h, 1));
+      s = Math.min(Math.max(s, 0.05), o.maxZoom ?? 8);
+      return { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 + 24 / s, s, r: roll };
+    }
+    layout() {
+      this.W = this.stage.clientWidth;
+      this.H = this.stage.clientHeight;
+      for (const kf of this.kfs) kf.resolved = this.resolve(kf);
+    }
+    static mix(a, b, e) {
+      const s = a.s * Math.pow(b.s / a.s, e);
+      const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
+      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+    }
+    stateAt(t) {
+      let st = this.home();
+      for (const kf of this.kfs) {
+        if (t < kf.at) break;
+        const p = kf.dur > 0 ? clamp01((t - kf.at) / kf.dur) : 1;
+        st = Camera.mix(st, kf.resolved, kf.ease(p));
+        if (p < 1) break;
+      }
+      return st;
+    }
+    apply(t) {
+      const st = (this.state = this.stateAt(t));
+      this.world.style.transform =
+        `translate(${r3(this.W / 2)}px, ${r3(this.H / 2)}px) rotate(${r3(st.r)}deg) scale(${r3(st.s)}) translate(${r3(-st.x)}px, ${r3(-st.y)}px)`;
+    }
+  }
+  E.Camera = Camera;
+
+  E.stage = (sel = ".eidos-stage", opts = {}) => {
+    const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+    const world = el.querySelector(".eidos-world");
+    const tl = new Timeline();
+    const camera = new Camera(el, world, tl);
+    tl.onSeek((t) => camera.apply(t));
+    const layoutFns = [];
+    let hud = null, raf = 0, anim = null;
+
+    const api = {
+      el, world, tl, camera, index: 0, started: false,
+      get reduced() { return E.reduced; },
+      get stops() { return tl.stops; },
+      get end() { return tl.end; },
+      get t() { return tl.t; },
+      measure: (target) => unionRect($all(target, world).map((n) => rectIn(n, world))),
+      onLayout(fn) { layoutFns.push(fn); return api; },
+      fx(name, o = {}) {
+        if (!E.fx[name]) throw new Error(`Eidos.fx.${name} is not loaded`);
+        return E.fx[name](api, o);
+      },
+      layout() {
+        const tf = world.style.transform;
+        world.style.transform = "none";
+        camera.layout();
+        for (const fn of layoutFns) fn();
+        world.style.transform = tf;
+        tl.seek(tl.t);
+      },
+      seek(t) { cancel(); tl.seek(t); api.index = stopIndexAt(tl.t); updateHud(); return api; },
+      jump(i) {
+        cancel();
+        api.index = Math.min(Math.max(i, 0), tl.stops.length - 1);
+        tl.seek(tl.stops[api.index].t);
+        updateHud();
+        return api;
+      },
+      goto(i) {
+        i = Math.min(Math.max(i, 0), tl.stops.length - 1);
+        if (E.reduced) {
+          api.jump(i);
+          world.classList.remove("eidos-fade");
+          void world.offsetWidth;
+          world.classList.add("eidos-fade");
+          return api;
+        }
+        cancel();
+        const from = tl.t, to = tl.stops[i].t;
+        api.index = i;
+        const ms = (Math.abs(to - from) * 1000) / (to < from ? 3 : 1);
+        if (ms < 1) { tl.seek(to); updateHud(); return api; }
+        const t0 = performance.now();
+        anim = { to };
+        const step = (now) => {
+          const k = Math.min((now - t0) / ms, 1);
+          tl.seek(lerp(from, to, k));
+          updateHud();
+          if (k < 1) raf = requestAnimationFrame(step);
+          else anim = null;
+        };
+        raf = requestAnimationFrame(step);
+        return api;
+      },
+      next() {
+        if (anim) { const to = anim.to; cancel(); tl.seek(to); updateHud(); return api; }
+        return api.goto(api.index + 1);
+      },
+      prev() { return api.goto(api.index - 1); },
+      snapshot() {
+        const out = [];
+        for (const n of [world, ...world.querySelectorAll("*")]) {
+          let txt = "";
+          for (const c of n.childNodes) if (c.nodeType === 3) txt += c.nodeValue;
+          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}`);
+        }
+        return out.join("\n");
+      },
+      start() {
+        if (tl.stops[tl.stops.length - 1].t < tl.end - 1e-9) tl.stop("");
+        api.layout();
+        tl.seek(0);
+        if (opts.hud !== false && params.get("hud") !== "0") buildHud();
+        bindControls();
+        addEventListener("resize", () => api.layout());
+        const qt = params.get("t"), qs = params.get("stop");
+        if (qt != null) api.seek(parseFloat(qt));
+        else if (qs != null) api.jump(parseInt(qs, 10));
+        else if (opts.autoplay !== false) api.goto(1);
+        api.started = true;
+        window.__eidos = api;
+        return api;
+      },
+    };
+
+    function cancel() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      anim = null;
+    }
+    function stopIndexAt(t) {
+      let idx = 0;
+      tl.stops.forEach((s, i) => { if (s.t <= t + 1e-9) idx = i; });
+      return idx;
+    }
+    function buildHud() {
+      hud = document.createElement("div");
+      hud.className = "eidos-hud";
+      hud.innerHTML =
+        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+      document.body.appendChild(hud);
+      updateHud();
+    }
+    function updateHud() {
+      if (!hud) return;
+      hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
+      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  → 다음`;
+      hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
+    }
+    function bindControls() {
+      addEventListener("keydown", (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const k = e.key;
+        if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
+        else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) api.prev();
+        else if (k === "Home") api.jump(0);
+        else if (k === "End") api.jump(tl.stops.length - 1);
+        else if (k === "r" || k === "R") { api.jump(0); api.goto(1); }
+        else return;
+        e.preventDefault();
+      });
+      el.addEventListener("click", (e) => {
+        if (e.target.closest("a, button, input, select, textarea, [data-eidos-noclick]")) return;
+        api.next();
+      });
+    }
+    return api;
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["split-screen"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const { r3 } = E.util;
+    const start = tl.resolveAt(o.at);
+    const dur = o.dur ?? 0.8;
+    const stepDur = o.stepDur ?? 0.5;
+    const dimTo = o.dimTo ?? 0.3;
+    const ghost = o.ghost ?? 0;
+    const other = (side) => (side === "left" ? o.right : side === "right" ? o.left : null);
+    let dimmed = other(o.focus);
+
+    tl.tween(o.left, { opacity: [0, dimmed === o.left ? dimTo : 1], x: [-12, 0] }, { at: start, dur: dur * 0.75, ease: "out" });
+    tl.tween(o.right, { opacity: [0, dimmed === o.right ? dimTo : 1], x: [12, 0] }, { at: start, dur: dur * 0.75, ease: "out" });
+
+    const dividers = E.$all(o.divider, stage.world);
+    let vertical = true;
+    if (dividers.length) {
+      stage.onLayout(() => {
+        const r = stage.measure(dividers);
+        vertical = r.h >= r.w;
+      });
+    }
+    const wipe = { at: start + dur * 0.15, dur: dur * 0.85, ease: "inOut" };
+    for (const el of dividers) {
+      if (el instanceof SVGGeometryElement) tl.tween(el, { draw: [0, 1] }, wipe);
+      else tl.tween(el, { style: (p) => ({ clipPath: vertical ? `inset(0 0 ${r3(100 - 100 * p)}% 0)` : `inset(0 ${r3(100 - 100 * p)}% 0 0)` }) }, wipe);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+
+    const queue = [...(o.steps ?? [])];
+    return {
+      start,
+      end: start + dur,
+      get remaining() {
+        return queue.length;
+      },
+      step(s = {}) {
+        const pair = s.pair ?? queue.shift();
+        if (!pair) throw new Error("split-screen: no step left");
+        const [left, right, caption] = pair;
+        const at = tl.resolveAt(s.at);
+        const d = s.dur ?? stepDur;
+        const props = ghost > 0 ? { opacity: [ghost, 1] } : { opacity: [0, 1], y: [8, 0] };
+        tl.tween(left, props, { at, dur: d, ease: "out" });
+        tl.tween(right, props, { at, dur: d, ease: "out" });
+        tl.prevStart = at;
+        if (caption != null) tl.stop(caption);
+        return { start: at, end: at + d };
+      },
+      focus(side, s = {}) {
+        const at = tl.resolveAt(s.at);
+        const d = s.dur ?? 0.5;
+        const next = other(side);
+        if (dimmed && dimmed !== next) tl.tween(dimmed, { opacity: [dimTo, 1] }, { at, dur: d });
+        if (next && next !== dimmed) tl.tween(next, { opacity: [1, dimTo] }, { at, dur: d });
+        dimmed = next;
+        tl.prevStart = at;
+        tl.extend(at + d);
+        return { start: at, end: at + d };
+      },
+    };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["cross-dissolve"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const dur = o.dur ?? 0.8;
+    const start = tl.resolveAt(o.at);
+    const ease = o.ease ?? "inOut";
+    const blur = o.blur === true ? 8 : Number(o.blur) || 0;
+    const out = { opacity: [1, 0] };
+    const inn = { opacity: [0, 1] };
+    if (blur > 0) {
+      out.blur = [0, blur];
+      inn.blur = [blur, 0];
+    }
+    if (o.from) tl.tween(o.from, out, { at: start, dur, ease });
+    if (o.to) tl.tween(o.to, inn, { at: start, dur, ease });
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["count-up"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const els = E.$all(o.targets ?? o.target, stage.world);
+    const dur = o.dur ?? 1.2;
+    const each = o.each ?? 0.15;
+    const ease = o.ease ?? "out";
+    const locale = o.locale ?? "ko-KR";
+    const start = tl.resolveAt(o.at);
+    const val = (ds, key, i, fallback) => {
+      if (ds[key] != null && ds[key] !== "") return ds[key];
+      const v = o[key];
+      return (Array.isArray(v) ? v[i] : v) ?? fallback;
+    };
+    const items = els.map((el, i) => {
+      const ds = el.dataset;
+      const from = Number(val(ds, "from", i, 0));
+      const to = Number(val(ds, "to", i, 0));
+      const decimals = Number(val(ds, "decimals", i, 0));
+      const prefix = String(val(ds, "prefix", i, ""));
+      const unit = String(val(ds, "unit", i, ""));
+      const fmt = (v) => prefix + v.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + unit;
+      el.style.fontVariantNumeric = "tabular-nums";
+      if (o.reserve) {
+        el.style.display = "inline-block";
+        stage.onLayout(() => {
+          const keep = el.textContent;
+          el.style.minWidth = "";
+          let w = 0;
+          for (const v of [from, to]) {
+            el.textContent = fmt(v);
+            w = Math.max(w, el.getBoundingClientRect().width);
+          }
+          el.textContent = keep;
+          el.style.minWidth = `${E.util.r3(w)}px`;
+        });
+      }
+      const at = start + i * each;
+      tl.tween(el, { text: (p) => fmt(from + (to - from) * p) }, { at, dur, ease });
+      const bars = E.$all(val(ds, "bar", i, null), stage.world);
+      if (bars.length) {
+        for (const b of bars) b.style.transformOrigin = "left center";
+        tl.tween(bars, { scaleX: [Number(val(ds, "barFrom", i, 0)), Number(val(ds, "barTo", i, 1))] }, { at, dur, ease });
+      }
+      return { el, start: at, end: at + dur, from, to };
+    });
+    return { start, end: items.length ? Math.max(...items.map((x) => x.end)) : start, items };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const NS = "http://www.w3.org/2000/svg";
+  const r3 = E.util.r3;
+  const ring = (w, h, px, py) => {
+    const cx = w / 2, cy = h / 2, ry = h / 2 + py;
+    const rx = w / 2 / Math.sqrt(1 - (h / 2 / ry) ** 2) + px;
+    const ct = Math.cos(-0.015), st = Math.sin(-0.015);
+    const n = 64, pts = [];
+    for (let i = 0; i <= n; i++) {
+      const s = i / n, a = (-100 + 400 * s) * (Math.PI / 180);
+      const k = 1 + 0.025 * Math.sin(2 * a + 1.1) + 0.015 * Math.sin(3 * a - 0.4);
+      const x = (rx + 3 * s) * k * Math.cos(a), y = (ry + 1.8 * s) * k * Math.sin(a);
+      pts.push(`${r3(cx + x * ct - y * st)} ${r3(cy + x * st + y * ct)}`);
+    }
+    return "M " + pts.join(" L ");
+  };
+  E.fx["highlight-sweep"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const els = E.$all(o.targets ?? o.target, stage.world);
+    const circle = !!o.circle;
+    const dur = o.dur ?? (circle ? 0.8 : 0.55);
+    const each = o.each ?? 0.12;
+    const ease = o.ease ?? (circle ? "inOut" : "out");
+    const color = o.color ?? (circle ? "var(--eidos-accent)" : "color-mix(in oklab, var(--eidos-accent) 32%, transparent)");
+    const start = tl.resolveAt(o.at);
+    const items = els.map((el, i) => {
+      const at = start + i * each;
+      el.style.position = "relative";
+      el.style.isolation = "isolate";
+      let mark;
+      if (circle) {
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("class", "eidos-circle");
+        svg.setAttribute("aria-hidden", "true");
+        svg.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;z-index:-1;pointer-events:none";
+        mark = document.createElementNS(NS, "path");
+        mark.style.cssText = `fill:none;stroke:${color};stroke-width:${o.width ?? 2.5};stroke-linecap:round;stroke-linejoin:round`;
+        svg.appendChild(mark);
+        el.appendChild(svg);
+        stage.onLayout(() => {
+          const r = svg.getBoundingClientRect();
+          const fs = parseFloat(getComputedStyle(el).fontSize);
+          mark.setAttribute("d", ring(r.width, r.height, fs * 0.15, fs * 0.6));
+        });
+        tl.tween(mark, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at, dur, ease });
+      } else {
+        mark = document.createElement("span");
+        mark.className = "eidos-sweep";
+        mark.setAttribute("aria-hidden", "true");
+        mark.style.cssText = `position:absolute;left:-0.15em;right:-0.15em;top:0.1em;bottom:-0.02em;border-radius:0.22em;background:${color};z-index:-1;transform-origin:left center;pointer-events:none`;
+        el.insertBefore(mark, el.firstChild);
+        const props = { scaleX: [0, 1] };
+        if (o.tilt) props.rotate = o.tilt;
+        tl.tween(mark, props, { at, dur, ease });
+      }
+      return { el, mark, start: at, end: at + dur };
+    });
+    return { start, end: items.length ? items[items.length - 1].end : start, items };
+  };
+})();
+
+</script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#scene-a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" });
+  const ss = s.fx("split-screen", {
+    left: "#rest", right: "#gql", divider: ".divider",
+    steps: [["#rest .r1", "#gql .q1"], ["#rest .r2", "#gql .q2"], ["#rest .r3", "#gql .q3"]],
+    at: "<+=0.2",
+  });
+  tl.tween(".vs", { opacity: [0, 1] }, { at: ss.end - 0.2, dur: 0.3 });
+  tl.stop("글 상세 화면에는 사용자, 글, 댓글이 모두 필요합니다");
+
+  const count = (sel, from, to, st) =>
+    tl.tween(sel, { text: (p) => `왕복 ${Math.round(from + (to - from) * p)}회` }, { at: st.start, dur: st.end - st.start });
+  const s1 = ss.step(); count("#rest .count", 0, 1, s1); count("#gql .count", 0, 1, s1);
+  tl.stop("사용자 정보: REST는 첫 번째 왕복, GraphQL은 쿼리의 user 블록");
+  const s2 = ss.step(); count("#rest .count", 1, 2, s2);
+  tl.stop("글 목록: REST는 두 번째 왕복, GraphQL은 같은 쿼리 안의 posts");
+  const s3 = ss.step(); count("#rest .count", 2, 3, s3);
+  ss.focus("right", { at: s3.end + 0.1 });
+  tl.stop("댓글까지: REST는 왕복 3번, GraphQL은 여전히 1번");
+
+  s.fx("cross-dissolve", { from: "#scene-a", to: "#scene-b", dur: 0.8 });
+  tl.tween("#scene-b .metric", { opacity: [0, 1], y: [10, 0] }, { at: "-=0.2", dur: 0.4, ease: "out" });
+  s.fx("count-up", { targets: "#rt-r, #rt-g, #ms-r, #ms-g, #kb-r, #kb-g", dur: 1.2, each: 0.12 });
+  tl.stop("결과: 왕복은 3배, 응답 크기는 9배 가까이 차이 납니다");
+
+  tl.tween(".conclusion", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
+  s.fx("highlight-sweep", { targets: "#kw1" });
+  tl.stop("핵심: 필요한 필드만 한 번에 가져온다");
+  s.fx("highlight-sweep", { targets: "#kw2", circle: true });
+  tl.stop("대가: HTTP 캐시를 쓰기 어렵다");
+  s.start();
+</script>
+</body>
+</html>
