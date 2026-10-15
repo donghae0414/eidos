@@ -1,0 +1,20 @@
+{
+  "name": "eidos",
+  "interface": {
+    "displayName": "EIDOS"
+  },
+  "plugins": [
+    {
+      "name": "eidos",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

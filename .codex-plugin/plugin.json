@@ -1,0 +1,24 @@
+{
+  "name": "eidos",
+  "version": "0.1.0",
+  "description": "Make Meaning Visible. Turns explanations into animated, self-contained HTML using cinematic camera moves, cuts, motion graphics and explainer diagrams.",
+  "author": {
+    "name": "donghae0414"
+  },
+  "homepage": "https://github.com/donghae0414/eidos",
+  "repository": "https://github.com/donghae0414/eidos",
+  "keywords": ["visualization", "html", "motion", "explainer", "presentation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "EIDOS",
+    "shortDescription": "Answers as animated, step-through HTML visuals",
+    "longDescription": "EIDOS turns an explanation into a single self-contained HTML file you step through with arrow keys or clicks. It combines camera moves, cuts, motion graphics and explainer diagrams such as sequence diagrams, state machines, code diffs and charts.",
+    "developerName": "donghae0414",
+    "category": "Productivity",
+    "capabilities": ["Workflow"],
+    "defaultPrompt": [
+      "OAuth 2.0 인증 흐름을 시각화해서 HTML로 저장해줘",
+      "REST와 GraphQL 차이를 비교하는 시각 자료를 만들어줘"
+    ]
+  }
+}

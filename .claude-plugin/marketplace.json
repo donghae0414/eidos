@@ -1,0 +1,16 @@
+{
+  "name": "eidos",
+  "owner": {
+    "name": "donghae0414",
+    "url": "https://github.com/donghae0414"
+  },
+  "description": "EIDOS: animated, self-contained HTML explanations.",
+  "plugins": [
+    {
+      "name": "eidos",
+      "source": "./",
+      "description": "Turns explanations into animated, self-contained HTML using camera moves, cuts, motion graphics and explainer diagrams.",
+      "category": "productivity"
+    }
+  ]
+}
