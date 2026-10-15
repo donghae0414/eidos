@@ -224,7 +224,8 @@
       return this;
     }
     resolve(kf) {
-      const { target, o } = kf;
+      const { o } = kf;
+      const target = typeof kf.target === "function" ? kf.target(this) : kf.target;
       const roll = o.roll || 0;
       if (target == null || target === "world") return { ...this.home(), r: roll };
       if (typeof target === "object" && "s" in target && "x" in target) return { r: roll, ...target };
