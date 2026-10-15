@@ -3,19 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EIDOS · 줌인 (Zoom In)</title>
+<title>EIDOS · 줌인과 돌리인 (Zoom In / Dolly In)</title>
 <link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
 <style>
-  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
-  .grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-content: center; }
-  .svc { position: relative; }
-  .svc h3 { margin: 0 0 4px; font-size: 1.05rem; }
-  .svc .role { font-size: 0.8rem; color: var(--eidos-muted-fg); }
-  .svc .dot { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--eidos-cat-3); }
-  #auth .dot, #pay .dot { background: var(--eidos-accent); }
-  .detail { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--eidos-border); font-size: 9px; line-height: 1.5; }
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2vh; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--eidos-muted-fg); margin-top: 6px; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+  .scene { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.25fr 1fr; grid-template-rows: 1fr 1.25fr 1fr; gap: 10px; place-items: center; }
+  .ring { position: absolute; border-radius: 50%; pointer-events: none; border: 1.5px dashed var(--eidos-border); }
+  .ring.outer { inset: 1%; border-color: color-mix(in oklch, var(--eidos-cat-4) 55%, transparent); }
+  .ring.mid { inset: 19% 20%; border-color: var(--eidos-cat-3); }
+  .node { width: min(100%, 210px); min-width: 0; padding: 0.6rem 0.75rem; }
+  .node h3 { margin: 0; font-size: clamp(0.78rem, 1.6vw, 1rem); }
+  .node .tag { font-size: clamp(0.6rem, 1.1vw, 0.72rem); color: var(--eidos-muted-fg); }
+  .client { border-color: var(--eidos-cat-4); }
+  .client .tag { color: var(--eidos-cat-4); }
+  .svc .tag { color: var(--eidos-cat-3); }
+  #db { border: 2px solid var(--eidos-accent); }
+  #db .tag { color: var(--eidos-accent); }
+  .detail { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--eidos-border); font-size: 7px; line-height: 1.5; }
   .detail b { color: var(--eidos-accent); font-weight: 600; }
-  .detail code { font-family: var(--eidos-font-mono); font-size: 8.5px; }
+  .detail code { font-family: var(--eidos-font-mono); font-size: 6.5px; }
 </style>
 </head>
 <body>
@@ -23,17 +31,24 @@
   <div class="eidos-world">
     <main class="layout">
       <header>
-        <div class="eidos-label">MSA 구조</div>
-        <h1 class="eidos-title">주문 시스템은 서비스 5개로 나뉩니다</h1>
+        <div class="eidos-label">계층 구조</div>
+        <h1 class="eidos-title">주문 요청은 바깥에서 안쪽으로 들어옵니다</h1>
+        <div class="legend"><span><i style="background:var(--eidos-cat-4)"></i>클라이언트 계층</span><span><i style="background:var(--eidos-cat-3)"></i>서비스 계층</span><span><i style="background:var(--eidos-accent)"></i>데이터 계층</span></div>
       </header>
-      <section class="grid">
-        <article class="svc eidos-card" id="gw" data-depth="0.6"><span class="dot"></span><h3>API Gateway</h3><div class="role">요청 라우팅</div></article>
-        <article class="svc eidos-card" id="auth" data-depth="0.6"><span class="dot"></span><h3>Auth</h3><div class="role">인증·인가</div>
-          <div class="detail"><b>POST</b> <code>/token</code> 로그인 후 JWT 발급<br><b>GET</b> <code>/verify</code> 게이트웨이가 매 요청 검증<br>저장소: Redis (세션 블랙리스트)</div></article>
-        <article class="svc eidos-card" id="order" data-depth="1"><span class="dot"></span><h3>Order</h3><div class="role">주문 생성·상태</div></article>
-        <article class="svc eidos-card" id="pay"><span class="dot"></span><h3>Payment</h3><div class="role">결제 승인</div>
+      <section class="scene">
+        <div class="ring outer" data-depth="1.5"></div>
+        <div class="ring mid" data-depth="0.6"></div>
+        <article class="node eidos-card client" data-depth="1.5"><div class="tag">클라이언트</div><h3>웹</h3></article>
+        <article class="node eidos-card svc" id="gw" data-depth="0.6"><div class="tag">서비스</div><h3>API Gateway</h3></article>
+        <article class="node eidos-card client" data-depth="1.5"><div class="tag">클라이언트</div><h3>iOS</h3></article>
+        <article class="node eidos-card svc" id="order" data-depth="0.6"><div class="tag">서비스</div><h3>Order</h3></article>
+        <article class="node eidos-card" id="db"><div class="tag">데이터</div><h3>Orders DB</h3>
+          <div class="detail"><b>orders</b> 테이블: <code>id, user_id, status, total</code><br><b>index</b> <code>(user_id, status)</code>로 내 주문 조회<br><b>outbox</b> 결제 완료와 이벤트 기록을 한 트랜잭션으로</div></article>
+        <article class="node eidos-card svc" id="pay" data-depth="0.6"><div class="tag">서비스</div><h3>Payment</h3>
           <div class="detail"><b>1</b> 주문 금액 확인<br><b>2</b> PG사 승인 요청 (타임아웃 3초)<br><b>3</b> 실패 시 Order에 보상 이벤트 발행</div></article>
-        <article class="svc eidos-card" id="inv" data-depth="1"><span class="dot"></span><h3>Inventory</h3><div class="role">재고 차감</div></article>
+        <article class="node eidos-card client" data-depth="1.5"><div class="tag">클라이언트</div><h3>Android</h3></article>
+        <article class="node eidos-card svc" id="noti" data-depth="0.6"><div class="tag">서비스</div><h3>Notification</h3></article>
+        <article class="node eidos-card client" data-depth="1.5"><div class="tag">클라이언트</div><h3>파트너 API</h3></article>
       </section>
     </main>
   </div>
@@ -43,16 +58,16 @@
 <script>
   const s = Eidos.stage();
   s.tl.tween(".layout header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
-    .tween(".svc", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5 })
-    .stop("개요: 주문 시스템을 이루는 서비스 5개");
+    .tween("#db, .ring.mid, .svc, .ring.outer, .client", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.6 })
+    .stop("요청은 바깥 클라이언트에서 서비스를 거쳐 가장 안쪽 DB까지 들어옵니다");
 
-  const auth = s.fx("zoom-in", { target: "#auth", dim: ".svc:not(#auth), header", reveal: "#auth .detail" });
-  s.tl.stop("줌인: Auth 서비스는 토큰을 발급하고 검증합니다");
-  auth.back();
+  const pay = s.fx("zoom-in", { target: "#pay", dim: "header, .client, .svc:not(#pay), #db, .ring", reveal: "#pay .detail" });
+  s.tl.stop("줌인: 렌즈만 확대합니다. 모든 계층이 같은 비율로 커지고, Payment의 세부가 읽힙니다");
+  pay.back();
   s.tl.stop("다시 전체로");
 
-  s.fx("zoom-in", { target: "#pay", mode: "dolly", dim: ".svc:not(#pay), header", reveal: "#pay .detail" });
-  s.tl.stop("돌리인: 결제는 3단계로 처리되고, 주변 서비스가 원근감 있게 밀려납니다");
+  s.fx("zoom-in", { target: "#db", mode: "dolly", dim: "header", reveal: "#db .detail" });
+  s.tl.stop("돌리인: 카메라가 바깥 계층을 지나 DB로 들어갑니다. 가까운 계층일수록 빠르게 밀려나 사라집니다");
   s.start();
 </script>
 </body>
