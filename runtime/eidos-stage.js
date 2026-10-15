@@ -83,6 +83,7 @@
       const len = r3(el.getTotalLength());
       el.style.strokeDasharray = `${len}`;
       el.style.strokeDashoffset = `${r3(len * (1 - st.draw))}`;
+      el.style.visibility = st.draw <= 0.0005 ? "hidden" : "visible";
     }
   }
 
