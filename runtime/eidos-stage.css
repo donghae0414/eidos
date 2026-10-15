@@ -1,0 +1,135 @@
+:root {
+  color-scheme: light;
+  --eidos-bg: oklch(0.9818 0.0054 95.0986);
+  --eidos-fg: oklch(0.3438 0.0269 95.7226);
+  --eidos-surface: oklch(0.9665 0.0067 97.3521);
+  --eidos-surface-fg: oklch(0.1908 0.0020 106.5859);
+  --eidos-muted-fg: oklch(0.5341 0.0078 97.4503);
+  --eidos-border: oklch(0.8847 0.0069 97.3627);
+  --eidos-accent: oklch(0.6171 0.1375 39.0427);
+  --eidos-accent-fg: oklch(1 0 0);
+  --eidos-cat-1: var(--eidos-accent);
+  --eidos-cat-2: oklch(0.56 0.16 290);
+  --eidos-cat-3: oklch(0.58 0.09 195);
+  --eidos-cat-4: oklch(0.56 0.13 255);
+  --eidos-cat-5: oklch(0.60 0.11 115);
+  --eidos-fill-warm: oklch(0.8816 0.0276 93.1280);
+  --eidos-fill-cool: oklch(0.8822 0.0403 298.1792);
+  --eidos-success: oklch(0.56 0.13 150);
+  --eidos-danger: oklch(0.56 0.19 27);
+  --eidos-warning: oklch(0.60 0.13 70);
+  --eidos-radius: 1rem;
+  --eidos-radius-sm: 0.5rem;
+  --eidos-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --eidos-font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --eidos-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Dark tokens: system preference unless ?theme=light, or forced with ?theme=dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --eidos-bg: oklch(0.2679 0.0036 106.6427);
+    --eidos-fg: oklch(0.9576 0.0027 106.4494);
+    --eidos-surface: oklch(0.2928 0.0018 106.5092);
+    --eidos-surface-fg: oklch(0.9818 0.0054 95.0986);
+    --eidos-muted-fg: oklch(0.7713 0.0169 99.0657);
+    --eidos-border: oklch(0.3618 0.0101 106.8928);
+    --eidos-accent: oklch(0.6724 0.1308 38.7559);
+    --eidos-accent-fg: oklch(0.1908 0.0020 106.5859);
+    --eidos-cat-2: oklch(0.6898 0.1581 290.4107);
+    --eidos-cat-3: oklch(0.72 0.10 195);
+    --eidos-cat-4: oklch(0.72 0.12 255);
+    --eidos-cat-5: oklch(0.74 0.11 115);
+    --eidos-fill-warm: oklch(0.2130 0.0078 95.4245);
+    --eidos-fill-cool: oklch(0.3074 0.0516 289.3230);
+    --eidos-success: oklch(0.72 0.14 150);
+    --eidos-danger: oklch(0.68 0.19 27);
+    --eidos-warning: oklch(0.80 0.14 75);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --eidos-bg: oklch(0.2679 0.0036 106.6427);
+  --eidos-fg: oklch(0.9576 0.0027 106.4494);
+  --eidos-surface: oklch(0.2928 0.0018 106.5092);
+  --eidos-surface-fg: oklch(0.9818 0.0054 95.0986);
+  --eidos-muted-fg: oklch(0.7713 0.0169 99.0657);
+  --eidos-border: oklch(0.3618 0.0101 106.8928);
+  --eidos-accent: oklch(0.6724 0.1308 38.7559);
+  --eidos-accent-fg: oklch(0.1908 0.0020 106.5859);
+  --eidos-cat-2: oklch(0.6898 0.1581 290.4107);
+  --eidos-cat-3: oklch(0.72 0.10 195);
+  --eidos-cat-4: oklch(0.72 0.12 255);
+  --eidos-cat-5: oklch(0.74 0.11 115);
+  --eidos-fill-warm: oklch(0.2130 0.0078 95.4245);
+  --eidos-fill-cool: oklch(0.3074 0.0516 289.3230);
+  --eidos-success: oklch(0.72 0.14 150);
+  --eidos-danger: oklch(0.68 0.19 27);
+  --eidos-warning: oklch(0.80 0.14 75);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--eidos-bg);
+  color: var(--eidos-fg);
+  font-family: var(--eidos-font-sans);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.eidos-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+.eidos-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.eidos-world svg * { transform-box: fill-box; transform-origin: center; }
+.eidos-world.eidos-fade { animation: eidos-fade 200ms ease-out; }
+@keyframes eidos-fade { from { opacity: 0.35; } to { opacity: 1; } }
+
+.eidos-hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.75rem 1.25rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1rem;
+  align-items: end;
+  pointer-events: none;
+  font-size: 0.9rem;
+  background: linear-gradient(to top, var(--eidos-bg) 55%, transparent);
+}
+.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; }
+.eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--eidos-border); overflow: hidden; }
+.eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
+.eidos-hud[hidden] { display: none; }
+
+.eidos-card {
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  box-shadow: var(--eidos-shadow);
+  padding: 0.9rem 1rem;
+}
+.eidos-title { font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.eidos-label { font-size: 0.8rem; color: var(--eidos-muted-fg); text-transform: uppercase; letter-spacing: 0.06em; }
+.eidos-muted { color: var(--eidos-muted-fg); }
+.eidos-accent { color: var(--eidos-accent); }
+.eidos-mono { font-family: var(--eidos-font-mono); }

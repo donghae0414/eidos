@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 줌인 (Zoom In)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-content: center; }
+  .svc { position: relative; }
+  .svc h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .svc .role { font-size: 0.8rem; color: var(--eidos-muted-fg); }
+  .svc .dot { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--eidos-cat-3); }
+  #auth .dot, #pay .dot { background: var(--eidos-accent); }
+  .detail { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--eidos-border); font-size: 9px; line-height: 1.5; }
+  .detail b { color: var(--eidos-accent); font-weight: 600; }
+  .detail code { font-family: var(--eidos-font-mono); font-size: 8.5px; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">MSA 구조</div>
+        <h1 class="eidos-title">주문 시스템은 서비스 5개로 나뉩니다</h1>
+      </header>
+      <section class="grid">
+        <article class="svc eidos-card" id="gw" data-depth="0.6"><span class="dot"></span><h3>API Gateway</h3><div class="role">요청 라우팅</div></article>
+        <article class="svc eidos-card" id="auth" data-depth="0.6"><span class="dot"></span><h3>Auth</h3><div class="role">인증·인가</div>
+          <div class="detail"><b>POST</b> <code>/token</code> 로그인 후 JWT 발급<br><b>GET</b> <code>/verify</code> 게이트웨이가 매 요청 검증<br>저장소: Redis (세션 블랙리스트)</div></article>
+        <article class="svc eidos-card" id="order" data-depth="1"><span class="dot"></span><h3>Order</h3><div class="role">주문 생성·상태</div></article>
+        <article class="svc eidos-card" id="pay"><span class="dot"></span><h3>Payment</h3><div class="role">결제 승인</div>
+          <div class="detail"><b>1</b> 주문 금액 확인<br><b>2</b> PG사 승인 요청 (타임아웃 3초)<br><b>3</b> 실패 시 Order에 보상 이벤트 발행</div></article>
+        <article class="svc eidos-card" id="inv" data-depth="1"><span class="dot"></span><h3>Inventory</h3><div class="role">재고 차감</div></article>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween(".layout header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".svc", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5 })
+    .stop("개요: 주문 시스템을 이루는 서비스 5개");
+
+  const auth = s.fx("zoom-in", { target: "#auth", dim: ".svc:not(#auth), header", reveal: "#auth .detail" });
+  s.tl.stop("줌인: Auth 서비스는 토큰을 발급하고 검증합니다");
+  auth.back();
+  s.tl.stop("다시 전체로");
+
+  s.fx("zoom-in", { target: "#pay", mode: "dolly", dim: ".svc:not(#pay), header", reveal: "#pay .detail" });
+  s.tl.stop("돌리인: 결제는 3단계로 처리되고, 주변 서비스가 원근감 있게 밀려납니다");
+  s.start();
+</script>
+</body>
+</html>
