@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 프리즈 프레임 (Freeze Frame)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .race { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr auto; gap: 4vh 4vw; align-content: center; align-items: center; }
+  .lanes { display: flex; flex-direction: column; gap: 9vh; }
+  .lane { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 14px; }
+  .lane .who { font-weight: 700; font-size: clamp(0.95rem, 1.6vw, 1.15rem); }
+  #lane-a .who { color: var(--eidos-cat-1); }
+  #lane-b .who { color: var(--eidos-cat-2); }
+  .track { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .step { padding: 0.6rem 0.7rem; font-family: var(--eidos-font-mono); font-size: clamp(0.8rem, 1.4vw, 1rem); text-align: center; }
+  .token { position: absolute; left: 0; top: -14px; width: 14px; height: 14px; border-radius: 50%; }
+  #lane-a .token { background: var(--eidos-cat-1); }
+  #lane-b .token { background: var(--eidos-cat-2); }
+  .seen { font-family: var(--eidos-font-mono); font-size: clamp(0.78rem, 1.3vw, 0.95rem); color: var(--eidos-muted-fg); grid-column: 2; }
+  .counter { text-align: center; padding: 1rem 1.4rem; }
+  .counter .label { font-size: 0.8rem; color: var(--eidos-muted-fg); }
+  .counter .val { font-family: var(--eidos-font-mono); font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; }
+  .verdict { grid-column: 1 / -1; font-size: clamp(1rem, 2vw, 1.25rem); }
+  .verdict b { color: var(--eidos-danger); }
+  @media (max-aspect-ratio: 1/1) {
+    .race { grid-template-columns: 1fr; }
+    .lanes { gap: 8vh; }
+    .lane { grid-template-columns: 1fr; gap: 6px; }
+    .seen { grid-column: 1; }
+    .step { font-size: 0.72rem; padding: 0.4rem 0.3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">경쟁 상태 (race condition)</div>
+        <h1 class="eidos-title">두 요청이 동시에 좋아요를 누르면</h1>
+      </header>
+      <section class="race" id="race">
+        <div class="lanes">
+          <div class="lane" id="lane-a"><span class="who">스레드 A</span>
+            <div class="track"><div class="step eidos-card s1">count 읽기</div><div class="step eidos-card s2">+1 계산</div><div class="step eidos-card s3">count 쓰기</div><span class="token"></span></div>
+            <span class="seen" id="seen-a">읽은 값: -</span></div>
+          <div class="lane" id="lane-b"><span class="who">스레드 B</span>
+            <div class="track"><div class="step eidos-card s1">count 읽기</div><div class="step eidos-card s2">+1 계산</div><div class="step eidos-card s3">count 쓰기</div><span class="token"></span></div>
+            <span class="seen" id="seen-b">읽은 값: -</span></div>
+        </div>
+        <div class="counter eidos-card"><div class="label">DB의 count</div><div class="val" id="count">41</div></div>
+        <p class="verdict" id="verdict">좋아요는 두 번 눌렸지만 count는 <b>42</b>입니다. 기대값 43 중 하나가 사라졌습니다.</p>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  const lanes = ["#lane-a", "#lane-b"];
+  const cx = {};
+  s.onLayout(() => {
+    for (const l of lanes) {
+      const track = s.measure(`${l} .track`);
+      cx[l] = [1, 2, 3].map((i) => { const r = s.measure(`${l} .s${i}`); return r.x + r.w / 2 - track.x - 7; });
+    }
+  });
+  const move = (l, from, to, at, dur) => tl.tween(`${l} .token`, { x: (p) => cx[l][from] + (cx[l][to] - cx[l][from]) * p }, { at, dur, ease: "inOut" });
+
+  tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".lane, .counter", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5 })
+    .tween(".token", { opacity: [0, 1] }, { at: "<", dur: 0.3 })
+    .stop("좋아요 수 41, 두 스레드가 동시에 +1을 하려 합니다");
+
+  const t1 = tl.end;
+  move("#lane-a", 0, 0, t1, 0.01); move("#lane-b", 0, 0, t1, 0.01);
+  tl.tween("#seen-a, #seen-b", { text: (p) => (p > 0.5 ? "읽은 값: 41" : "읽은 값: -") }, { at: t1 + 0.3, dur: 0.2, ease: "linear" });
+  tl.extend(t1 + 0.6);
+
+  const ff = s.fx("freeze-frame", {
+    target: "#race",
+    dim: ".counter, .who",
+    annotations: [
+      { target: "#seen-a", text: "A가 41을 읽음", place: "below" },
+      { target: "#seen-b", text: "A가 아직 쓰기 전이라 B도 41을 읽음", place: "below", dx: 60 },
+    ],
+  });
+  tl.stop("멈춤: 두 스레드가 같은 순간에 같은 값 41을 읽었습니다");
+
+  ff.release();
+  const t2 = tl.end;
+  move("#lane-a", 0, 2, t2, 1.0); move("#lane-b", 0, 2, t2 + 0.3, 1.0);
+  tl.tween("#count", { text: (p) => (p > 0.5 ? "42" : "41") }, { at: t2 + 0.9, dur: 0.2, ease: "linear" });
+  tl.tween("#count", { scale: (p) => 1 + 0.12 * Math.sin(p * Math.PI) }, { at: t2 + 1.2, dur: 0.4, ease: "linear" });
+  tl.extend(t2 + 1.6);
+  tl.tween("#verdict", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
+  tl.stop("둘 다 41+1=42를 씁니다. 두 번의 증가가 한 번으로 줄었습니다");
+  s.start();
+</script>
+</body>
+</html>
