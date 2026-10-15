@@ -85,5 +85,7 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 
 ## 예시
 
-- [examples/oauth-flow.html](examples/oauth-flow.html): 흐름 설명. establishing-shot, sequence-message, tracking, freeze-frame 조합
-- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html): 비교 설명. split-screen, count-up, highlight-sweep 조합
+- [examples/oauth-flow.html](examples/oauth-flow.html): 흐름 설명. sequence-message → freeze-frame(핵심 순간 주석) → cross-dissolve → stagger-reveal(요약 세 가지) → highlight-sweep(결론)
+- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html): 비교 설명. split-screen → cross-dissolve → count-up(수치) → highlight-sweep(결론과 대가)
+
+예시는 모두 `scripts/inline.mjs`로 묶은 한 파일입니다. 마지막 `<script>` 블록이 장면 구성 코드이므로, 새 결과물을 만들 때 참고하세요.
