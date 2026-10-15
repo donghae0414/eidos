@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 카운트업 (Count-up)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 1080px; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .metric { padding: 1rem 1.1rem 1.1rem; }
+  .metric .name { font-size: 0.78rem; color: var(--eidos-muted-fg); text-transform: uppercase; letter-spacing: 0.06em; }
+  .metric .val { margin: 6px 0 10px; font-size: clamp(2rem, 4.4vw, 3.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+  .metric .val small { margin-left: 3px; font-size: 0.42em; font-weight: 600; color: var(--eidos-muted-fg); }
+  .track { height: 8px; border-radius: 4px; background: var(--eidos-fill-warm); overflow: hidden; }
+  .fill { height: 100%; border-radius: 4px; background: var(--eidos-accent); }
+  .delta { margin-top: 10px; font-size: 0.86rem; font-weight: 600; color: var(--eidos-success); }
+  .summary { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0; font-size: clamp(1rem, 1.7vw, 1.25rem); }
+  .summary b { font-weight: 800; }
+  @media (max-width: 640px) {
+    .metrics { grid-template-columns: 1fr; gap: 10px; }
+    .metric { padding: 0.75rem 0.9rem 0.85rem; }
+    .metric .val { margin: 2px 0 8px; }
+    .delta { margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">성능 개선 결과</div>
+        <h1 class="eidos-title">인덱스 추가와 커넥션 풀 조정 뒤, 숫자는 이렇게 바뀌었습니다</h1>
+      </header>
+      <section class="metrics">
+        <article class="metric eidos-card">
+          <div class="name">p95 응답 지연</div>
+          <div class="val"><span class="num" id="lat" data-from="820" data-to="120" data-bar="#lat-bar" data-bar-from="1" data-bar-to="0.146">820</span><small>ms</small></div>
+          <div class="track"><div class="fill" id="lat-bar"></div></div>
+          <div class="delta" id="lat-d">−85% · 목표 150ms 안에 들어옴</div>
+        </article>
+        <article class="metric eidos-card">
+          <div class="name">처리량</div>
+          <div class="val"><span class="num" id="thr" data-from="3200" data-to="12400" data-bar="#thr-bar" data-bar-from="0.258" data-bar-to="1">3,200</span><small>rps</small></div>
+          <div class="track"><div class="fill" id="thr-bar"></div></div>
+          <div class="delta" id="thr-d">×3.9 · 같은 인스턴스 수로</div>
+        </article>
+        <article class="metric eidos-card">
+          <div class="name">오류율</div>
+          <div class="val"><span class="num" id="err" data-from="2.4" data-to="0.3" data-decimals="1" data-bar="#err-bar" data-bar-from="1" data-bar-to="0.125">2.4</span><small>%</small></div>
+          <div class="track"><div class="fill" id="err-bar"></div></div>
+          <div class="delta" id="err-d">−88% · 타임아웃이 거의 사라짐</div>
+        </article>
+      </section>
+      <p class="summary" id="sum">
+        <span>지연 <b class="sum-num" data-from="0" data-to="85" data-prefix="−" data-unit="%">−85%</b></span>
+        <span>처리량 <b class="sum-num" data-from="1" data-to="3.9" data-prefix="×" data-decimals="1">×3.9</b></span>
+        <span>오류 <b class="sum-num" data-from="0" data-to="88" data-prefix="−" data-unit="%">−88%</b></span>
+      </p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".metric", { opacity: [0, 1], y: [12, 0] }, { at: "<+=0.2", each: 0.12, dur: 0.5, ease: "out" })
+    .stop("개선 전: 지연 820ms, 처리량 3,200rps, 오류율 2.4%");
+  const lat = s.fx("count-up", { targets: "#lat", dur: 1.4 });
+  s.tl.tween("#lat-d", { opacity: [0, 1] }, { at: lat.end - 0.3, dur: 0.4 })
+    .stop("p95 지연이 820ms에서 120ms로 내려갔습니다");
+  const thr = s.fx("count-up", { targets: "#thr", dur: 1.4 });
+  s.tl.tween("#thr-d", { opacity: [0, 1] }, { at: thr.end - 0.3, dur: 0.4 })
+    .stop("처리량은 3,200rps에서 12,400rps로 늘었습니다");
+  const err = s.fx("count-up", { targets: "#err", dur: 1.2 });
+  s.tl.tween("#err-d", { opacity: [0, 1] }, { at: err.end - 0.3, dur: 0.4 })
+    .tween("#sum", { opacity: [0, 1], y: [8, 0] }, { at: err.end - 0.1, dur: 0.4, ease: "out" });
+  s.fx("count-up", { targets: ".sum-num", at: err.end, each: 0.15, dur: 0.9 });
+  s.tl.stop("오류율도 2.4%에서 0.3%로. 세 지표를 한 줄로 요약하면 이렇습니다");
+  s.start();
+</script>
+</body>
+</html>

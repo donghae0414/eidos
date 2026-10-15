@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 마스크 리빌 (Mask Reveal)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 1040px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3.5vh; }
+  .big { margin: 0; font-size: clamp(2.1rem, 7.2vw, 4.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; }
+  .big .line { display: block; }
+  .big .em { color: var(--eidos-accent); }
+  .support { margin: 0; max-width: 36em; font-size: clamp(1.05rem, 2vw, 1.4rem); color: var(--eidos-muted-fg); line-height: 1.5; }
+  .support .line { display: block; }
+  .ways { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: clamp(0.98rem, 1.7vw, 1.2rem); }
+  .ways li { display: block; }
+  .ways b { font-weight: 700; }
+  .ways .sep { margin: 0 0.35em; color: var(--eidos-muted-fg); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <div class="eidos-label" id="label">캐시 설계 원칙 · 01</div>
+      <h1 class="big">
+        <span class="line">캐시는 빠르지만,</span>
+        <span class="line em">무효화는 어렵다.</span>
+      </h1>
+      <p class="support">
+        <span class="line">값을 저장하는 코드는 한 줄이지만,</span>
+        <span class="line">언제 버릴지 정하는 일은 설계 문제입니다.</span>
+      </p>
+      <ul class="ways">
+        <li><b>TTL</b><span class="sep">·</span>시간이 지나면 버린다</li>
+        <li><b>이벤트</b><span class="sep">·</span>원본이 바뀌면 지운다</li>
+        <li><b>버전 키</b><span class="sep">·</span>키에 버전을 붙여 새로 만든다</li>
+      </ul>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("#label", { opacity: [0, 1] }, { dur: 0.4 });
+  s.fx("mask-reveal", { targets: ".big .line:first-child", at: "<+=0.1" });
+  s.tl.stop("캐시는 빠릅니다. 여기까지는 모두 동의합니다");
+  s.fx("mask-reveal", { targets: ".big .em" });
+  s.tl.stop("문제는 그 값을 언제 버릴 것인가입니다");
+  s.fx("mask-reveal", { targets: ".support .line", each: 0.16 });
+  s.tl.stop("저장은 한 줄, 폐기 시점은 설계 문제");
+  s.fx("mask-reveal", { targets: ".ways li", mode: "wipe", each: 0.18 });
+  s.tl.stop("무효화 전략 세 가지: TTL, 이벤트, 버전 키");
+  s.start();
+</script>
+</body>
+</html>

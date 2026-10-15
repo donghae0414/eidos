@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 하이라이트 스윕 (Highlight Sweep)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 900px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
+  .body { margin: 0; font-size: clamp(1.1rem, 2.1vw, 1.55rem); line-height: 1.75; }
+  .body p { margin: 0; }
+  .body p + p { margin-top: 1em; }
+  .kw { font-weight: 600; white-space: nowrap; }
+  code.kw { font-family: var(--eidos-font-mono); font-size: 0.92em; }
+  .nb { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">DB 기초</div>
+        <h1 class="eidos-title">인덱스는 왜 조회를 빠르게 할까</h1>
+      </header>
+      <div class="body" id="body">
+        <p>인덱스는 테이블과 별도로 <span class="kw" id="k1">정렬된 자료구조</span><span class="nb">(B-tree)</span>를 유지합니다. 조회할 때는 테이블 전체를 훑는 대신 트리를 따라 내려가므로 <code class="kw" id="k2">O(log n)</code>에 원하는 행을 찾습니다.</p>
+        <p>대신 행을 바꿀 때마다 <span class="kw" id="k3">인덱스도 함께 갱신</span>해야 하므로 삽입과 수정은 느려집니다. 그래서 인덱스는 자주 조회하는 <span class="kw" id="k4">WHERE 조건</span>과 <span class="kw" id="k5">JOIN 키</span>에만 겁니다.</p>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#body", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.25", dur: 0.55, ease: "out" })
+    .stop("인덱스가 빠른 이유를 두 문단으로 정리했습니다");
+  s.fx("highlight-sweep", { targets: "#k1" });
+  s.tl.stop("핵심 1: 데이터를 미리 정렬해 둔 별도의 구조입니다");
+  s.fx("highlight-sweep", { targets: "#k2" });
+  s.tl.stop("핵심 2: 트리를 타고 내려가므로 로그 시간에 찾습니다");
+  s.fx("highlight-sweep", { targets: "#k3", circle: true });
+  s.tl.stop("대가: 행을 바꿀 때마다 인덱스 갱신 비용이 붙습니다");
+  s.fx("highlight-sweep", { targets: "#k4, #k5", each: 0.35 });
+  s.tl.stop("그래서 조회 조건과 조인 키에만 인덱스를 겁니다");
+  s.start();
+</script>
+</body>
+</html>

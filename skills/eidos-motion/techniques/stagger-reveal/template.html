@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 스태거 리빌 (Stagger Reveal)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 920px; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 2.6vh; }
+  .sub { margin: 4px 0 0; color: var(--eidos-muted-fg); font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border: 1px solid var(--eidos-border); border-radius: 999px; background: var(--eidos-surface); color: var(--eidos-surface-fg); font-family: var(--eidos-font-mono); font-size: 0.82rem; }
+  .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--eidos-cat-1); }
+  .chip:nth-child(2) i { background: var(--eidos-cat-2); }
+  .chip:nth-child(3) i { background: var(--eidos-cat-3); }
+  .chip:nth-child(4) i { background: var(--eidos-cat-4); }
+  .chip:nth-child(5) i { background: var(--eidos-cat-5); }
+  .steps { display: flex; flex-direction: column; gap: 10px; }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .step .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-accent); color: var(--eidos-accent-fg); font-weight: 700; font-size: 0.95rem; }
+  .step h3 { margin: 4px 0 0; font-size: clamp(1rem, 1.6vw, 1.15rem); line-height: 1.35; }
+  .step h3 code { font-family: var(--eidos-font-mono); font-size: 0.92em; color: var(--eidos-accent); }
+  .step p { margin: 3px 0 0; color: var(--eidos-muted-fg); font-size: clamp(0.88rem, 1.35vw, 1rem); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">브랜치 전략</div>
+        <h1 class="eidos-title">Git Flow는 네 단계로 돌아갑니다</h1>
+        <p class="sub">역할이 다른 브랜치 다섯 종류가 정해진 순서로 합쳐집니다.</p>
+      </header>
+      <section class="chips">
+        <span class="chip"><i></i>main</span>
+        <span class="chip"><i></i>develop</span>
+        <span class="chip"><i></i>feature/*</span>
+        <span class="chip"><i></i>release/*</span>
+        <span class="chip"><i></i>hotfix/*</span>
+      </section>
+      <section class="steps">
+        <article class="step"><span class="n">1</span><div><h3><code>feature/*</code> 에서 기능을 개발한다</h3><p>develop에서 분기합니다. 기능 하나에 브랜치 하나, 끝나면 PR을 엽니다.</p></div></article>
+        <article class="step"><span class="n">2</span><div><h3>리뷰가 끝나면 <code>develop</code> 으로 머지한다</h3><p>다음 릴리스에 들어갈 기능이 develop에 차곡차곡 쌓입니다.</p></div></article>
+        <article class="step"><span class="n">3</span><div><h3><code>release/*</code> 에서 배포를 준비하고 <code>main</code> 에 머지한다</h3><p>버전 번호와 버그 수정만 다룹니다. 끝나면 main과 develop 양쪽에 머지하고 태그를 답니다.</p></div></article>
+        <article class="step"><span class="n">4</span><div><h3>운영 장애는 <code>hotfix/*</code> 로 바로 고친다</h3><p>main에서 분기해 수정하고, 역시 main과 develop 양쪽에 머지합니다.</p></div></article>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.fx("stagger-reveal", { targets: ".layout header > *", each: 0.12 });
+  s.fx("stagger-reveal", { targets: ".chip", at: "-=0.2", dir: "left", dist: 12, each: 0.08, dur: 0.4 });
+  s.tl.stop("Git Flow는 역할이 다른 브랜치 다섯 종류를 씁니다");
+  s.fx("stagger-reveal", {
+    targets: ".step",
+    disclose: true,
+    stops: [
+      "1단계: 기능은 develop에서 딴 feature 브랜치에서 개발합니다",
+      "2단계: 리뷰를 거쳐 develop으로 머지하면 다음 릴리스 후보가 쌓입니다",
+      "3단계: 배포 준비는 release 브랜치에서, 끝나면 main과 develop 양쪽에 머지합니다",
+      "4단계: 운영 장애는 main에서 hotfix 브랜치를 따서 고치고 역시 양쪽에 머지합니다",
+    ],
+  });
+  s.start();
+</script>
+</body>
+</html>

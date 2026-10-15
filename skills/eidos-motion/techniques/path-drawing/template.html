@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 패스 드로잉 (Path Drawing)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
+  .flow { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .node { flex: none; width: 160px; padding: 0.8rem 0.6rem; text-align: center; }
+  .node .tag { display: block; margin-bottom: 4px; font-family: var(--eidos-font-mono); font-size: 0.7rem; letter-spacing: 0.04em; color: var(--eidos-muted-fg); }
+  .node h3 { margin: 0; font-size: 1.05rem; }
+  .node .role { margin-top: 2px; font-size: 0.78rem; color: var(--eidos-muted-fg); }
+  .note { margin: 0; text-align: center; font-size: clamp(1rem, 1.7vw, 1.3rem); line-height: 1.6; }
+  .kw { display: inline-block; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .layout { gap: 2vh; }
+    .flow { flex-direction: column; justify-content: center; gap: 26px; }
+    .node { width: min(60vw, 240px); padding: 0.55rem 0.6rem; }
+    .node .tag { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">데이터 파이프라인</div>
+        <h1 class="eidos-title">이벤트는 다섯 단계를 지나 대시보드에 닿습니다</h1>
+      </header>
+      <section class="flow">
+        <article class="node eidos-card" id="collect"><span class="tag">collector</span><h3>수집</h3><div class="role">SDK · 로그 에이전트</div></article>
+        <article class="node eidos-card" id="queue"><span class="tag">kafka</span><h3>큐</h3><div class="role">토픽별 파티션</div></article>
+        <article class="node eidos-card" id="proc"><span class="tag">worker</span><h3>처리</h3><div class="role">정제 · 집계</div></article>
+        <article class="node eidos-card" id="store"><span class="tag">clickhouse</span><h3>저장</h3><div class="role">열 지향 테이블</div></article>
+        <article class="node eidos-card" id="dash"><span class="tag">grafana</span><h3>대시보드</h3><div class="role">패널 · 알림</div></article>
+      </section>
+      <p class="note" id="note">처리 단계는 <span class="kw" id="kw">멱등성</span>을 지켜야 합니다. 큐가 같은 이벤트를 두 번 보내도 결과가 같아야 하니까요.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#collect", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.3", dur: 0.4, ease: "out" })
+    .stop("이벤트는 수집기에서 출발합니다");
+  s.fx("path-drawing", { links: [["#collect", "#queue"], ["#queue", "#proc"]] });
+  s.tl.stop("큐에 쌓인 이벤트를 워커가 꺼내 처리합니다");
+  s.fx("path-drawing", { links: [["#proc", "#store"], ["#store", "#dash"]] });
+  s.tl.stop("처리 결과는 저장소를 거쳐 대시보드에 닿습니다");
+  s.tl.tween("#note", { opacity: [0, 1], y: [8, 0] }, { dur: 0.45, ease: "out" });
+  s.fx("path-drawing", { underline: "#kw", at: "<+=0.35", dur: 0.6 });
+  s.tl.stop("처리 단계의 조건 하나: 멱등성");
+  s.start();
+</script>
+</body>
+</html>
