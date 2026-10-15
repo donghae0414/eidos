@@ -45,7 +45,8 @@
         const w = n.card.offsetWidth, h = n.card.offsetHeight;
         const below = n.a.place === "below";
         const dx = n.a.dx ?? 0;
-        n.pos = { x: Math.max(4, r.x + r.w / 2 - w / 2 + dx), y: below ? r.y + r.h + 26 : r.y - h - 26 };
+        const maxX = world.clientWidth - w - 8;
+        n.pos = { x: Math.min(Math.max(8, r.x + r.w / 2 - w / 2 + dx), maxX), y: below ? r.y + r.h + 26 : r.y - h - 26 };
         const ax = r.x + r.w / 2, ay = below ? r.y + r.h + 2 : r.y - 2;
         const bx = n.pos.x + w / 2, by = below ? n.pos.y : n.pos.y + h;
         n.line.setAttribute("d", `M ${r3(bx)} ${r3(by)} L ${r3(ax)} ${r3(ay)}`);
