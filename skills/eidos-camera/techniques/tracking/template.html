@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 트래킹 (Tracking)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 5vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; }
+  .route { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 2vw; }
+  .node { width: min(15vw, 180px); padding: 0.7rem 0.8rem; display: flex; flex-direction: column; gap: 4px; }
+  .node b { font-size: 0.95rem; }
+  .node span { font-size: 0.72rem; color: var(--eidos-muted-fg); }
+  .node .ms { font-family: var(--eidos-font-mono); font-size: 0.7rem; color: var(--eidos-cat-2); }
+  .route-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: -1; }
+  .base { fill: none; stroke: var(--eidos-border); stroke-width: 2; stroke-dasharray: 4 6; }
+  .trail { fill: none; stroke: var(--eidos-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .packet { position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--eidos-accent); box-shadow: 0 0 0 5px color-mix(in oklch, var(--eidos-accent) 25%, transparent); z-index: 2; }
+  @media (max-aspect-ratio: 1/1) {
+    .route { flex-direction: column; justify-content: space-between; align-items: stretch; padding: 0 12vw; }
+    .node { width: auto; }
+    .node:nth-child(odd) { margin-right: 22vw; }
+    .node:nth-child(even) { margin-left: 22vw; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">요청 따라가기</div>
+        <h1 class="eidos-title">주문 버튼을 누르면 요청은 어디를 지나갈까요</h1>
+      </header>
+      <section class="route">
+        <div class="node eidos-card" id="n-browser"><b>브라우저</b><span>POST /orders</span><span class="ms">0ms</span></div>
+        <div class="node eidos-card" id="n-cdn"><b>CDN</b><span>동적 요청은 통과</span><span class="ms">+8ms</span></div>
+        <div class="node eidos-card" id="n-lb"><b>로드 밸런서</b><span>TLS 종료, 서버 선택</span><span class="ms">+3ms</span></div>
+        <div class="node eidos-card" id="n-app"><b>주문 API</b><span>검증, 재고 확인</span><span class="ms">+21ms</span></div>
+        <div class="node eidos-card" id="n-db"><b>PostgreSQL</b><span>INSERT orders</span><span class="ms">+6ms</span></div>
+      </section>
+    </main>
+    <svg class="route-svg" aria-hidden="true"><path class="base"></path><path class="trail"></path></svg>
+    <div class="packet" aria-hidden="true"></div>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const nodes = ["#n-browser", "#n-cdn", "#n-lb", "#n-app", "#n-db"];
+  s.onLayout(() => {
+    const pts = nodes.map((n) => { const r = s.measure(n); return `${r.x + r.w / 2} ${r.y}`; });
+    document.querySelector(".base").setAttribute("d", "M " + pts.join(" L "));
+  });
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".node", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.4, each: 0.08 })
+    .stop("요청 하나가 다섯 곳을 거칩니다");
+  s.fx("tracking", {
+    object: ".packet",
+    path: nodes,
+    trail: ".trail",
+    anchor: "top",
+    captions: [
+      "트래킹: 카메라가 요청을 따라갑니다. 브라우저에서 출발",
+      "CDN: 주문은 캐시할 수 없어 그대로 통과 (+8ms)",
+      "로드 밸런서: TLS를 풀고 주문 API 서버 하나를 고릅니다 (+3ms)",
+      "주문 API: 가장 오래 걸리는 구간, 검증과 재고 확인 (+21ms)",
+      "DB에 기록하면 끝. 왕복 합계 약 38ms",
+    ],
+  });
+  s.camera.to("world", { dur: 1.3 });
+  s.tl.stop("전체 경로: 시간의 절반 이상이 주문 API 안에서 쓰입니다");
+  s.start();
+</script>
+</body>
+</html>
