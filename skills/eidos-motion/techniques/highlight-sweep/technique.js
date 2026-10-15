@@ -3,8 +3,9 @@
   const NS = "http://www.w3.org/2000/svg";
   const r3 = E.util.r3;
   const ring = (w, h, px, py) => {
-    const cx = w / 2, cy = h / 2, rx = w / 2 + px, ry = h / 2 + py;
-    const ct = Math.cos(-0.035), st = Math.sin(-0.035);
+    const cx = w / 2, cy = h / 2, ry = h / 2 + py;
+    const rx = w / 2 / Math.sqrt(1 - (h / 2 / ry) ** 2) + px;
+    const ct = Math.cos(-0.015), st = Math.sin(-0.015);
     const n = 64, pts = [];
     for (let i = 0; i <= n; i++) {
       const s = i / n, a = (-100 + 400 * s) * (Math.PI / 180);
@@ -40,7 +41,7 @@
         stage.onLayout(() => {
           const r = svg.getBoundingClientRect();
           const fs = parseFloat(getComputedStyle(el).fontSize);
-          mark.setAttribute("d", ring(r.width, r.height, fs * 0.55, fs * 0.24));
+          mark.setAttribute("d", ring(r.width, r.height, fs * 0.15, fs * 0.6));
         });
         tl.tween(mark, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at, dur, ease });
       } else {
