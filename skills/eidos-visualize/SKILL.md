@@ -21,15 +21,18 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
    - 맨 위에 `structure:` 줄과 장면 목록을 둡니다.
    - concept 표의 행마다 object(무엇이), motion(어떻게 움직이고), meaning(그 움직임이 개념에 대해 무엇을 말하는지)을 모두 채웁니다. meaning에 "나타난다", "등장", "페이드인"만 적은 행은 무효입니다.
    - boundary 표에는 장면 경계마다 `via`와 reason을 적습니다. `via` 값과 고르는 기준은 [references/transitions.md](references/transitions.md)의 장면 경계 표를 따릅니다. 같은 전환을 네 번 연속 쓰지 않습니다.
+   - 장면이 4개 이상이면 boundary 표의 `via`는 서로 다른 값이 3가지 이상이어야 합니다. 두 값을 번갈아 쓰는 것도 하우스 전환입니다. 경계마다 관계를 보고 고른 결과로 3가지가 나와야 하며, 개수를 맞추려고 관계에 맞지 않는 값을 넣지 않습니다. 표 아래에 `distinct via: N (값 목록)` 한 줄을 적습니다.
    - 트레이드오프 개념(값을 바꾸면 결과가 달라지는 것)에는 [references/controls.md](references/controls.md)를 보고 control 행을 둡니다. 컨트롤이 없으면 `controls: none` 한 줄을 씁니다.
 4. **캐스트와 캡션:** `storyboard.md`의 행을 스톱으로 옮기고, 스톱마다 캡션을 한 문장으로 씁니다. 스토리보드에 없는 스톱은 만들지 않습니다.
 5. **카드 읽기:** 스토리보드에서 고른 기법의 `card.md`와 `template.html`만 읽습니다. 경로는 `ROOT/skills/<group>/techniques/<id>/`입니다.
 6. **HTML 작성:** 아래 뼈대로 작업 파일을 만듭니다. 장면은 `s.scene`, 갈래는 `s.spoke`/`s.back`, 컨트롤은 `s.control`로 만들고, 각 호출의 `reason`에는 `storyboard.md` boundary 표의 reason을 그대로 옮깁니다. 런타임과 technique 파일은 **절대 경로**로 참조합니다.
 7. **한 파일로 묶기:** `node ROOT/scripts/inline.mjs work.html <최종 파일>.html`을 실행합니다. CSS와 JS가 모두 파일 안으로 들어가고, 외부 참조가 남으면 실패합니다.
 8. **검증:** `bun ROOT/scripts/qa.mjs <최종 파일>.html --contact <디렉터리> --stop-diff`를 실행합니다. 오류 없이 통과해야 하고, 실패하면 메시지대로 고친 뒤 7단계부터 다시 합니다.
+   - qa.mjs는 브라우저(Bun.WebView)가 20초 안에 뜨지 않으면 `BROWSER UNAVAILABLE`을 출력하고 종료 코드 3으로 끝납니다(`EIDOS_QA_BROWSER_TIMEOUT`로 초 단위 조정). Codex `workspace-write` 같은 샌드박스는 WebKit XPC 서비스를 막기 때문에 이렇게 됩니다. 이때는 같은 명령을 샌드박스 밖에서 다시 실행하도록 권한 상승(escalated/unsandboxed 실행 승인)을 요청합니다. 그것도 안 되면 사용자에게 이 명령을 직접 실행해 달라고 요청합니다.
 9. **자기 검토 (self-review):** 8단계가 만든 contact sheet 이미지를 직접 봅니다. 한 번에 contact sheet는 최대 2장까지만 읽고, 스톱별 개별 스크린숏을 전부 열지 않습니다. 본 내용을 `storyboard.md` 끝 `## self-review` 표 `| stop | moves | explains | fix |`에 적습니다.
    - 의미 있는 움직임이 없는 스톱, 장식 움직임뿐인 스톱, 스토리보드 행으로 거슬러 갈 수 없는 스톱은 고치고 7~9단계를 다시 합니다. 자기 검토는 최대 2회입니다.
-   - `bun`이나 `Bun.WebView`를 쓸 수 없으면 스크린숏 대신 스토리보드와 코드를 대조해 같은 표를 채우고, 스크린숏 검토를 건너뛰었다고 전달 때 밝힙니다.
+   - boundary 표의 `distinct via` 줄을 다시 확인합니다. 장면이 4개 이상인데 3가지 미만이면 고칩니다.
+   - contact sheet를 보지 않고 self-review 표를 채우지 않습니다. 코드나 스토리보드만 읽고 moves/explains를 적는 것은 검토가 아닙니다. 8단계의 권한 상승과 사용자 실행 요청이 모두 안 되면 표 대신 `스크린샷 검토: 하지 않음 (이유)`만 적고, 전달할 때 검토를 통과한 것이 아니라 하지 않았다고 밝힙니다.
    - 스토리보드 파일은 작업 HTML 옆에 그대로 둡니다.
 10. **전달:** 파일 경로, 구조 요약 한두 줄, 조작법을 알려줍니다. 조작법은 `→`/`Space`/클릭으로 다음, `←`로 이전, 스크롤이나 스와이프로 넘기기, `P`로 자동 재생과 정지, `[` `]`로 속도 조절이고, 컨트롤이 있으면 슬라이더나 토글이 무엇을 바꾸는지도 적습니다. 갈래 구조면 숫자 키나 클릭으로 들어가고 `Esc`로 돌아온다고 알려줍니다.
 
