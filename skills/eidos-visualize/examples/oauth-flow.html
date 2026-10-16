@@ -1094,7 +1094,7 @@ body {
         const sceneStops = tl.stops.map((s, i) => ({ ...s, i })).filter((s) => s.scene === scene);
         const hashStop = sceneStops.find((s, i) => s.id === local || (s.id == null && String(i) === local));
         if (qt != null) api.seek(parseFloat(qt));
-        else if (qs != null) api.jump(parseInt(qs, 10));
+        else if (qs != null) api.jump(parseInt(qs, 10) || 0);
         else if (hashStop) api.jump(hashStop.i);
         else if (opts.intro !== false) api.goto(1);
         readControls();

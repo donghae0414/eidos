@@ -313,6 +313,16 @@ const FEATURES = {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const stops = [], ends = []; addEventListener("eidos:stop", (e) => stops.push(e.detail.index)); addEventListener("eidos:ended", (e) => ends.push(e.detail)); A.goto(3); A.goto(2); const result = stops.join() === "3,2" && ends.length === 0 ? "" : "index changes lost or ended emitted before arrival: " + JSON.stringify({ stops, ends }); A.jump(1); return result;`);
       }],
+      ["malformed stop values start at stop 0", async (c) => {
+        const bad = [];
+        for (const v of ["abc", "", "NaN"]) {
+          const ok = await c.open(`${Q}&stop=${v}`).catch((e) => e.message);
+          if (ok !== true) { bad.push(`stop=${v}: stage did not start (${ok})`); continue; }
+          const m = await ev(c.view, `return errs().length || A.index !== 0 || !near(A.t, A.stops[0].t) ? JSON.stringify({ errs: errs(), index: A.index, t: A.t }) : "";`);
+          if (m) bad.push(`stop=${v}: ${m}`);
+        }
+        return bad.join("; ");
+      }],
       ["ready waits for fonts and first layout", async (c) => {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `await A.ready; return document.fonts.status === "loaded" && A.camera.W === A.el.clientWidth && A.camera.H === A.el.clientHeight && near(A.t, A.stops[1].t) ? "" : "ready resolved before fonts, layout, or URL state";`);
