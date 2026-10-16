@@ -1,0 +1,13 @@
+Iteration
+context requests
+context tokens
+generation requests
+decode, prefill
+batch size
+long-prefill-token-threshold
+max-num-seqs
+kvcache
+동시사용자, token per sec, end to end response time
+vllm, model 사용할건데 이 개념들 모르겠다
+
+시각화해서 보여줄래?
