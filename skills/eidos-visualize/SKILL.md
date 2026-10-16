@@ -1,31 +1,48 @@
 ---
 name: eidos-visualize
-description: "Turn an explanation into an animated, self-contained HTML visualization built from cinematic camera moves, cuts, motion graphics and explainer diagrams. Use when the user asks to visualize, illustrate or animate how something works (a flow, architecture, comparison, before/after, state change, metrics or code change), says 시각화/그림으로/애니메이션으로/한눈에 보여줘, or wants an HTML visual explanation instead of plain text."
+description: "Turn an explanation into an animated, self-contained HTML visualization where every scene explains with meaningful motion: cinematic camera moves, scene transitions chosen per relationship, motion graphics, explainer diagrams and interactive controls. Use when the user asks to visualize, illustrate or animate how something works (a flow, architecture, comparison, before/after, state change, trade-off, metrics or code change), says 시각화/그림으로/애니메이션으로/한눈에 보여줘, says they don't understand a concept and want it visualized (개념을 모르겠다 + 시각화해줘), or wants an HTML visual explanation instead of plain text."
 ---
 
 # EIDOS: 설명을 보이는 것으로 만들기
 
-질문에 대한 답을 **장면(stop) 단위로 진행되는 HTML 한 파일**로 만듭니다. 사용자는 브라우저에서 열고 `→`, `Space`, `Enter`, 클릭으로 한 단계씩 넘겨 봅니다.
+질문에 대한 답을 **장면(scene)과 스톱(stop) 단위로 진행되는 HTML 한 파일**로 만듭니다. 사용자는 브라우저에서 열고 키, 클릭, 스크롤, 스와이프, 자동 재생으로 한 단계씩 따라갑니다.
+
+**사용자가 모션을 요청하지 않아도 기본으로 장면 안 모션과 의미 있는 전환을 쓴다.** 글과 표만 있는 정적인 스톱은 실패입니다. 각 스톱에서는 무언가가 움직이고, 흐르고, 쌓이고, 바뀌면서 개념을 설명해야 합니다. 장면 경계의 전환도 장면 사이 관계를 보고 매번 고릅니다. 정해 둔 기본 전환은 없습니다.
 
 이 skill의 기준 디렉터리를 `SKILL_DIR`, 플러그인 루트를 `ROOT = SKILL_DIR/../..`라고 하겠습니다.
 
 ## 작업 순서
 
-1. **의도 파악:** 질문이 흐름, 비교, 구조, 변화, 수치, 강조 중 무엇인지 정합니다. [references/decision-table.md](references/decision-table.md)에서 기법 조합을 고릅니다.
-2. **장면 설계:** 3~7개 stop으로 나눕니다. stop 하나에 주장 하나만 담고, 각 stop의 캡션을 한 문장으로 미리 써 둡니다.
-3. **카드 읽기:** 고른 기법의 `card.md`와 `template.html`만 읽습니다. 경로는 `ROOT/skills/<group>/techniques/<id>/`입니다.
+순서를 건너뛰지 마세요. 특히 캡션이나 HTML은 3단계 스토리보드를 파일로 쓴 다음에만 시작합니다.
 
-   | group | 기법 |
-   |---|---|
-   | eidos-camera | zoom-in, establishing-shot, pan, tracking, rack-focus, freeze-frame |
-   | eidos-cut | cross-dissolve, match-cut, split-screen |
-   | eidos-motion | stagger-reveal, mask-reveal, path-drawing, count-up, highlight-sweep |
-   | eidos-explainer | sequence-message, state-transition, graph-build, code-diff, chart-grow, chart-annotate |
+1. **의도 파악:** 질문이 흐름, 비교, 구조, 변화, 수치, 트레이드오프, 강조 중 무엇인지 정합니다. [references/decision-table.md](references/decision-table.md)에서 기법 후보를 고릅니다.
+2. **구조 선택:** `single-flow`(한 줄 흐름), `layered-chapters`(장으로 나눈 층), `hub-and-spoke`(전체 지도에서 갈래로 들어갔다 돌아옴) 중 하나를 고릅니다. 기준과 장면 수 권장치는 [references/structure.md](references/structure.md)에 있습니다.
+3. **모션 스토리보드 작성 (필수):** 캡션이나 HTML보다 먼저 `<최종 파일>.storyboard.md`를 씁니다. 형식은 [ROOT/docs/runtime-api.md](../../docs/runtime-api.md)의 (l)절을 따릅니다.
+   - 맨 위에 `structure:` 줄과 장면 목록을 둡니다.
+   - concept 표의 행마다 object(무엇이), motion(어떻게 움직이고), meaning(그 움직임이 개념에 대해 무엇을 말하는지)을 모두 채웁니다. meaning에 "나타난다", "등장", "페이드인"만 적은 행은 무효입니다.
+   - boundary 표에는 장면 경계마다 `via`와 reason을 적습니다. `via` 값과 고르는 기준은 [references/transitions.md](references/transitions.md)의 장면 경계 표를 따릅니다. 같은 전환을 네 번 연속 쓰지 않습니다.
+   - 트레이드오프 개념(값을 바꾸면 결과가 달라지는 것)에는 [references/controls.md](references/controls.md)를 보고 control 행을 둡니다. 컨트롤이 없으면 `controls: none` 한 줄을 씁니다.
+4. **캐스트와 캡션:** `storyboard.md`의 행을 스톱으로 옮기고, 스톱마다 캡션을 한 문장으로 씁니다. 스토리보드에 없는 스톱은 만들지 않습니다.
+5. **카드 읽기:** 스토리보드에서 고른 기법의 `card.md`와 `template.html`만 읽습니다. 경로는 `ROOT/skills/<group>/techniques/<id>/`입니다.
+6. **HTML 작성:** 아래 뼈대로 작업 파일을 만듭니다. 장면은 `s.scene`, 갈래는 `s.spoke`/`s.back`, 컨트롤은 `s.control`로 만들고, 각 호출의 `reason`에는 `storyboard.md` boundary 표의 reason을 그대로 옮깁니다. 런타임과 technique 파일은 **절대 경로**로 참조합니다.
+7. **한 파일로 묶기:** `node ROOT/scripts/inline.mjs work.html <최종 파일>.html`을 실행합니다. CSS와 JS가 모두 파일 안으로 들어가고, 외부 참조가 남으면 실패합니다.
+8. **검증:** `bun ROOT/scripts/qa.mjs <최종 파일>.html --contact <디렉터리> --stop-diff`를 실행합니다. 오류 없이 통과해야 하고, 실패하면 메시지대로 고친 뒤 7단계부터 다시 합니다.
+9. **자기 검토 (self-review):** 8단계가 만든 contact sheet 이미지를 직접 봅니다. 한 번에 contact sheet는 최대 2장까지만 읽고, 스톱별 개별 스크린숏을 전부 열지 않습니다. 본 내용을 `storyboard.md` 끝 `## self-review` 표 `| stop | moves | explains | fix |`에 적습니다.
+   - 의미 있는 움직임이 없는 스톱, 장식 움직임뿐인 스톱, 스토리보드 행으로 거슬러 갈 수 없는 스톱은 고치고 7~9단계를 다시 합니다. 자기 검토는 최대 2회입니다.
+   - `bun`이나 `Bun.WebView`를 쓸 수 없으면 스크린숏 대신 스토리보드와 코드를 대조해 같은 표를 채우고, 스크린숏 검토를 건너뛰었다고 전달 때 밝힙니다.
+   - 스토리보드 파일은 작업 HTML 옆에 그대로 둡니다.
+10. **전달:** 파일 경로, 구조 요약 한두 줄, 조작법을 알려줍니다. 조작법은 `→`/`Space`/클릭으로 다음, `←`로 이전, 스크롤이나 스와이프로 넘기기, `P`로 자동 재생과 정지, `[` `]`로 속도 조절이고, 컨트롤이 있으면 슬라이더나 토글이 무엇을 바꾸는지도 적습니다. 갈래 구조면 숫자 키나 클릭으로 들어가고 `Esc`로 돌아온다고 알려줍니다.
 
-4. **HTML 작성:** 아래 뼈대로 작업 파일을 만듭니다. 런타임과 technique 파일은 **절대 경로**로 참조합니다.
-5. **한 파일로 묶기:** `node ROOT/scripts/inline.mjs work.html <최종 파일>.html`을 실행합니다. CSS와 JS가 모두 파일 안으로 들어가고, 외부 참조가 남으면 실패합니다.
-6. **검증:** `bun`이 있으면 `bun ROOT/scripts/qa.mjs <최종 파일>.html`을 실행합니다. `PASS`, `DETERMINISM 1/1`, `REDUCED 1/1`이 나와야 합니다. 실패하면 메시지대로 고친 뒤 다시 묶습니다.
-7. **전달:** 파일 경로와 조작법(`→`/`Space`/클릭으로 다음, `←`로 이전, `R`로 처음부터)을 알려주고, 장면 구성을 한두 줄로 요약합니다.
+## 기법 목록
+
+| group | 기법 |
+|---|---|
+| eidos-cut | cross-dissolve, match-cut, split-screen, wipe, iris, jump-cut, smash-cut, dip-to-color, whip-pan, screen-dive, zoom-through, cross-cutting, pixel-dissolve, cutaway |
+| eidos-camera | zoom-in, establishing-shot, pan, tracking, rack-focus, freeze-frame, crane-up, ken-burns, parallax, fly-to, speed-ramp, time-lapse, orbit, dolly-zoom, fpv-flight, infinite-zoom |
+| eidos-motion | stagger-reveal, mask-reveal, path-drawing, count-up, highlight-sweep, shape-morph, kinetic-type, text-scramble, text-sandwich, particle-assemble, light-sweep |
+| eidos-explainer | sequence-message, state-transition, graph-build, code-diff, chart-grow, chart-annotate, step-panel, pinned-scrollytelling, exploded-view, chart-morph, bar-race |
+
+`via`에 쓸 수 있는 것은 카드 프런트매터가 `kind: transition`인 기법과 내장값 `camera`, `cut`뿐입니다. 나머지는 `kind: technique`이고 장면 안에서 `s.fx()`로 부릅니다. 어느 쪽인지는 [references/transitions.md](references/transitions.md)와 각 카드에서 확인합니다.
 
 ## HTML 뼈대
 
@@ -38,54 +55,81 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 <title>제목</title>
 <link rel="stylesheet" href="ROOT/runtime/eidos-stage.css">
 <style>
-  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
+  .scene { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
 </style>
 </head>
 <body>
 <div class="eidos-stage">
   <div class="eidos-world">
-    <main class="layout">
-      <!-- 장면 내용: 모든 내용은 .eidos-world 안에 둔다 -->
-    </main>
+    <!-- 모든 장면은 .eidos-world 안에 둔다 -->
+    <section id="overview" class="scene"><!-- 전체 그림 --></section>
+    <section id="detail" class="scene"><!-- 한 부분을 확대한 그림 --></section>
   </div>
 </div>
 <script src="ROOT/runtime/eidos-stage.js"></script>
-<script src="ROOT/skills/eidos-camera/techniques/zoom-in/technique.js"></script>
+<script src="ROOT/skills/<group>/techniques/<id>/technique.js"></script>
 <script>
   const s = Eidos.stage();
-  s.tl.tween(".layout header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5 }).stop("첫 장면 캡션");
-  s.fx("zoom-in", { target: "#detail" });
-  s.tl.stop("두 번째 장면 캡션");
+
+  s.scene("overview", { el: "#overview", title: "전체 그림" });
+  s.tl.tween("#overview .block", { x: [0, 240] }, { dur: 0.8 }).stop("요청 블록이 큐에서 GPU로 들어갑니다");
+
+  s.scene("detail", {
+    el: "#detail",
+    via: "<스토리보드 boundary 표의 via>",
+    reason: "<스토리보드 boundary 표의 reason을 그대로>",
+    title: "세부"
+  });
+  s.fx("<장면 안 기법 id>", { target: "#detail .part" });
+  s.tl.stop("두 번째 스톱 캡션");
+
   s.start();
 </script>
 </body>
 </html>
 ```
 
-## 런타임 핵심 API
+첫 장면만 `via`를 생략합니다. 그 뒤 모든 `s.scene`과 `s.spoke`에는 `via`가 필요하고, 빠뜨리면 런타임이 오류를 냅니다.
+
+## 런타임 API
+
+전체 계약은 [ROOT/docs/runtime-api.md](../../docs/runtime-api.md)에 있습니다. 시그니처가 헷갈리면 그 문서를 기준으로 삼으세요.
 
 | API | 설명 |
 |---|---|
-| `Eidos.stage()` | `.eidos-stage > .eidos-world` 구조를 잡고 stage 객체를 돌려줍니다 |
+| `Eidos.stage()` | `.eidos-stage > .eidos-world` 구조를 잡고 stage 객체 `s`를 돌려줍니다 |
 | `s.tl.tween(target, props, {at, dur, ease})` | `props`: `x, y, scale, scaleX, scaleY, rotate, opacity, blur, draw`(SVG 선 그리기), `style: p => ({})`, `attr: p => ({})`, `text: p => ""` |
 | `s.tl.stagger(target, props, {each})` | 여러 요소를 순서대로 |
-| `s.tl.stop("캡션")` | 여기서 멈추고, 하단 캡션을 보여줍니다 |
+| `s.tl.stop(label, {id, hold})` | 스톱. `id`는 URL 해시용, `hold`는 자동 재생 때 머무는 초 |
 | `s.tl.wait(sec)` | 빈 시간 |
+| `s.tl.ramp({at, dur, rate})` | 시간 재매핑. `rate < 1`은 슬로모션, `0`은 정지 화면 |
 | `at` | 생략하면 이어서, `"<"`는 직전 동작과 동시, `"<+=0.2"`, `"+=0.3"`, 숫자는 절대 시각 |
+| `s.scene(id, {el, via, with, reason, title, lead, trail})` | 장면 시작. `via`는 첫 장면 외 필수, `lead`/`trail`은 J컷/L컷 캡션 이동 |
+| `s.spoke(id, {hub, from, via, with, title, reason})` | 허브 장면의 요소 `from`에서 갈래로 들어감 |
+| `s.back({via, with, label})` | 갈래를 닫고 허브로 복귀. 갈래 안에서 바꾼 것은 복귀 구간에서 모두 되돌립니다 |
+| `s.enter(id)` / `s.exit()` / `s.where()` | 갈래로 이동, 복귀, 현재 위치 `{scene, path, local, of}` |
 | `s.camera.to(target, {dur, pad, zoom})` | 카메라가 요소나 `"world"`(전체)를 프레이밍합니다 |
-| `s.fx("<id>", opts)` | 기법 실행. 옵션은 각 카드의 파라미터 표를 따릅니다 |
+| `s.fx("<id>", opts)` | 장면 안 기법 실행. 옵션은 각 카드의 파라미터 표를 따릅니다 |
+| `s.control(name, {type, min, max, step, options, value, label, when, layout, sticky})` | 슬라이더, 토글, 선택. `{value, set(v), drive(a, b, {at, dur, ease})}`를 돌려줍니다 |
+| `s.setControls(patch)` / `s.params` / `s.onParams(fn)` | 컨트롤 값 일괄 반영, 현재 값, 값 변경 콜백 |
+| `s.play({speed})` / `s.pause()` / `s.speed(x)` / `s.playing` | 자동 재생. 수동 입력이 들어오면 멈춥니다 |
 | `s.onLayout(fn)` | 화면 크기가 바뀔 때 다시 계산할 좌표(연결선 등) |
 | `Eidos.reduced` | 사용자가 모션 줄이기를 켰는지 |
+| 이벤트 | `eidos:stop`, `eidos:scene`, `eidos:params`, `eidos:ended` |
+
+키(`→ ← Space Enter P [ ] R 1-9 Esc`), 휠과 스와이프, URL 해시(`#scene.k&c.x=v`)는 런타임이 처리합니다. 따로 구현하지 마세요.
 
 ## 반드시 지킬 것
 
-- 모든 움직임은 `tl`/`camera`/`fx`로만 만듭니다. 트랙 함수 안에서 `Math.random`, `Date.now`, DOM 생성, CSS transition을 쓰지 않습니다. 그래야 앞뒤로 넘겨도 같은 화면이 나옵니다.
+- 모든 움직임은 `tl`/`camera`/`fx`/`control.drive`로만 만듭니다. 트랙 함수 안에서 `Math.random`, `Date.now`, DOM 생성, CSS transition을 쓰지 않습니다. 자동 재생을 위해 `setInterval`을 쓰지 않습니다. 그래야 앞뒤로 넘겨도 같은 화면이 나옵니다.
+- 스톱에 멈춘 동안 반복하는 장식 모션은 넣지 않습니다. 움직임은 스톱 사이 구간에서 개념을 설명하는 데 씁니다.
+- 컨트롤은 값만 바꿉니다. 필요한 노드는 `start()` 전에 모두 만들어 두고, 화면을 바꾸지 않는 컨트롤은 두지 않습니다.
 - 외부 CDN, 웹폰트, 원격 이미지를 쓰지 않습니다. 그림은 인라인 SVG로 그립니다.
 - 원칙과 체크리스트는 [references/principles.md](references/principles.md)를 따릅니다.
 
 ## 예시
 
-- [examples/oauth-flow.html](examples/oauth-flow.html): 흐름 설명. sequence-message → freeze-frame(핵심 순간 주석) → cross-dissolve → stagger-reveal(요약 세 가지) → highlight-sweep(결론)
-- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html): 비교 설명. split-screen → cross-dissolve → count-up(수치) → highlight-sweep(결론과 대가)
+- [examples/oauth-flow.html](examples/oauth-flow.html): 흐름 설명. sequence-message, freeze-frame(핵심 순간 주석), stagger-reveal(요약 세 가지), highlight-sweep(결론)
+- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html): 비교 설명. split-screen, count-up(수치), highlight-sweep(결론과 대가)
 
-예시는 모두 `scripts/inline.mjs`로 묶은 한 파일입니다. 마지막 `<script>` 블록이 장면 구성 코드이므로, 새 결과물을 만들 때 참고하세요.
+예시는 모두 `scripts/inline.mjs`로 묶은 한 파일입니다. 마지막 `<script>` 블록이 장면 구성 코드이므로 참고하되, 전환은 예시를 따라 하지 말고 내 스토리보드의 boundary 표대로 고릅니다.
