@@ -99,7 +99,8 @@
       // Every visible unit is a whole grapheme of the target, the source or the glyph pool;
       // not-yet-reached target graphemes go to a hidden span so the box keeps its final size.
       const frame = (x) => {
-        const e = E.reduced ? (x > 0 ? 1 : 0) : ease(x);
+        if (E.reduced) return x >= 1 ? [text, "", false] : [from, reserve ? T.slice(graphemes(from).length).join("") : "", false];
+        const e = ease(x);
         if (x >= 1 || e >= 1) return [text, "", false];
         if (mode === "type") {
           const k = Math.max(0, Math.floor(e * T.length));
@@ -127,7 +128,8 @@
           S.rest.textContent = rest;
           S.caret.style.visibility = caret ? "visible" : "hidden";
         },
-        { at, dur, ease: lin },
+        // Zero-duration tracks distinguish future (0) from started (1), including exact onset.
+        { at, dur: E.reduced ? 0 : dur, ease: lin },
       );
       t = at + dur + each;
       return { el, start: at, end: at + dur, text };

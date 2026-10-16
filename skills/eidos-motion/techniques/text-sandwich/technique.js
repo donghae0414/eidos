@@ -62,7 +62,7 @@
         front.style.transform = `translateY(${r3(a.fy + (b.fy - a.fy) * q)}%)`;
       };
     }
-    tl.add((x) => draw(snap(x)), { at: start, dur, ease: lin });
+    tl.add((x) => draw(snap(x)), { at: E.reduced ? start + dur / 2 : start, dur: E.reduced ? 0 : dur, ease: lin });
     tl.prevStart = start;
     tl.extend(start + dur);
     return { start, end: start + dur, items: layers.map((el) => ({ el, start, end: start + dur })) };

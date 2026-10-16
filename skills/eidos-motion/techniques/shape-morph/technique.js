@@ -271,7 +271,7 @@
           const p = snap(x);
           el.setAttribute("d", E.reduced ? (p < 0.5 ? fromD : toD) : p <= 0 ? fromD : p >= 1 ? toD : frame(parts, ease(p)));
         },
-        { at, dur, ease: lin },
+        { at: E.reduced ? at + dur / 2 : at, dur: E.reduced ? 0 : dur, ease: lin },
       );
       return { el, start: at, end: at + dur, from: fromD, to: toD };
     });

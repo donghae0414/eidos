@@ -160,7 +160,7 @@
           dot.style.opacity = String(first ? r2(E.reduced ? q : clamp01(q / 0.3)) : fade ? r2(E.reduced ? 1 - q : 1 - clamp01((q - 0.7) / 0.3)) : 1);
         }
       },
-      { at: start, dur, ease: lin },
+      { at: E.reduced ? start + dur / 2 : start, dur: E.reduced ? 0 : dur, ease: lin },
     );
     tl.prevStart = start;
     tl.extend(start + dur);

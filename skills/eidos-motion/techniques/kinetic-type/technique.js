@@ -86,12 +86,20 @@
     });
     const total = plan.length ? Math.max(...plan.map((it) => it.at + it.dur)) : 0;
     const start = tl.resolveAt(o.at);
-    tl.add(
+    if (E.reduced) {
+      for (const it of plan) tl.add(
+        (p) => {
+          it.w.style.transform = "translate(0px, 0px) scale(1)";
+          it.w.style.opacity = String(it.fn === MOVES.pulse ? 1 : p);
+        },
+        { at: start + it.at, dur: 0, ease: lin },
+      );
+    } else tl.add(
       (x) => {
         const T = snap(x) * total;
         for (const it of plan) {
           const q = it.dur > 0 ? clamp01((T - it.at) / it.dur) : 1;
-          const v = E.reduced ? { x: 0, y: 0, s: 1, op: it.fn === MOVES.pulse || q > 0 ? 1 : 0 } : it.fn(q, it.m);
+          const v = it.fn(q, it.m);
           it.w.style.transform = `translate(${r3(v.x)}px, ${r3(v.y)}px) scale(${r3(v.s)})`;
           it.w.style.opacity = String(r3(v.op));
         }
