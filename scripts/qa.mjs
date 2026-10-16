@@ -139,7 +139,7 @@ const FEATURES = {
       }],
       ["focused range + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
-        return ev(c.view, `const r = $("#r"); r.focus(); const i = A.index; const untouched = key(r, "ArrowRight"); if (A.index !== i) return "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index; return untouched ? "" : "keydown on a focused range input was canceled (slider cannot move)";`);
+        return ev(c.view, `const r = $("#r"); if (r.disabled) return "range input is disabled"; r.focus(); if (document.activeElement !== r) return "range input did not take focus"; const i = A.index; const untouched = key(r, "ArrowRight"); if (A.index !== i) return "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index; return untouched ? "" : "keydown on a focused range input was canceled (slider cannot move)";`);
       }],
       ["click Play then ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -340,10 +340,16 @@ const FEATURES = {
       }],
       ["focused slider + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
-        // Bun.WebView press() does not deliver arrow keys to a range input (probed on WebKit), so the
-        // key guard is checked with a synthetic keydown that must reach window uncanceled, and the
-        // slider -> params -> scene wiring with the input event its default action fires.
-        return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; r.focus(); let seen = false; const probe = () => (seen = true); addEventListener("keydown", probe); const untouched = key(r, "ArrowRight"); removeEventListener("keydown", probe); if (A.index !== 1) return "ArrowRight on focused dock slider changed index 1 -> " + A.index; if (!untouched) return "keydown on focused dock slider was canceled (slider cannot move)"; if (!seen) return "keydown on focused dock slider was swallowed before reaching window"; await frames(); const n0 = A.params.n, s0 = scene(); r.stepUp(); r.dispatchEvent(new Event("input", { bubbles: true })); await frames(); return A.params.n === n0 + 1 && scene() !== s0 && A.index === 1 ? "" : "slider step did not update params and scene (n " + n0 + " -> " + A.params.n + ", index " + A.index + ")";`);
+        // Guard only: in this WebKit, a synthetic keydown never moves a range input and Bun.WebView
+        // press() delivers no arrow keys to it (probed), so the keyboard value change cannot be observed.
+        // Asserted instead: the slider is enabled and really focused, the runtime neither cancels nor
+        // stops the key, and the stage does not navigate.
+        return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; if (r.disabled) return "dock slider is disabled"; r.focus(); if (document.activeElement !== r) return "dock slider did not take focus (activeElement is " + (document.activeElement && document.activeElement.tagName) + ")"; let seen = false; const probe = () => (seen = true); addEventListener("keydown", probe); const e = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }); r.dispatchEvent(e); removeEventListener("keydown", probe); if (A.index !== 1) return "ArrowRight on focused dock slider changed index 1 -> " + A.index; if (e.defaultPrevented) return "keydown on focused dock slider was preventDefault()ed (slider cannot move)"; return seen ? "" : "keydown on focused dock slider was stopped before reaching window";`);
+      }],
+      ["dock slider input drives params and scene", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        // Input wiring, not keyboard operation: the input event a slider fires must update params and the scene.
+        return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; if (r.disabled) return "dock slider is disabled"; await frames(); const n0 = A.params.n, s0 = scene(); r.stepUp(); r.dispatchEvent(new Event("input", { bubbles: true })); await frames(); return A.params.n === n0 + 1 && scene() !== s0 && A.index === 1 ? "" : "slider input did not update params and scene (n " + n0 + " -> " + A.params.n + ", index " + A.index + ")";`);
       }],
       ["sticky keeps, non-sticky clears, drive < override", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -381,11 +387,14 @@ const FEATURES = {
       }],
       ["exit() returns to the hub state", async (c) => {
         const I = await needIdx(c);
-        await c.open(`${Q}&stop=${I["hub.0"]}`);
-        const r = await ev(c.view, `const I = ${JSON.stringify(I)}; await frames(); const hub = scene(); A.enter("A"); if (!(await settle(I["A.0"]))) return { err: "enter('A') did not land on A.0 (index " + A.index + ")" }; A.exit(); if (!(await settle(I["hub.ret-A"]))) return { err: "exit() did not land on hub.ret-A (index " + A.index + ")" }; await frames(); await waitFor(() => location.hash === "#hub.ret-A", 1000); if (location.hash !== "#hub.ret-A") return { err: "URL hash after exit() is '" + location.hash + "' (want #hub.ret-A)" }; if (scene() !== hub) return { err: "scene after exit() differs from the hub.0 scene (stale spoke state)" }; const exitSnap = A.snapshot(); A.next(); if (!(await settle(I["B.0"]))) return { err: "next() after exit() did not land on B.0 (index " + A.index + ")" }; return { exitSnap };`);
+        await c.open(Q, "hub.0");
+        // Full snapshots (params line included): exit() and a fresh #hub.ret-A must both equal the
+        // original #hub.0 snapshot taken before any enter().
+        const diff = `const diff = (a, b) => { const x = a.split("\\n"), y = b.split("\\n"); const i = Math.max(0, x.findIndex((l, k) => l !== y[k])); return " (line " + i + ": " + JSON.stringify(x[i]) + " vs " + JSON.stringify(y[i]) + ")"; };`;
+        const r = await ev(c.view, `${diff} const I = ${JSON.stringify(I)}; if (A.index !== I["hub.0"]) return { err: "#hub.0 loaded index " + A.index }; await frames(); const hub = A.snapshot(); A.enter("A"); if (!(await settle(I["A.0"]))) return { err: "enter('A') did not land on A.0 (index " + A.index + ")" }; A.exit(); if (!(await settle(I["hub.ret-A"]))) return { err: "exit() did not land on hub.ret-A (index " + A.index + ")" }; await frames(); await waitFor(() => location.hash === "#hub.ret-A", 1000); if (location.hash !== "#hub.ret-A") return { err: "URL hash after exit() is '" + location.hash + "' (want #hub.ret-A)" }; const ex = A.snapshot(); if (ex !== hub) return { err: "snapshot after exit() != original #hub.0 snapshot" + diff(hub, ex) }; A.next(); if (!(await settle(I["B.0"]))) return { err: "next() after exit() did not land on B.0 (index " + A.index + ")" }; return { hub };`);
         if (r.err) return r.err;
         await c.open(Q, "hub.ret-A");
-        return ev(c.view, `const I = ${JSON.stringify(I)}; if (A.index !== I["hub.ret-A"]) return "fresh #hub.ret-A loaded index " + A.index; await frames(); if (A.snapshot() !== ${JSON.stringify(r.exitSnap)}) return "fresh #hub.ret-A snapshot != snapshot after exit()"; A.next(); return (await settle(I["B.0"])) ? "" : "next() from fresh #hub.ret-A did not land on B.0 (index " + A.index + ")";`);
+        return ev(c.view, `${diff} const I = ${JSON.stringify(I)}, hub = ${JSON.stringify(r.hub)}; if (A.index !== I["hub.ret-A"]) return "fresh #hub.ret-A loaded index " + A.index; await frames(); const fr = A.snapshot(); if (fr !== hub) return "fresh #hub.ret-A snapshot != original #hub.0 snapshot" + diff(hub, fr); A.next(); return (await settle(I["B.0"])) ? "" : "next() from fresh #hub.ret-A did not land on B.0 (index " + A.index + ")";`);
       }],
       ["fresh #hub.0 next -> A.0", async (c) => {
         const I = await needIdx(c);
