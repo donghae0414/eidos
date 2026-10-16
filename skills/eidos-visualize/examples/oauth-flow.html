@@ -93,6 +93,7 @@ body {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  touch-action: pan-y pinch-zoom;
 }
 .eidos-world {
   position: absolute;
@@ -121,11 +122,104 @@ body {
   font-size: 0.9rem;
   background: linear-gradient(to top, var(--eidos-bg) 55%, transparent);
 }
-.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
+.eidos-hud-breadcrumb { grid-column: 1 / -1; color: var(--eidos-muted-fg); font-size: 0.8rem; overflow-wrap: anywhere; }
+.eidos-hud-breadcrumb:empty { display: none; }
+.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-width: 0; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
 .eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-transport { display: flex; align-items: center; gap: 0.75rem; pointer-events: auto; }
+.eidos-hud-play {
+  min-width: 4.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-hud-play:hover, .eidos-hud-play:active { background: var(--eidos-border); }
+.eidos-hud-play:focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-hud-speed { min-width: 3ch; color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-count { grid-column: 1 / -1; }
+@media (max-width: 480px) {
+  .eidos-hud-count { font-size: 0.8rem; }
+}
 .eidos-hud-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--eidos-border); overflow: hidden; }
 .eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
 .eidos-hud[hidden] { display: none; }
+
+.eidos-dock {
+  position: fixed;
+  z-index: 2;
+  inset-block-start: 1.25rem;
+  inset-inline-end: 1.25rem;
+  width: min(18rem, calc(100% - 2.5rem));
+  max-height: calc(100dvh - 10rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  box-shadow: var(--eidos-shadow);
+  font-size: 0.9rem;
+}
+.eidos-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+.eidos-control + .eidos-control { border-top: 1px solid var(--eidos-border); }
+.eidos-control > span { overflow-wrap: anywhere; font-weight: 500; }
+.eidos-control output { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-control input { accent-color: var(--eidos-accent); cursor: pointer; }
+.eidos-control input[type="range"] { grid-column: 1 / -1; width: 100%; min-width: 0; min-height: 44px; margin: 0; }
+.eidos-control input[type="checkbox"] { width: 1.25rem; height: 1.25rem; margin: 0.75rem 0; }
+.eidos-control-select { position: relative; }
+.eidos-control-select::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  inset-block-end: 1.75rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 1.5px solid var(--eidos-muted-fg);
+  border-block-end: 1.5px solid var(--eidos-muted-fg);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.eidos-control select {
+  appearance: none;
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 2rem 0.5rem 0.5rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-bg);
+  color: var(--eidos-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-control :is(input, select):focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-dock[hidden], .eidos-control[hidden] { display: none; }
+@media (max-width: 600px) {
+  .eidos-dock {
+    inset-block-start: auto;
+    inset-block-end: calc(14vh + env(safe-area-inset-bottom));
+    inset-inline: 0.75rem;
+    width: auto;
+    max-height: 42dvh;
+    border-radius: var(--eidos-radius) var(--eidos-radius) var(--eidos-radius-sm) var(--eidos-radius-sm);
+  }
+}
 
 .eidos-card {
   background: var(--eidos-surface);
@@ -143,41 +237,241 @@ body {
 
 </style>
 <style>
-  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
-  #seq { flex: 1; min-height: 0; }
-  #scene-b { justify-content: center; gap: 4vh; }
-  .points { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-  .point { display: grid; grid-template-columns: 2.2rem 1fr; gap: 12px; align-items: start; padding: 1rem 1.2rem; }
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; background: var(--eidos-bg); }
+  .layout header { flex: 0 0 auto; }
+  .eidos-title { line-height: 1.2; }
+
+  /* flow: 두 구간으로 나눈 시퀀스. 아래 구간은 행위자 헤더를 접어 생명선만 이어 보이게 한다 */
+  .seqwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #seq-a { flex: 64 1 0; min-height: 0; }
+  #seq-b { flex: 36 1 0; min-height: 0; }
+  #seq-b .eidos-seq-actor { height: 0; padding: 0 !important; border: 0; box-shadow: none; overflow: hidden; visibility: hidden; }
+
+  /* 이동하는 값(칩). 위치는 스크립트가 transform으로만 바꾼다 */
+  .chip { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; padding: 0.1rem 0.5rem; border-radius: 999px; font: 600 0.68rem/1.3 var(--eidos-font-mono); letter-spacing: 0.01em; white-space: nowrap; background: var(--eidos-surface); color: var(--eidos-surface-fg); border: 1.5px solid var(--eidos-border); box-shadow: var(--eidos-shadow); pointer-events: none; z-index: 3; opacity: 0; }
+  .chip-id { color: var(--eidos-muted-fg); }
+  .chip-pw { border-color: var(--eidos-cat-3); color: var(--eidos-cat-3); }
+  .chip-code { border-color: var(--eidos-cat-2); color: var(--eidos-cat-2); }
+  .chip-secret { background: var(--eidos-fg); color: var(--eidos-bg); border-color: var(--eidos-fg); }
+  .chip-token { background: var(--eidos-accent); color: var(--eidos-accent-fg); border-color: var(--eidos-accent); }
+  .chip-data { border-color: var(--eidos-cat-5); color: var(--eidos-cat-5); }
+  .chip-verifier { border-color: var(--eidos-cat-4); color: var(--eidos-cat-4); }
+  .chip-challenge { border-style: dashed; border-color: var(--eidos-cat-4); color: var(--eidos-cat-4); }
+  .chip-ok { background: var(--eidos-success); color: var(--eidos-accent-fg); border-color: var(--eidos-success); }
+  .chip-bad { background: var(--eidos-danger); color: var(--eidos-accent-fg); border-color: var(--eidos-danger); }
+
+  /* inside: 인증 서버 내부 */
+  .server { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 1.5vh 1.5vw; align-content: center; }
+  .req { grid-column: 1; position: relative; display: grid; gap: 0.25rem; align-self: start; }
+  #req2 { grid-row: 2; }
+  .req code, .token code { font-family: var(--eidos-font-mono); font-size: clamp(0.62rem, 1.15vw, 0.85rem); color: var(--eidos-surface-fg); overflow-wrap: anywhere; }
+  .req code b, .token code b { font-weight: 700; color: var(--eidos-cat-2); }
+  .ledger { grid-column: 2; grid-row: 1 / 3; position: relative; align-self: start; }
+  .ledger table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 0.35rem; font-size: clamp(0.6rem, 1.1vw, 0.85rem); }
+  .ledger th { text-align: left; font-weight: 500; color: var(--eidos-muted-fg); padding: 0.2rem 0.3rem; border-bottom: 1px solid var(--eidos-border); }
+  .ledger td { padding: 0.35rem 0.3rem; border-bottom: 1px solid var(--eidos-border); font-family: var(--eidos-font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ledger td.state { font-family: var(--eidos-font-sans); }
+  .ledger tr.spent td { color: var(--eidos-muted-fg); }
+  .ledger .strike { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .ledger .strike path { fill: none; stroke: var(--eidos-accent); stroke-width: 2.5; stroke-linecap: round; }
+  .checks { grid-column: 3; grid-row: 1; list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; font-size: clamp(0.7rem, 1.3vw, 0.95rem); align-self: start; }
+  .checks li { display: grid; grid-template-columns: 1.4rem 1fr; gap: 0.4rem; align-items: center; color: var(--eidos-fg); }
+  .checks li span { opacity: 0.55; }
+  .checks svg { width: 1.3rem; height: 1.3rem; overflow: visible; }
+  .checks path { fill: none; stroke: var(--eidos-success); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .token { grid-column: 3; grid-row: 2; display: grid; gap: 0.25rem; border-color: var(--eidos-accent); align-self: start; }
+  .token small { color: var(--eidos-muted-fg); font-size: clamp(0.6rem, 1.1vw, 0.8rem); }
+  .reject { position: absolute; inset: 0; pointer-events: none; }
+  .reject svg { position: absolute; left: 50%; top: 50%; width: 3.2rem; height: 3.2rem; margin: -1.6rem 0 0 -1.6rem; overflow: visible; }
+  .reject path { fill: none; stroke: var(--eidos-danger); stroke-width: 4; stroke-linecap: round; }
+  .tagwrap { position: absolute; left: 0; right: 0; bottom: -0.9rem; text-align: center; pointer-events: none; }
+  .tag { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: clamp(0.62rem, 1.1vw, 0.8rem); font-weight: 600; white-space: nowrap; background: var(--eidos-danger); color: var(--eidos-accent-fg); }
+
+  /* threat / pkce: 같은 배치의 다이어그램 */
+  .tri { flex: 1; min-height: 0; position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 6vh 2vw; align-content: center; }
+  .node { position: relative; display: grid; gap: 0.4rem; align-content: start; align-self: center; padding: 0.9rem 1rem; }
+  .node h2 { margin: 0; font-size: clamp(0.9rem, 1.8vw, 1.2rem); }
+  .node .sub { color: var(--eidos-muted-fg); font-size: clamp(0.68rem, 1.2vw, 0.9rem); }
+  .node-app { grid-column: 1; grid-row: 1; }
+  .node-srv { grid-column: 3; grid-row: 1; }
+  .node-atk { grid-column: 2; grid-row: 2; border-style: dashed; }
+  .slot { display: flex; align-items: center; gap: 0.5rem; min-height: 1.9rem; padding: 0.25rem 0.5rem; border: 1.5px dashed var(--eidos-border); border-radius: var(--eidos-radius-sm); font-size: clamp(0.64rem, 1.15vw, 0.85rem); color: var(--eidos-muted-fg); }
+  .slot .k { font-family: var(--eidos-font-mono); color: var(--eidos-fg); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slot .v { margin-left: auto; font-family: var(--eidos-font-mono); white-space: nowrap; }
+  .slot .v.bad { color: var(--eidos-danger); }
+  .check { display: grid; grid-template-columns: 1.2rem 1fr; gap: 0.35rem; align-items: center; font-size: clamp(0.64rem, 1.15vw, 0.85rem); }
+  .check svg { width: 1.1rem; height: 1.1rem; overflow: visible; }
+  .check path { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .check .ok { stroke: var(--eidos-success); }
+  .check .no { stroke: var(--eidos-danger); }
+  .check span { color: var(--eidos-fg); opacity: 0.45; }
+
+  /* summary */
+  #summary { justify-content: center; gap: 3vh; }
+  .points { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .point { display: grid; grid-template-columns: 2.2rem 1fr; gap: 12px; align-items: start; padding: 0.9rem 1.2rem; }
   .point .n { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-accent); color: var(--eidos-accent-fg); font-weight: 700; }
-  .point b { display: block; font-size: clamp(1rem, 2vw, 1.3rem); margin-bottom: 4px; }
-  .point span { font-size: clamp(0.85rem, 1.5vw, 1rem); color: var(--eidos-muted-fg); }
+  .point b { display: block; font-size: clamp(0.95rem, 1.9vw, 1.25rem); margin-bottom: 4px; }
+  .point span { font-size: clamp(0.8rem, 1.4vw, 0.95rem); color: var(--eidos-muted-fg); }
   .point code { font-family: var(--eidos-font-mono); color: var(--eidos-cat-2); }
-  .conclusion { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.6rem); line-height: 1.9; }
+  .conclusion { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.6rem); line-height: 1.8; }
+  .conclusion .hit { color: var(--eidos-accent); }
+  .conclusion.sub { font-size: clamp(0.95rem, 2vw, 1.35rem); }
   .kw { white-space: nowrap; }
+  .title-line { display: block; }
+
+  @media (max-width: 600px) {
+    .layout { padding: 4vh 4vw 16vh; gap: 1.5vh; }
+    .server { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 1vh 2vw; }
+    .req { grid-column: 1; grid-row: 1; }
+    #req2 { grid-column: 2; grid-row: 1; }
+    .ledger { grid-column: 1 / 3; grid-row: 2; }
+    .checks { grid-column: 1; grid-row: 3; }
+    .token { grid-column: 2; grid-row: 3; }
+    .ledger th:nth-child(3), .ledger td:nth-child(3) { display: none; }
+    .tri { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4vh 3vw; }
+    .node-srv { grid-column: 2; }
+    .node-atk { grid-column: 1 / 3; width: 72%; justify-self: center; }
+    .node { padding: 0.6rem 0.65rem; }
+    .points { gap: 8px; }
+    .point { padding: 0.6rem 0.8rem; }
+    .chip { font-size: 0.58rem; padding: 0.05rem 0.38rem; }
+  }
 </style>
 </head>
 <body>
 <div class="eidos-stage">
   <div class="eidos-world">
-    <main class="layout" id="scene-a">
+
+    <main class="layout" id="flow">
       <header>
         <div class="eidos-label">OAuth 2.0 Authorization Code</div>
         <h1 class="eidos-title">"구글로 로그인"을 누르면 일어나는 일</h1>
       </header>
-      <section id="seq"></section>
+      <div class="seqwrap">
+        <section id="seq-a"></section>
+        <section id="seq-b"></section>
+      </div>
     </main>
-    <main class="layout" id="scene-b">
+
+    <main class="layout" id="inside">
+      <header>
+        <div class="eidos-label">인증 서버 안에서 · 개념도</div>
+        <h1 class="eidos-title">code를 token으로 바꾸기 전에 확인하는 것</h1>
+      </header>
+      <div class="server">
+        <div class="req eidos-card" id="req1">
+          <div class="eidos-label">토큰 요청 (우리 서버 →)</div>
+          <code>grant_type=authorization_code</code>
+          <code>code=<b>7f3a…</b></code>
+          <code>client_id=our-app</code>
+          <code>redirect_uri=/callback</code>
+          <code>client_secret=<b>••••</b></code>
+        </div>
+        <div class="req eidos-card" id="req2">
+          <div class="eidos-label">같은 code로 다시 요청</div>
+          <code>code=<b>7f3a…</b></code>
+          <code>client_id=our-app</code>
+          <code>client_secret=<b>••••</b></code>
+          <div class="reject"><svg viewBox="0 0 48 48"><path class="x1" d="M10 10 L38 38"/><path class="x2" d="M38 10 L10 38"/></svg></div>
+          <div class="tagwrap" id="tag-used"><span class="tag">거절: 이미 사용된 code</span></div>
+        </div>
+        <div class="ledger eidos-card">
+          <div class="eidos-label">발급한 code 장부</div>
+          <table>
+            <thead><tr><th>code</th><th>client_id</th><th>redirect_uri</th><th>상태</th></tr></thead>
+            <tbody>
+              <tr class="spent"><td>c91e…</td><td>other-app</td><td>/oauth/cb</td><td class="state">사용됨</td></tr>
+              <tr id="row-hit"><td><span class="kw" id="hit-code">7f3a…</span></td><td>our-app</td><td>/callback</td><td class="state" id="hit-state">발급 2분 전</td></tr>
+              <tr class="spent"><td>b0d4…</td><td>shop</td><td>/login/done</td><td class="state">만료</td></tr>
+            </tbody>
+          </table>
+          <svg class="strike" aria-hidden="true"><path id="strike-hit" d="M0 0 L0 0"/></svg>
+        </div>
+        <ul class="checks">
+          <li id="chk1"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17 L19 7"/></svg><span>code가 장부에 있다</span></li>
+          <li id="chk2"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17 L19 7"/></svg><span>client_id가 발급 때와 같다</span></li>
+          <li id="chk3"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17 L19 7"/></svg><span>redirect_uri가 발급 때와 같다</span></li>
+          <li id="chk4"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17 L19 7"/></svg><span>client_secret이 맞다</span></li>
+        </ul>
+        <div class="token eidos-card" id="tok">
+          <div class="eidos-label">응답</div>
+          <code>access_token=<b>eyJhbGciOi…</b></code>
+          <small>expires_in=3600 · scope=profile email</small>
+        </div>
+      </div>
+    </main>
+
+    <main class="layout" id="threat">
+      <header>
+        <div class="eidos-label">그런데</div>
+        <h1 class="eidos-title">모바일 앱과 SPA에는 secret을 숨길 서버가 없습니다</h1>
+      </header>
+      <div class="tri" id="tri-t">
+        <div class="node node-app eidos-card" id="t-app">
+          <h2>앱 (모바일 · SPA)</h2>
+          <div class="sub">코드가 사용자 기기에 있음</div>
+          <div class="slot" id="t-slot-secret"><span class="k">client_secret</span><span class="v bad" id="t-nosecret">숨길 곳 없음</span></div>
+          <div class="slot" id="t-slot-code"><span class="k">code</span></div>
+        </div>
+        <div class="node node-srv eidos-card" id="t-srv">
+          <h2>인증 서버</h2>
+          <div class="sub">토큰 요청을 받으면</div>
+          <div class="check" id="t-chk-code"><svg viewBox="0 0 24 24"><path class="ok" d="M5 12.5 L10 17 L19 7"/></svg><span>code가 장부에 있다</span></div>
+          <div class="check" id="t-chk-secret"><svg viewBox="0 0 24 24"><path class="no" d="M6 6 L18 18"/><path class="no" d="M18 6 L6 18"/></svg><span>secret은 확인할 수 없다</span></div>
+          <div class="slot" id="t-slot-out"><span class="k">발급 / 요청 접수</span></div>
+        </div>
+        <div class="node node-atk eidos-card" id="t-atk">
+          <h2>공격자</h2>
+          <div class="sub">기기 안의 다른 앱, 악성 스크립트</div>
+          <div class="slot" id="t-slot-stolen"><span class="k">가로챈 값</span></div>
+        </div>
+      </div>
+    </main>
+
+    <main class="layout" id="pkce">
+      <header>
+        <div class="eidos-label">PKCE (Proof Key for Code Exchange)</div>
+        <h1 class="eidos-title">secret 대신, code를 "만든 쪽"에 묶습니다</h1>
+      </header>
+      <div class="tri" id="tri-p">
+        <div class="node node-app eidos-card" id="p-app">
+          <h2>앱 (모바일 · SPA)</h2>
+          <div class="sub">요청마다 새로 만드는 비밀값</div>
+          <div class="slot" id="p-slot-verifier"><span class="k">code_verifier</span></div>
+          <div class="slot" id="p-slot-code"><span class="k">code</span></div>
+        </div>
+        <div class="node node-srv eidos-card" id="p-srv">
+          <h2>인증 서버</h2>
+          <div class="sub">code를 발급할 때 함께 적어 둠</div>
+          <div class="slot" id="p-slot-challenge"><span class="k">code_challenge</span></div>
+          <div class="check" id="p-chk-ok"><svg viewBox="0 0 24 24"><path class="ok" d="M5 12.5 L10 17 L19 7"/></svg><span>SHA-256(verifier) = challenge</span></div>
+          <div class="check" id="p-chk-no"><svg viewBox="0 0 24 24"><path class="no" d="M6 6 L18 18"/><path class="no" d="M18 6 L6 18"/></svg><span>verifier 없음 → 거절</span></div>
+          <div class="slot" id="p-slot-out"><span class="k">발급 / 요청 접수</span></div>
+        </div>
+        <div class="node node-atk eidos-card" id="p-atk">
+          <h2>공격자</h2>
+          <div class="sub">code는 여전히 가로챌 수 있음</div>
+          <div class="slot" id="p-slot-stolen"><span class="k">가로챈 값</span></div>
+        </div>
+      </div>
+    </main>
+
+    <main class="layout" id="summary">
       <header>
         <div class="eidos-label">정리</div>
-        <h1 class="eidos-title">이 흐름이 안전한 이유 세 가지</h1>
+        <h1 class="eidos-title"><span class="title-line">이 흐름이 안전한 이유 네 가지</span></h1>
       </header>
       <ol class="points">
         <li class="point eidos-card"><span class="n">1</span><div><b>비밀번호는 구글만 봅니다</b><span>우리 서비스는 로그인 화면을 만들지도, 비밀번호를 받지도 않습니다.</span></div></li>
         <li class="point eidos-card"><span class="n">2</span><div><b>브라우저에는 일회용 code만 지나갑니다</b><span>code는 몇 분 안에 한 번만 쓸 수 있고, 그 자체로는 API를 부를 수 없습니다.</span></div></li>
         <li class="point eidos-card"><span class="n">3</span><div><b>토큰 교환은 서버끼리 합니다</b><span><code>client_secret</code>은 우리 서버에만 있으므로, code를 훔쳐도 토큰으로 바꿀 수 없습니다.</span></div></li>
+        <li class="point eidos-card"><span class="n">4</span><div><b>secret이 없는 앱은 PKCE로 code를 묶습니다</b><span><code>code_verifier</code>는 앱 안에만 있고 서버는 그 해시만 받아 두므로, code를 훔쳐도 교환할 수 없습니다.</span></div></li>
       </ol>
-      <p class="conclusion">핵심은 <span class="kw" id="kw1">브라우저를 믿지 않는 것</span>입니다. 노출될 수 있는 길로는 쓸모없는 값만 보내고, <span class="kw" id="kw2">진짜 열쇠는 서버 사이로만</span> 오갑니다.</p>
+      <p class="conclusion" id="c1">핵심은 브라우저를 <b class="hit">믿지 않는 것</b>입니다.</p>
+      <p class="conclusion sub" id="c2">노출될 수 있는 길로는 쓸모없는 값만 보내고, <span class="kw" id="kw2">진짜 열쇠는 서버 사이로만</span> 오갑니다.</p>
     </main>
+
   </div>
 </div>
 <script >
@@ -185,6 +479,24 @@ body {
   const E = (window.Eidos = window.Eidos || {});
   E.version = "0.1.0";
   E.fx = E.fx || {};
+
+  E.gesture = (state, { dx, dy, mode, t, kind, viewportH = innerHeight }) => {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(t)) return { state, action: null };
+    if (kind === "swipe") {
+      let action = null;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) >= 1.5 * Math.abs(dy)) action = dx < 0 ? "next" : "prev";
+      else if (Math.abs(dy) >= 48 && Math.abs(dy) >= 1.5 * Math.abs(dx)) action = dy < 0 ? "next" : "prev";
+      return { state, action };
+    }
+    if (kind !== "wheel" || ![0, 1, 2].includes(mode)) return { state, action: null };
+    const factor = mode === 1 ? 16 : mode === 2 ? viewportH : 1;
+    const delta = (Math.abs(dy) >= Math.abs(dx) ? dy : dx) * factor;
+    const fresh = !state || t - state.t >= 160 || t < state.t;
+    const next = { t, total: (fresh ? 0 : state.total) + delta, fired: fresh ? false : state.fired };
+    const action = !next.fired && Math.abs(next.total) > 80 ? next.total > 0 ? "next" : "prev" : null;
+    if (action) next.fired = true;
+    return { state: next, action };
+  };
 
   const errors = (window.__eidosErrors = []);
   addEventListener("error", (e) => {
@@ -203,6 +515,14 @@ body {
   E.reduced = motion === "reduce" || (motion !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  // Track progress snapped at both ends: (t - at) / dur can land a hair under 1 at t = at + dur in floating
+  // point (e.g. (1.001 - 1) / 0.001 = 0.99999999999989), which would leave a transition one ulp short of done.
+  const progressOf = (t, at, dur) => {
+    if (!(dur > 0)) return 1;
+    if (t >= at + dur - 1e-9 * Math.max(1, dur)) return 1;
+    const p = (t - at) / dur;
+    return p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p;
+  };
   const lerp = (a, b, p) => a + (b - a) * p;
   const r3 = (v) => Math.round(v * 1000) / 1000;
   E.util = { clamp01, lerp, r3 };
@@ -295,7 +615,8 @@ body {
     constructor() {
       this.tracks = [];
       this.hooks = [];
-      this.stops = [{ t: 0, label: "" }];
+      this.ramps = [];
+      this.stops = [{ t: 0, label: "", hold: 1.5, scene: null }];
       this.end = 0;
       this.t = 0;
       this.prevStart = 0;
@@ -336,15 +657,59 @@ body {
       this.end += d;
       return this;
     }
-    stop(label = "") {
+    stop(label = "", o = {}) {
       const last = this.stops[this.stops.length - 1];
-      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) last.label = label || last.label;
-      else this.stops.push({ t: this.end, label });
+      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1 && last.scene === (this.scene ?? null)) {
+        last.label = label || last.label;
+        if (o.id != null) last.id = o.id;
+        last.hold = o.hold ?? Math.min(Math.max(0.9 + 0.055 * last.label.length, 1.5), 6);
+      } else this.stops.push({ t: this.end, label, id: o.id, hold: o.hold ?? Math.min(Math.max(0.9 + 0.055 * label.length, 1.5), 6), scene: this.scene ?? null });
       return this;
     }
     onSeek(fn) {
       this.hooks.push(fn);
       return this;
+    }
+    ramp({ at, dur, rate }) {
+      if (![at, dur, rate].every(Number.isFinite) || at < 0 || dur < 0 || rate < 0) {
+        errors.push("tl.ramp requires finite nonnegative at, dur and rate");
+        return this;
+      }
+      this.ramps.push({ at, dur, rate });
+      this.ramps.sort((a, b) => a.at - b.at);
+      return this;
+    }
+    rateAt(t) {
+      return this.ramps.reduce((rate, r) => t >= r.at && t < r.at + r.dur ? rate * r.rate : rate, 1);
+    }
+    segments(a, b) {
+      const points = [a, b];
+      for (const r of this.ramps) for (const t of [r.at, r.at + r.dur]) if (t > a && t < b) points.push(t);
+      return [...new Set(points)].sort((x, y) => x - y);
+    }
+    sourceTime(t) {
+      const points = this.segments(0, t);
+      let u = 0;
+      for (let i = 1; i < points.length; i++) u += (points[i] - points[i - 1]) * this.rateAt((points[i] + points[i - 1]) / 2);
+      return u;
+    }
+    // Positive rates integrate reciprocally; freezes consume presentation time.
+    travel(from, to, budget) {
+      const forward = to >= from;
+      const points = this.segments(Math.min(from, to), Math.max(from, to));
+      if (!forward) points.reverse();
+      let cost = 0, t = from;
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], rate = this.rateAt((a + b) / 2) || 1;
+        const duration = Math.abs(b - a) / rate;
+        if (budget - cost < duration) {
+          t = a + (forward ? 1 : -1) * Math.max(0, budget - cost) * rate;
+          return { t, cost: budget };
+        }
+        cost += duration;
+        t = b;
+      }
+      return { t, cost };
     }
     // Tracks that have not started are applied first, latest-start first, at p=0;
     // started tracks are then applied in start order. The result depends only on t,
@@ -352,12 +717,14 @@ body {
     seek(t) {
       t = Math.min(Math.max(t, 0), this.end);
       this.t = t;
+      if (this.paramsAt) this.paramsAt(t);
+      const u = this.sourceTime(t);
       const future = [], started = [];
-      for (const tr of this.tracks) (tr.at > t + 1e-9 ? future : started).push(tr);
+      for (const tr of this.tracks) (tr.at > u + 1e-9 ? future : started).push(tr);
       future.sort((a, b) => b.at - a.at || b.i - a.i);
       for (const tr of future) tr.fn(tr.ease(0));
       started.sort((a, b) => a.at - b.at || a.i - b.i);
-      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1));
+      for (const tr of started) tr.fn(tr.ease(progressOf(u, tr.at, tr.dur)));
       for (const h of this.hooks) h(t);
       return this;
     }
@@ -400,7 +767,9 @@ body {
     to(target, o = {}) {
       const at = this.tl.resolveAt(o.at);
       const dur = o.dur ?? 1.2;
-      this.kfs.push({ target, o, at, dur, ease: easeOf(o.ease || "camera"), resolved: null });
+      const arc = o.arc ?? 0;
+      if (typeof arc !== "number" || !(arc >= 0 && arc <= 1)) errors.push(`camera.to arc must be a number from 0 to 1, got ${String(o.arc)}`);
+      this.kfs.push({ target, o, at, dur, arc: typeof arc === "number" && arc > 0 ? Math.min(arc, 1) : 0, ease: easeOf(o.ease || "camera"), resolved: null });
       this.kfs.sort((a, b) => a.at - b.at);
       this.tl.prevStart = at;
       this.tl.extend(at + dur);
@@ -424,23 +793,37 @@ body {
       this.H = this.stage.clientHeight;
       for (const kf of this.kfs) kf.resolved = this.resolve(kf);
     }
-    static mix(a, b, e) {
+    // arc (0-1) turns the move into a zoom-out, travel, zoom-in flight. View extent v = 1/s widens by
+    // h * sin(pi e) at most, where arc = 1 sizes the mid-flight view to the span of both endpoint views in a
+    // W x H viewport. Position follows the accumulated extent (as the plain mix does), so screen-space travel
+    // speed stays even. arc 0 takes the plain path unchanged.
+    static mix(a, b, e, arc = 0, W = 0, H = 0) {
       const s = a.s * Math.pow(b.s / a.s, e);
-      const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
-      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      const va = 1 / a.s, vb = 1 / b.s, vm = Math.sqrt(va * vb);
+      const fit = arc > 0 && W > 0 && H > 0 ? Math.max(Math.abs(b.x - a.x) / W, Math.abs(b.y - a.y) / H) + (va + vb) / 2 : 0;
+      const h = arc * Math.max(0, fit - vm);
+      if (!(h > 1e-9 * vm)) {
+        const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
+        return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      }
+      const k = Math.log(vb / va);
+      const extent = (q) => (Math.abs(k) > 1e-9 ? (va * Math.pow(vb / va, q) - va) / k : va * q) + (h * (1 - Math.cos(Math.PI * q))) / Math.PI;
+      const w = extent(e) / extent(1);
+      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s: 1 / (1 / s + h * Math.sin(Math.PI * e)), r: lerp(a.r, b.r, e) };
     }
     stateAt(t) {
       let st = this.home();
       for (const kf of this.kfs) {
         if (t < kf.at) break;
-        const p = kf.dur > 0 ? clamp01((t - kf.at) / kf.dur) : 1;
-        st = Camera.mix(st, kf.resolved, kf.ease(p));
+        if (kf.after && t === kf.at) continue;
+        const p = progressOf(t, kf.at, kf.dur);
+        st = Camera.mix(st, kf.resolved, kf.ease(p), kf.arc, this.W, this.H);
         if (p < 1) break;
       }
       return st;
     }
     apply(t) {
-      const st = (this.state = this.stateAt(t));
+      const st = (this.state = this.stateAt(this.tl.sourceTime(t)));
       this.world.style.transform =
         `translate(${r3(this.W / 2)}px, ${r3(this.H / 2)}px) rotate(${r3(st.r)}deg) scale(${r3(st.s)}) translate(${r3(-st.x)}px, ${r3(-st.y)}px)`;
     }
@@ -455,13 +838,170 @@ body {
     tl.onSeek((t) => camera.apply(t));
     const layoutFns = [];
     let hud = null, raf = 0, anim = null;
+    const manual = params.get("clock") === "manual";
+    let playing = false, speed = 1, holding = null, lastFrame = 0;
+    let ended = false, generation = 0;
+    const controls = new Map(), overrides = new Map(), paramFns = [];
+    let values = Object.freeze({}), renderedValues = values, paramStop = 0, paramsRaf = 0, needsLayout = false, dock = null;
+    const scenes = [], namedScenes = new Map(), spokes = new Map(), returns = [];
+    let currentScene = null, activeSpoke = null, shownScene = null, captions = [];
+    tl.paramsAt = resolveParams;
+    tl.onSeek(updateScene);
 
     const api = {
-      el, world, tl, camera, index: 0, started: false,
+      el, world, tl, camera, scenes, index: 0, started: false,
+      scene(id, o = {}) {
+        checkScene(id, o);
+        if (activeSpoke) api.back();
+        openScene(id, o);
+        return api;
+      },
+      spoke(id, o = {}) {
+        checkScene(id, { ...o, el: o.from });
+        const hub = namedScenes.get(o.hub);
+        if (!hub) sceneError(`Unknown hub: ${o.hub}`);
+        if (activeSpoke) api.back();
+        const hubStop = tl.stops.findLast((s) => s.scene === hub.id && !String(s.id || "").startsWith("ret-"));
+        if (!hubStop) sceneError(`Hub ${hub.id} needs a stop before spoke ${id}`);
+        const record = openScene(id, { ...o, el: o.from }, hub.id);
+        activeSpoke = { id, hub, hubStop, record, via: o.via, with: o.with };
+        spokes.set(id, activeSpoke);
+        for (const origin of $all(o.from, world)) origin.dataset.eidosSpoke = id;
+        return api;
+      },
+      back(o = {}) {
+        if (!activeSpoke) return api;
+        const spoke = activeSpoke;
+        const via = o.via ?? spoke.via;
+        checkVia(via);
+        activeSpoke = null;
+        openScene(spoke.hub.id, {
+          el: spoke.hub.el, title: spoke.hub.title, via, with: o.with ?? spoke.with,
+        }, null, via === "camera" ? (c) => c.stateAt(tl.sourceTime(spoke.hubStop.t)) : undefined, true);
+        tl.stop(o.label ?? spoke.hubStop.label, { id: `ret-${spoke.id}` });
+        spoke.returnStop = tl.stops[tl.stops.length - 1];
+        return api;
+      },
+      enter(id) {
+        const spoke = spokes.get(id);
+        const first = tl.stops.findIndex((s) => s.scene === id);
+        if (!spoke || first < 0 || !spoke.returnStop) sceneError(`Unknown or unclosed spoke: ${id}`);
+        returns.push({ from: stopIndexAt(tl.t), stop: spoke.returnStop });
+        api.pause();
+        // Every spoke starts at the same hub state; skip unrelated branches.
+        tl.seek(spoke.record.t0);
+        return api.goto(first);
+      },
+      exit() {
+        const target = returns.pop();
+        return target ? api.goto(tl.stops.indexOf(target.stop)) : api;
+      },
+      where() {
+        const stop = tl.stops[stopIndexAt(tl.t)];
+        // The bootstrap stop is not the first authored scene stop.
+        const exact = Math.abs(stop.t - tl.t) < 1e-9;
+        const scene = exact ? stop.scene : scenes.findLast((s) => s.t0 <= tl.t)?.id ?? null;
+        const localStops = tl.stops.filter((s) => s.scene === scene);
+        const local = Math.max(0, localStops.findLastIndex((s) => s.t <= tl.t + 1e-9));
+        const hub = spokes.get(scene)?.hub.id;
+        return { scene, path: scene == null ? [] : hub ? [hub, scene] : [scene], local, of: localStops.length };
+      },
+      get params() { return values; },
+      onParams(fn) { paramFns.push(fn); return api; },
+      control(name, o) {
+        if (!name || controls.has(name) || !["range", "toggle", "select"].includes(o.type)) {
+          errors.push(`Invalid control: ${name}`);
+          return;
+        }
+        const c = { ...o, tracks: [], input: null, row: null };
+        if (c.type === "range") {
+          c.min ??= 0; c.max ??= 1; c.step ??= 1;
+          if (![c.min, c.max, c.step].every(Number.isFinite) || c.max < c.min || c.step <= 0) {
+            errors.push(`Invalid range: ${name}`);
+            return;
+          }
+        }
+        if (c.type === "select") {
+          if (!Array.isArray(c.options) || !c.options.length) { errors.push(`Invalid options: ${name}`); return; }
+          c.options = c.options.map((v) => typeof v === "object" ? v : { value: v, label: String(v) });
+        }
+        const initial = normalize(c, c.value ?? (c.type === "range" ? c.min : c.type === "toggle" ? false : c.options[0].value));
+        if (!initial.ok) { errors.push(`Invalid default for control: ${name}`); return; }
+        c.value = initial.value;
+        controls.set(name, c);
+        values = Object.freeze({ ...values, [name]: c.value });
+        const handle = {
+          get value() { return values[name]; },
+          set(v) { api.setControls({ [name]: v }); return handle; },
+          drive(a, b, o = {}) {
+            const from = normalize(c, a), to = normalize(c, b);
+            const at = tl.resolveAt(o.at), dur = o.dur ?? 0.6;
+            if (!from.ok || !to.ok || !Number.isFinite(at) || !Number.isFinite(dur) || dur < 0) {
+              errors.push(`Invalid drive for control: ${name}`);
+              return handle;
+            }
+            c.tracks.push({ a: from.value, b: to.value, at, dur, ease: easeOf(o.ease), i: c.tracks.length });
+            c.tracks.sort((a, b) => a.at - b.at || a.i - b.i);
+            tl.prevStart = at;
+            tl.extend(at + dur);
+            return handle;
+          },
+        };
+        return handle;
+      },
+      setControls(patch) {
+        const next = [];
+        for (const [name, v] of Object.entries(patch)) {
+          const c = controls.get(name), result = c && normalize(c, v);
+          if (!result?.ok) { errors.push(`Invalid control value: ${name}=${String(v)}`); return api; }
+          next.push([name, result.value]);
+        }
+        // Stops playback only; an in-flight goto() still arrives at its stop.
+        if (playing) api.pause();
+        for (const [name, v] of next) {
+          overrides.set(name, v);
+          if (controls.get(name).layout) needsLayout = true;
+        }
+        resolveParams(tl.t, false, false);
+        queueParams();
+        return api;
+      },
       get reduced() { return E.reduced; },
       get stops() { return tl.stops; },
       get end() { return tl.end; },
       get t() { return tl.t; },
+      get playing() { return playing; },
+      speed(x) {
+        if (x == null && arguments.length === 0) return speed;
+        if (typeof x !== "number" || !Number.isFinite(x) || x <= 0) {
+          errors.push(`Invalid playback speed: ${String(x)}`);
+          speed = 1;
+        } else speed = x;
+        updateHud();
+        return api;
+      },
+      play(o = {}) {
+        if (o.speed !== undefined) api.speed(o.speed);
+        if (playing) return api;
+        playing = true;
+        ended = false;
+        const current = tl.stops[stopIndexAt(tl.t)];
+        if (!anim && holding == null && Math.abs(tl.t - current.t) < 1e-9) holding = current.hold;
+        if (!anim && tl.t >= tl.end) finish();
+        schedule();
+        updateHud();
+        return api;
+      },
+      pause() {
+        playing = false;
+        cancel();
+        updateHud();
+        return api;
+      },
+      advance(ms) {
+        if (manual && Number.isFinite(ms) && ms >= 0) tick(ms / 1000);
+        return api;
+      },
       measure: (target) => unionRect($all(target, world).map((n) => rectIn(n, world))),
       onLayout(fn) { layoutFns.push(fn); return api; },
       fx(name, o = {}) {
@@ -469,6 +1009,8 @@ body {
         return E.fx[name](api, o);
       },
       layout() {
+        resolveParams(tl.t);
+        needsLayout = false;
         const tf = world.style.transform;
         world.style.transform = "none";
         for (const fn of layoutFns) fn();
@@ -476,15 +1018,20 @@ body {
         world.style.transform = tf;
         tl.seek(tl.t);
       },
-      seek(t) { cancel(); tl.seek(t); api.index = stopIndexAt(tl.t); updateHud(); return api; },
+      seek(t) { api.pause(); holding = null; tl.seek(t); setIndex(stopIndexAt(tl.t)); reachedStop(); updateHud(); return api; },
       jump(i) {
-        cancel();
-        api.index = Math.min(Math.max(i, 0), tl.stops.length - 1);
-        tl.seek(tl.stops[api.index].t);
+        api.pause();
+        holding = null;
+        i = Math.min(Math.max(i, 0), tl.stops.length - 1);
+        tl.seek(tl.stops[i].t);
+        setIndex(i);
+        reachedStop();
         updateHud();
         return api;
       },
       goto(i) {
+        api.pause();
+        holding = null;
         i = Math.min(Math.max(i, 0), tl.stops.length - 1);
         if (E.reduced) {
           api.jump(i);
@@ -493,94 +1040,479 @@ body {
           world.classList.add("eidos-fade");
           return api;
         }
-        cancel();
         const from = tl.t, to = tl.stops[i].t;
-        api.index = i;
-        const ms = (Math.abs(to - from) * 1000) / (to < from ? 3 : 1);
-        if (ms < 1) { tl.seek(to); updateHud(); return api; }
-        const t0 = performance.now();
+        setIndex(i);
         anim = { to };
-        const step = (now) => {
-          const k = Math.min((now - t0) / ms, 1);
-          tl.seek(lerp(from, to, k));
-          updateHud();
-          if (k < 1) raf = requestAnimationFrame(step);
-          else anim = null;
-        };
-        raf = requestAnimationFrame(step);
+        if (Math.abs(to - from) < 1e-9) { anim = null; tl.seek(to); reachedStop(); updateHud(); return api; }
+        schedule();
         return api;
       },
       next() {
-        if (anim) { const to = anim.to; cancel(); tl.seek(to); updateHud(); return api; }
+        if (anim) { const to = anim.to; api.pause(); tl.seek(to); setIndex(stopIndexAt(to)); reachedStop(); updateHud(); return api; }
         return api.goto(api.index + 1);
       },
       prev() { return api.goto(api.index - 1); },
       snapshot() {
-        const out = [];
+        const out = [JSON.stringify(api.params)];
+        const geometry = ["cx", "cy", "r", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points", "transform", "d"];
         for (const n of [world, ...world.querySelectorAll("*")]) {
           let txt = "";
           for (const c of n.childNodes) if (c.nodeType === 3) txt += c.nodeValue;
-          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}`);
+          const cls = [...n.classList].filter((c) => c !== "eidos-fade").join(" ");
+          const attrs = [...n.attributes]
+            .filter((a) => geometry.includes(a.name) || a.name.startsWith("data-eidos-"))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((a) => [a.name, a.value]);
+          const input = n instanceof HTMLInputElement ? { value: n.value, checked: n.checked } : null;
+          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}|${JSON.stringify([cls, attrs, input])}`);
         }
         return out.join("\n");
       },
       start() {
+        if (activeSpoke) api.back();
         if (tl.stops[tl.stops.length - 1].t < tl.end - 1e-9) tl.stop("");
+        if (currentScene) currentScene.t1 = tl.end;
+        captions = [];
+        for (const stop of tl.stops) {
+          const range = scenes.find((s) => s.id === stop.scene && stop.t >= s.t0 && stop.t <= s.t1);
+          const first = range && !captions.some((c) => c.range === range);
+          const shifted = first && (range.lead != null || range.trail != null);
+          const at = shifted ? range.t0 - (range.lead ?? 0) + (range.trail ?? 0) : stop.t;
+          // A J cut replaces even later captions from the outgoing scene.
+          if (first) captions = captions.filter((c) => c.t < at);
+          captions.push({ t: Math.max(at, captions[captions.length - 1]?.t ?? 0), label: stop.label, range });
+        }
         api.layout();
         tl.seek(0);
         if (opts.hud !== false && params.get("hud") !== "0") buildHud();
         bindControls();
         addEventListener("resize", () => api.layout());
+        addEventListener("visibilitychange", () => { if (document.hidden) api.pause(); });
+        if (params.has("speed")) api.speed(Number(params.get("speed")));
         const qt = params.get("t"), qs = params.get("stop");
+        const [scene, local] = location.hash.slice(1).split("&")[0].split(".");
+        const sceneStops = tl.stops.map((s, i) => ({ ...s, i })).filter((s) => s.scene === scene);
+        const hashStop = sceneStops.find((s, i) => s.id === local || (s.id == null && String(i) === local));
         if (qt != null) api.seek(parseFloat(qt));
         else if (qs != null) api.jump(parseInt(qs, 10));
-        else if (opts.autoplay !== false) api.goto(1);
+        else if (hashStop) api.jump(hashStop.i);
+        else if (opts.intro !== false) api.goto(1);
+        readControls();
+        resolveParams(tl.t, true);
+        if (controls.size) buildDock();
+        if (needsLayout) { needsLayout = false; api.layout(); }
+        if (params.get("autoplay") === "1") api.play();
         api.started = true;
         window.__eidos = api;
+        api.ready = document.fonts.ready.then(() => { api.layout(); });
         return api;
       },
     };
 
+    function sceneError(message) {
+      // file:// masks errors thrown across script boundaries as "Script error.".
+      errors.push(message);
+      throw new Error(message);
+    }
+    function checkVia(via) {
+      if (!via) sceneError("Scene via is required after the first scene");
+      if (via !== "camera" && via !== "cut" && E.fx[via]?.kind !== "transition") {
+        sceneError(`Scene via "${via}" must name an fx with kind "transition"`);
+      }
+    }
+    function checkScene(id, o) {
+      if (!id || namedScenes.has(id)) sceneError(`Invalid or duplicate scene: ${id}`);
+      if (!$all(o.el, world).length) sceneError(`Scene ${id} needs an el`);
+      if (currentScene || o.via != null) checkVia(o.via);
+    }
+    function openScene(id, o, parent = null, target = o.el, returning = false) {
+      const at = tl.end;
+      const previous = currentScene;
+      if (previous) previous.t1 = at;
+      const record = { ...o, id, t0: at, t1: at, parent };
+      scenes.push(record);
+      if (!namedScenes.has(id)) namedScenes.set(id, record);
+      currentScene = record;
+      tl.scene = id;
+      let from = previous?.el, to = o.el;
+      const fromEl = $all(from, world)[0], toEl = $all(to, world)[0];
+      const nestedIn = fromEl !== toEl && fromEl?.contains(toEl);
+      const nestedOut = fromEl !== toEl && toEl?.contains(fromEl);
+      if (nestedIn || nestedOut) {
+        const outer = nestedIn ? fromEl : toEl, inner = nestedIn ? toEl : fromEl;
+        const siblings = [];
+        for (let node = inner; node !== outer; node = node.parentElement) {
+          siblings.push(...[...node.parentElement.children].filter((sibling) => sibling !== node));
+        }
+        // Shared ancestors and the selected branch stay visible in both directions.
+        from = nestedIn ? siblings : null;
+        to = nestedOut ? siblings : null;
+      }
+      const trackStart = tl.tracks.length;
+      if (o.via === "camera") {
+        camera.to(target, { ...o.with, at });
+        // Preserve the previous stop at a zero-duration boundary, including spoke entries.
+        const entry = camera.kfs[camera.kfs.length - 1];
+        if (!returning && (parent != null || (previous && entry.dur === 0))) entry.after = true;
+      }
+      else if (o.via === "cut") {
+        if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
+        if (to) tl.tween(to, { opacity: [0, 1] }, { at, dur: 0 });
+      } else if (previous) {
+        const transition = E.fx[o.via](api, { ...o.with, from, to, at });
+        tl.extend(transition.end);
+      }
+      // Entries preserve the previous stop; returns restore the hub at their own stop.
+      if (!returning && (nestedIn || (previous && o.via === "cut"))) for (const track of tl.tracks.slice(trackStart)) {
+        const fn = track.fn;
+        track.fn = (p) => fn(tl.t <= at ? 0 : p);
+      }
+      return record;
+    }
+    function updateScene() {
+      if (!scenes.length) return;
+      const { scene, path } = api.where();
+      if (scene !== shownScene) {
+        shownScene = scene;
+        dispatchEvent(new CustomEvent("eidos:scene", { detail: { id: scene, path, title: namedScenes.get(scene)?.title ?? scene } }));
+      }
+      if (hud) {
+        hud.querySelector(".eidos-hud-breadcrumb").textContent = path.map((id) => namedScenes.get(id)?.title ?? id).join(" › ");
+        hud.querySelector(".eidos-hud-caption").textContent = captionAt();
+      }
+    }
+    function captionAt() {
+      return captions.findLast((c) => c.t <= tl.t + 1e-9)?.label ?? "";
+    }
+    function normalize(c, v, url = false) {
+      if (url) {
+        if (c.type === "range") v = v.trim() === "" ? NaN : Number(v);
+        else if (c.type === "toggle") v = v === "true" || v === "1" ? true : v === "false" || v === "0" ? false : null;
+        else {
+          const option = c.options.find((o) => String(o.value) === v);
+          return option ? { ok: true, value: option.value } : { ok: false };
+        }
+      }
+      if (c.type === "range") {
+        if (typeof v !== "number" || !Number.isFinite(v)) return { ok: false };
+        v = Math.min(Math.max(v, c.min), c.max);
+        const units = (v - c.min) / c.step;
+        v = c.min + Math.floor(units + 0.5 + Number.EPSILON * Math.max(1, Math.abs(units)) * 4) * c.step;
+        return { ok: true, value: Number(Math.min(Math.max(v, c.min), c.max).toPrecision(15)) };
+      }
+      if (c.type === "toggle") return { ok: typeof v === "boolean", value: v };
+      return { ok: c.options.some((o) => o.value === v), value: v };
+    }
+    function resolveParams(t, force = false, render = true) {
+      const stop = stopIndexAt(t), next = {};
+      if (stop !== paramStop) {
+        for (const [name, c] of controls) if (!c.sticky) overrides.delete(name);
+        paramStop = stop;
+      }
+      let changed = force;
+      for (const [name, c] of controls) {
+        let v = c.value;
+        for (const tr of c.tracks) {
+          if (t < tr.at) break;
+          const p = tr.ease(progressOf(t, tr.at, tr.dur));
+          v = c.type === "range" ? normalize(c, lerp(tr.a, tr.b, p)).value : p < 1 ? tr.a : tr.b;
+        }
+        next[name] = overrides.has(name) ? overrides.get(name) : v;
+        if (next[name] !== values[name]) {
+          changed = true;
+          if (c.layout) needsLayout = true;
+        }
+      }
+      if (changed) values = Object.freeze(next);
+      if (render && (force || [...controls.keys()].some((name) => values[name] !== renderedValues[name]))) {
+        renderedValues = values;
+        for (const fn of paramFns) fn(values);
+        dispatchEvent(new CustomEvent("eidos:params", { detail: { params: values } }));
+      }
+      updateDock(stop);
+      if (needsLayout && api.started) queueParams();
+    }
+    function queueParams() {
+      if (paramsRaf) return;
+      paramsRaf = requestAnimationFrame(() => {
+        paramsRaf = 0;
+        if (needsLayout) { needsLayout = false; api.layout(); }
+        else tl.seek(tl.t);
+      });
+    }
+    function readControls() {
+      const hash = new URLSearchParams(location.hash.slice(1).split("&").slice(1).join("&"));
+      for (const source of [params, hash]) for (const [key, v] of source) {
+        if (!key.startsWith("c.")) continue;
+        const name = key.slice(2), c = controls.get(name), result = c && normalize(c, v, true);
+        if (!result?.ok) errors.push(`Invalid URL control: ${key}=${v}`);
+        else overrides.set(name, result.value);
+      }
+    }
+    function writeControls() {
+      if (!api.started || (!controls.size && !scenes.length)) return;
+      const url = new URL(location.href), i = stopIndexAt(tl.t), stop = tl.stops[i];
+      for (const key of [...url.searchParams.keys()]) if (key.startsWith("c.") || key === "t" || key === "stop") url.searchParams.delete(key);
+      if (!stop.scene) url.searchParams.set("stop", String(i));
+      const local = tl.stops.slice(0, i).filter((s) => s.scene === stop.scene).length;
+      const state = new URLSearchParams();
+      for (const [name, v] of overrides) state.set(`c.${name}`, String(v));
+      url.hash = (stop.scene ? `${stop.scene}.${stop.id ?? local}` : String(i)) + (state.size ? `&${state}` : "");
+      try { history.replaceState(null, "", url); } catch {}
+    }
+    function reachedStop() {
+      if (Math.abs(tl.t - tl.stops[stopIndexAt(tl.t)].t) < 1e-9) writeControls();
+    }
+    function updateDock(stop) {
+      if (!dock) return;
+      let visible = false;
+      for (const [name, c] of controls) {
+        const index = (v) => typeof v === "number" ? v : tl.stops.findIndex((s) => s.id === v);
+        c.row.hidden = c.when == null ? false : Array.isArray(c.when)
+          ? !(stop >= index(c.when[0]) && stop <= index(c.when[1]))
+          : tl.stops[stop].scene !== c.when;
+        visible ||= !c.row.hidden;
+        if (c.type === "toggle") c.input.checked = values[name];
+        else c.input.value = c.type === "select" ? String(c.options.findIndex((o) => o.value === values[name])) : String(values[name]);
+        if (c.output) c.output.value = String(values[name]);
+      }
+      dock.hidden = !visible;
+    }
+    function buildDock() {
+      dock = document.createElement("div");
+      dock.className = "eidos-dock";
+      dock.setAttribute("role", "group");
+      dock.setAttribute("aria-label", "Controls");
+      dock.dataset.eidosNokeys = "";
+      for (const [name, c] of controls) {
+        const row = c.row = document.createElement("label");
+        row.className = `eidos-control eidos-control-${c.type}`;
+        const label = document.createElement("span");
+        label.textContent = c.label ?? name;
+        row.appendChild(label);
+        const input = c.input = document.createElement(c.type === "select" ? "select" : "input");
+        input.id = `eidos-control-${document.querySelectorAll(".eidos-dock").length}-${dock.children.length}`;
+        row.htmlFor = input.id;
+        input.name = name;
+        if (c.type === "select") c.options.forEach((o, i) => {
+          const option = document.createElement("option");
+          option.value = String(i); option.textContent = o.label ?? String(o.value);
+          input.appendChild(option);
+        });
+        else input.type = c.type === "toggle" ? "checkbox" : "range";
+        if (c.type === "range") {
+          input.min = c.min; input.max = c.max; input.step = c.step;
+          c.output = document.createElement("output");
+          row.appendChild(c.output);
+        }
+        row.appendChild(input);
+        const edit = () => api.setControls({ [name]: c.type === "toggle" ? input.checked : c.type === "select" ? c.options[Number(input.value)].value : Number(input.value) });
+        input.addEventListener("input", edit);
+        input.addEventListener("change", () => { edit(); writeControls(); });
+        dock.appendChild(row);
+      }
+      document.body.appendChild(dock);
+      updateDock(stopIndexAt(tl.t));
+    }
     function cancel() {
+      generation++;
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       anim = null;
+      lastFrame = 0;
+    }
+    function schedule() {
+      if (manual || raf || (!playing && !anim)) return;
+      lastFrame = performance.now();
+      const token = generation;
+      raf = requestAnimationFrame((now) => frame(now, token));
+    }
+    function frame(now, token) {
+      if (token !== generation) return;
+      raf = 0;
+      const elapsed = (now - lastFrame) / 1000;
+      lastFrame = now;
+      tick(elapsed);
+      if (token === generation) schedule();
+    }
+    function finish() {
+      playing = false;
+      anim = null;
+      holding = 0;
+      if (!ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      }
+    }
+    function tick(seconds) {
+      let budget = seconds * speed;
+      while (budget > 0 && (playing || anim)) {
+        if (holding > 0 && playing) {
+          const spent = Math.min(holding, budget);
+          holding -= spent;
+          if (holding < 1e-9) holding = 0;
+          budget -= spent;
+          if (holding > 0 || (budget <= 0 && !E.reduced)) break;
+        }
+        if (!anim) {
+          const current = stopIndexAt(tl.t);
+          if (current === tl.stops.length - 1) { finish(); break; }
+          anim = { to: tl.stops[current + 1].t };
+        }
+        const to = anim.to;
+        if (E.reduced && playing) {
+          tl.seek(to);
+        } else {
+          const reverse = to < tl.t ? 3 : 1;
+          const step = tl.travel(tl.t, to, budget * reverse);
+          tl.seek(step.t);
+          budget = Math.max(0, budget - step.cost / reverse);
+          if (Math.abs(tl.t - to) > 1e-9) break;
+        }
+        anim = null;
+        setIndex(stopIndexAt(to));
+        reachedStop();
+        if (playing) {
+          if (api.index === tl.stops.length - 1) { finish(); break; }
+          holding = tl.stops[api.index].hold;
+        }
+      }
+      updateHud();
     }
     function stopIndexAt(t) {
       let idx = 0;
       tl.stops.forEach((s, i) => { if (s.t <= t + 1e-9) idx = i; });
       return idx;
     }
+    function setIndex(i) {
+      if (api.index === i) return;
+      api.index = i;
+      const { id, label, scene } = tl.stops[i];
+      dispatchEvent(new CustomEvent("eidos:stop", { detail: { index: i, id, label, scene } }));
+    }
     function buildHud() {
       hud = document.createElement("div");
       hud.className = "eidos-hud";
       hud.innerHTML =
-        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+        '<div class="eidos-hud-breadcrumb"></div><div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-transport" data-eidos-noclick><button type="button" class="eidos-hud-play" data-eidos-noclick></button><span class="eidos-hud-speed"></span></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+      hud.querySelector("button").addEventListener("click", () => playing ? api.pause() : api.play());
       document.body.appendChild(hud);
+      updateScene();
       updateHud();
     }
     function updateHud() {
+      const atEnd = api.index === tl.stops.length - 1 && tl.t >= tl.stops[api.index].t;
+      if (atEnd && !ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      } else if (!atEnd) ended = false;
       if (!hud) return;
-      hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
-      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  → 다음`;
+      const button = hud.querySelector(".eidos-hud-play");
+      button.textContent = playing ? "Pause" : "Play";
+      button.setAttribute("aria-pressed", String(playing));
+      hud.querySelector(".eidos-hud-speed").textContent = `${speed}x`;
+      hud.querySelector(".eidos-hud-caption").textContent = captionAt();
+      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  →/Space 다음 · ← 이전 · P 재생 · 스크롤`;
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
     }
     function bindControls() {
+      const gestureControls = "a, button, input, select, textarea, label, [contenteditable], .eidos-dock, .eidos-hud, [data-eidos-nokeys], [data-eidos-noclick]";
+      const ownsGesture = (target, dx, dy) => {
+        if (target.closest(gestureControls)) return false;
+        for (let node = target; node && node !== el; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          const canScroll = (overflow, delta, pos, max) =>
+            /^(auto|scroll|overlay)$/.test(overflow) && (delta > 0 ? pos < max : delta < 0 && pos > 0);
+          if (canScroll(style.overflowY, dy, node.scrollTop, node.scrollHeight - node.clientHeight) ||
+              canScroll(style.overflowX, dx, node.scrollLeft, node.scrollWidth - node.clientWidth)) return false;
+        }
+        return true;
+      };
+      let wheelState, wheelOwner = false;
+      el.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || !Number.isFinite(e.deltaX) || !Number.isFinite(e.deltaY) || ![0, 1, 2].includes(e.deltaMode)) return;
+        if (!wheelState || e.timeStamp - wheelState.t >= 160 || e.timeStamp < wheelState.t) {
+          wheelOwner = ownsGesture(e.target, e.deltaX, e.deltaY);
+        }
+        const result = E.gesture(wheelState, {
+          dx: e.deltaX, dy: e.deltaY, mode: e.deltaMode,
+          t: e.timeStamp, kind: "wheel", viewportH: innerHeight,
+        });
+        wheelState = result.state;
+        if (!wheelOwner) return;
+        e.preventDefault();
+        if (api.playing) api.pause();
+        if (result.action) api[result.action]();
+      }, { passive: false });
+      let pointer = null, swipeClick = false;
+      el.addEventListener("pointerdown", (e) => {
+        swipeClick = false;
+        if (e.pointerType === "mouse" || !e.isPrimary) return;
+        pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target, owner: null };
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        if (pointer.owner === null && (dx || dy)) pointer.owner = ownsGesture(pointer.target, -dx, -dy);
+        if (pointer.owner && api.playing) api.pause();
+      });
+      el.addEventListener("pointerup", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        const owner = pointer.owner ?? ownsGesture(pointer.target, -dx, -dy);
+        pointer = null;
+        if (!owner) return;
+        const { action } = E.gesture(undefined, { dx, dy, mode: 0, t: e.timeStamp, kind: "swipe" });
+        if (!action) return;
+        swipeClick = true;
+        api[action]();
+      });
+      el.addEventListener("pointercancel", (e) => {
+        if (pointer?.id === e.pointerId) pointer = null;
+      });
+      el.addEventListener("click", (e) => {
+        if (!swipeClick) return;
+        swipeClick = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }, true);
       addEventListener("keydown", (e) => {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target.closest("input, select, textarea, [contenteditable], [data-eidos-nokeys]")) return;
         const k = e.key;
-        if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
+        if (e.target.closest("button") && (k === " " || k === "Enter")) return;
+        if (/^[1-9]$/.test(k)) {
+          const id = [...spokes.keys()][Number(k) - 1];
+          if (!id) return;
+          api.enter(id);
+        }
+        else if (k === "Escape") api.exit();
+        else if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
         else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) api.prev();
         else if (k === "Home") api.jump(0);
         else if (k === "End") api.jump(tl.stops.length - 1);
         else if (k === "r" || k === "R") { api.jump(0); api.goto(1); }
+        else if (k === "p" || k === "P") { playing ? api.pause() : api.play(); }
+        else if (k === "[" || k === "]") {
+          const steps = [0.5, 1, 1.5, 2];
+          api.speed(k === "]" ? steps.find((s) => s > speed) ?? 2 : steps.findLast((s) => s < speed) ?? 0.5);
+        }
         else return;
         e.preventDefault();
       });
       el.addEventListener("click", (e) => {
-        if (e.target.closest("a, button, input, select, textarea, [data-eidos-noclick]")) return;
+        // Keep an in-flight goto() so next() below completes it, as ArrowRight does.
+        if (playing) api.pause();
+        const origin = e.target.closest("[data-eidos-spoke]");
+        if (origin && !e.target.closest("input, select, textarea, label, [data-eidos-noclick]")) {
+          api.enter(origin.dataset.eidosSpoke);
+          return;
+        }
+        if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });
+      addEventListener("input", () => { if (playing) api.pause(); });
+      addEventListener("change", () => { if (playing) api.pause(); });
     }
     return api;
   };
@@ -774,87 +1706,343 @@ body {
 <script >
 (() => {
   const E = window.Eidos;
-  E.fx["cross-dissolve"] = (stage, o = {}) => {
-    const { tl } = stage;
-    const dur = o.dur ?? 0.8;
-    const start = tl.resolveAt(o.at);
-    const ease = o.ease ?? "inOut";
-    const blur = o.blur === true ? 8 : Number(o.blur) || 0;
-    const out = { opacity: [1, 0] };
-    const inn = { opacity: [0, 1] };
-    if (blur > 0) {
-      out.blur = [0, blur];
-      inn.blur = [blur, 0];
-    }
-    if (o.from) tl.tween(o.from, out, { at: start, dur, ease });
-    if (o.to) tl.tween(o.to, inn, { at: start, dur, ease });
-    tl.prevStart = start;
-    tl.extend(start + dur);
-    return { start, end: start + dur };
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
   };
+  const easeOf = (e) => (typeof e === "function" ? e : Object.hasOwn(E.ease, e) ? E.ease[e] : fail(`screen-dive: unknown ease ${JSON.stringify(e)}`));
+  const find = (stage, target, what) => {
+    let els = [];
+    try {
+      els = E.$all(target, stage.world);
+    } catch {
+      fail(`screen-dive: ${what} is not a valid selector (got ${JSON.stringify(target)})`);
+    }
+    return els.length ? els : fail(`screen-dive: no element for ${what} ${JSON.stringify(target)}`);
+  };
+  const span = (p, a, b) => (p <= a ? 0 : p >= b ? 1 : (p - a) / (b - a));
+  // Phases on q, the dive progress (q = p going in, q = 1 - p with out: true): the inner scene appears in the
+  // screen over [0, INNER], the dive runs over [DIVE, 1], the outer scene lets go over [OUTER, 1].
+  const INNER = 0.3, DIVE = 0.2, OUTER = 0.8;
+
+  E.fx["screen-dive"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const { r3 } = E.util;
+    const allowed = { from: 1, to: 1, at: 1, dur: 1, ease: 1, screen: 1, content: 1, out: 1 };
+    if (!o || typeof o !== "object" || Array.isArray(o)) fail("screen-dive: options must be an object");
+    for (const key of Object.keys(o)) if (!Object.hasOwn(allowed, key)) fail(`screen-dive: unknown option ${key}`);
+    if (o.out != null && typeof o.out !== "boolean") fail(`screen-dive: out must be true or false (got ${JSON.stringify(o.out)})`);
+    const out = o.out === true;
+    if (o.from == null || o.to == null) {
+      fail('screen-dive: needs from and to as two separate full-frame scenes; when the next scene is an element inside the screen, use via: "camera"');
+    }
+    const dur = o.dur ?? 1.4;
+    if (!Number.isFinite(dur) || dur < 0) fail(`screen-dive: dur must be a finite number >= 0 (got ${JSON.stringify(o.dur)})`);
+    const ease = easeOf(o.ease ?? "camera");
+    const fromEls = find(stage, o.from, "from");
+    const toEls = find(stage, o.to, "to");
+    const host = out ? "to" : "from";
+    if (o.screen == null) fail(`screen-dive: screen is required: the window or device screen element inside the ${host} scene`);
+    const screen = find(stage, o.screen, "screen")[0];
+    const outer = out ? toEls : fromEls, inner = out ? fromEls : toEls;
+    if (!outer.some((el) => el !== screen && el.contains(screen))) fail(`screen-dive: screen must be inside the ${host} scene (got ${JSON.stringify(o.screen)})`);
+    if (inner.some((el) => el.contains(screen) || screen.contains(el))) fail("screen-dive: the scene seen in the screen must be a separate layer, not nested in or around the screen");
+    const content = o.content == null ? [...screen.children] : find(stage, o.content, "content");
+    const start = tl.resolveAt(o.at);
+    if (!Number.isFinite(start) || start < 0) fail("screen-dive: at must resolve to finite nonnegative seconds");
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    const finish = () => {
+      for (const tr of tl.tracks.slice(first)) {
+        const fn = tr.fn;
+        tr.fn = (p) => fn(tl.t <= start ? 0 : p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p);
+      }
+      tl.prevStart = start;
+      tl.extend(start + dur);
+      return { start, end: start + dur };
+    };
+
+    if (E.reduced) {
+      tl.tween(fromEls, { opacity: (p) => (p < 0.5 ? 1 : 0) }, at);
+      tl.tween(toEls, { opacity: (p) => (p < 0.5 ? 0 : 1) }, at);
+      return finish();
+    }
+
+    // Layout, in world coordinates with transforms ignored: the screen rect S, the inner scene rect V and
+    // k, the zoom at which S covers V (4% over, so the screen's rounded corners leave the frame).
+    // The dive is a camera-style move from V's centre at scale 1 to S's centre at scale k.
+    let cS = { x: 0, y: 0 }, cV = { x: 0, y: 0 }, k = 1, gen = 0, warned = false;
+    const centre = new Map();
+    stage.onLayout(() => {
+      gen++;
+      const S = stage.measure(screen), V = stage.measure(inner);
+      cS = { x: S.x + S.w / 2, y: S.y + S.h / 2 };
+      cV = { x: V.x + V.w / 2, y: V.y + V.h / 2 };
+      if (S.w < 1 || S.h < 1) {
+        if (!warned) (window.__eidosErrors ||= []).push("screen-dive: screen has no size at layout (display: none?)");
+        warned = true;
+        k = 1;
+      } else k = Math.min(Math.max(V.w / S.w, V.h / S.h) * 1.04, 60);
+      for (const el of [...outer, ...inner]) {
+        const r = stage.measure(el);
+        centre.set(el, { x: r.x + r.w / 2, y: r.y + r.h / 2 });
+      }
+    });
+    const q = (p) => (out ? 1 - p : p);
+    const view = (qq) => E.Camera.mix({ x: cV.x, y: cV.y, s: 1, r: 0 }, { x: cS.x, y: cS.y, s: k, r: 0 }, ease(span(qq, DIVE, 1)));
+    const ID = { x: 0, y: 0, s: 1 };
+    // The outer scene rides the dive: the screen centre goes to the frame centre while it scales by k.
+    const outerAt = (el, v) => {
+      const c = centre.get(el) || cV;
+      return { x: cV.x - c.x + v.s * (c.x - v.x), y: cV.y - c.y + v.s * (c.y - v.y), s: v.s };
+    };
+    // The inner scene is the dive composed with the inverse of its end state: it starts fitted inside the
+    // screen (scale 1/k) and arrives untransformed (scale 1) exactly when the screen fills the frame.
+    const innerAt = (el, v) => {
+      const c = centre.get(el) || cV, sc = v.s / k;
+      return { x: cV.x - c.x + v.s * (cS.x - v.x) + sc * (c.x - cV.x), y: cV.y - c.y + v.s * (cS.y - v.y) + sc * (c.y - cV.y), s: sc };
+    };
+    const memoPose = (fn) => {
+      let lp = NaN, lg = -1, val = ID;
+      return (p) => (p === lp && gen === lg ? val : ((lp = p), (lg = gen), (val = fn(p))));
+    };
+    const props = (tf, opacity) => ({ x: (p) => r3(tf(p).x), y: (p) => r3(tf(p).y), scale: (p) => tf(p).s, opacity });
+
+    // Every element is untransformed at both ends of the transition; the zoomed poses exist only while the
+    // element is invisible at that end, so reusing a scene later with another transition finds no residue.
+    for (const el of outer) {
+      const tf = memoPose((p) => (q(p) >= 1 ? ID : outerAt(el, view(q(p)))));
+      tl.tween(el, props(tf, (p) => 1 - E.ease.inOut(span(q(p), OUTER, 1))), at);
+    }
+    for (const el of inner) {
+      const tf = memoPose((p) => (q(p) <= 0 ? ID : innerAt(el, view(q(p)))));
+      tl.tween(el, props(tf, (p) => E.ease.out(span(q(p), 0, INNER))), at);
+    }
+    const screenContentOpacity = (p) => (q(p) >= 1 ? 1 : 1 - E.ease.out(span(q(p), 0, INNER)));
+    if (content.length) tl.tween(content, { opacity: screenContentOpacity }, at);
+
+    return finish();
+  };
+  E.fx["screen-dive"].kind = "transition";
 })();
 
 </script>
 <script >
 (() => {
   const E = window.Eidos;
-  E.fx["stagger-reveal"] = (stage, o = {}) => {
-    const { tl } = stage;
-    const items = E.$all(o.targets ?? o.target, stage.world);
-    const extra = E.$all(o.dim, stage.world);
-    const each = o.each ?? 0.1;
-    const dur = o.dur ?? 0.5;
-    const dist = o.dist ?? 14;
-    const dimTo = o.dimTo ?? 0.45;
-    const dimDur = o.dimDur ?? dur * 0.6;
-    const ease = o.ease ?? "out";
-    const per = Math.max(1, o.per ?? 1);
-    const offset = { up: { y: dist }, down: { y: -dist }, left: { x: dist }, right: { x: -dist }, none: {} }[o.dir ?? "up"] || {};
-    const labels = Array.isArray(o.stops) ? o.stops : [];
-    const groups = o.stops ? Array.from({ length: Math.ceil(items.length / per) }, (_, g) => items.slice(g * per, g * per + per)) : [items];
-    const level = (el) => el.__eidosLevel ?? 1;
-    const dim = (el, at) => {
-      if (level(el) <= dimTo + 1e-9) return;
-      tl.tween(el, { opacity: [level(el), dimTo] }, { at, dur: dimDur });
-      el.__eidosLevel = dimTo;
-    };
-    const start = tl.resolveAt(o.at);
-    const times = [];
-    let prev = null;
-    groups.forEach((group, g) => {
-      const base = g === 0 ? start : tl.end;
-      group.forEach((el, i) => {
-        const at = base + i * each;
-        const props = { opacity: [0, 1] };
-        if (offset.x != null) props.x = [offset.x, 0];
-        if (offset.y != null) props.y = [offset.y, 0];
-        tl.tween(el, props, { at, dur, ease });
-        el.__eidosLevel = 1;
-        if (!times.length) for (const d of extra) dim(d, at);
-        if (o.disclose && prev) dim(prev.el, Math.max(at, prev.at + dur));
-        times.push({ el, start: at, end: at + dur });
-        prev = { el, at };
-      });
-      if (o.stops) tl.stop(labels[g] ?? "");
-    });
-    const end = times.length ? Math.max(...times.map((t) => t.end)) : start;
-    return {
-      start,
-      end,
-      items: times,
-      restore(r = {}) {
-        const at = tl.resolveAt(r.at);
-        const d = r.dur ?? dimDur;
-        for (const el of [...items, ...extra]) {
-          if (level(el) >= 1) continue;
-          tl.tween(el, { opacity: [level(el), 1] }, { at, dur: d });
-          el.__eidosLevel = 1;
-        }
-        tl.extend(at + d);
-        return { start: at, end: at + d };
-      },
-    };
+  const FLASHES = ["invert", "contrast", false];
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
   };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`smash-cut: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+  const layer = (cls, css) => {
+    const el = document.createElement("div");
+    el.className = cls;
+    el.setAttribute("aria-hidden", "true");
+    Object.assign(el.style, { position: "absolute", inset: "0", pointerEvents: "none", visibility: "hidden", ...css });
+    return el;
+  };
+
+  E.fx["smash-cut"] = (stage, o = {}) => {
+    const { tl, world } = stage;
+    const { r3, clamp01, lerp } = E.util;
+    const flash = o.flash ?? "invert";
+    if (!FLASHES.some((f) => f === flash)) fail(`smash-cut: flash must be "invert", "contrast" or false (got ${JSON.stringify(o.flash)})`);
+    if (o.slam != null && (typeof o.slam !== "string" || !o.slam.trim())) fail(`smash-cut: slam must be a non-empty string (got ${JSON.stringify(o.slam)})`);
+    const slam = E.reduced ? null : o.slam ?? null;
+    const lit = !E.reduced && flash !== false;
+    // The swap happens right after start; dur is how long the flash or slam card lasts, 0 for a pure cut.
+    // An explicit dur is always honoured (end = start + dur); a pure cut defaults to 0.
+    const dur = durOf(o.dur ?? (slam ? 1.1 : lit ? 0.45 : 0));
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    const cut = (p) => p > 0;
+    if (o.from) tl.tween(o.from, { opacity: (p) => (cut(p) ? 0 : 1) }, at);
+    if (o.to) tl.tween(o.to, { opacity: (p) => (cut(p) ? 1 : 0) }, at);
+    const on = (p) => p > 0 && p < 1;
+
+    if (slam) {
+      // Slam card: full-bleed inverted panel with one huge line, then it drops away to the new scene.
+      const card = layer("eidos-fx-smash-cut-slam", {
+        display: "grid", placeItems: "center", padding: "6vw", background: "var(--eidos-fg)",
+      });
+      const word = document.createElement("div");
+      word.textContent = slam;
+      Object.assign(word.style, {
+        color: "var(--eidos-bg)", fontWeight: "800", fontSize: "clamp(48px, 13vw, 190px)", lineHeight: "1",
+        letterSpacing: "-0.03em", textAlign: "center", wordBreak: "keep-all", fontVariantNumeric: "tabular-nums",
+      });
+      card.append(word);
+      world.after(card);
+      const HOLD = 0.62;
+      tl.tween(card, {
+        style: (p) => {
+          if (!on(p)) return { visibility: "hidden", opacity: "0" };
+          return { visibility: "visible", opacity: String(r3(p < HOLD ? 1 : 1 - E.ease.in(clamp01((p - HOLD) / (1 - HOLD))))) };
+        },
+      }, at);
+      tl.tween(word, { scale: (p) => (on(p) ? lerp(1.18, 1, E.ease.out(clamp01(p / 0.25))) : 1) }, at);
+    } else if (lit && flash === "invert") {
+      // Invert flash: white with difference blending flips every colour, then decays.
+      const inv = layer("eidos-fx-smash-cut-flash", { background: "#fff", mixBlendMode: "difference" });
+      world.after(inv);
+      tl.tween(inv, {
+        style: (p) => (on(p) ? { visibility: "visible", opacity: String(r3(p < 0.35 ? 1 : 1 - E.ease.out((p - 0.35) / 0.65))) } : { visibility: "hidden", opacity: "0" }),
+      }, at);
+    } else if (lit && flash === "contrast") {
+      if (o.to) tl.tween(o.to, { style: (p) => ({ filter: on(p) ? `contrast(${r3(lerp(2.2, 1, E.ease.out(p)))}) saturate(${r3(lerp(1.6, 1, E.ease.out(p)))})` : "none" }) }, at);
+    }
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["smash-cut"].kind = "transition";
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`jump-cut: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+
+  E.fx["jump-cut"] = (stage, o = {}) => {
+    const { tl, world } = stage;
+    const { r3 } = E.util;
+    const flash = o.flash ?? true;
+    if (typeof flash !== "boolean") fail(`jump-cut: flash must be true or false (got ${JSON.stringify(o.flash)})`);
+    const peak = o.strength ?? 0.22;
+    if (typeof peak !== "number" || !(peak >= 0 && peak <= 1)) fail(`jump-cut: strength must be a number in [0, 1] (got ${JSON.stringify(o.strength)})`);
+    // The swap happens right after start (exactly at start the previous state stays); dur is the flash length, 0 without it.
+    const lit = flash && !E.reduced;
+    // An explicit dur is always honoured (end = start + dur); without a flash it defaults to 0.
+    const dur = durOf(o.dur ?? (lit ? 0.08 : 0));
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    if (o.from) tl.tween(o.from, { opacity: (p) => (p > 0 ? 0 : 1) }, at);
+    if (o.to) tl.tween(o.to, { opacity: (p) => (p > 0 ? 1 : 0) }, at);
+    if (lit) {
+      const veil = document.createElement("div");
+      veil.className = "eidos-fx-jump-cut";
+      veil.setAttribute("aria-hidden", "true");
+      Object.assign(veil.style, { position: "absolute", inset: "0", pointerEvents: "none", background: "var(--eidos-fg)", opacity: "0" });
+      world.after(veil);
+      tl.tween(veil, { style: (p) => ({ opacity: String(p > 0 && p < 1 ? r3(peak * (1 - p)) : 0) }) }, at);
+    }
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["jump-cut"].kind = "transition";
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  // Text colour that reads on each dip colour; anything else falls back to the accent foreground.
+  const ON = { fg: "bg", "surface-fg": "bg", bg: "fg", surface: "fg", "fill-warm": "fg", "fill-cool": "fg", border: "fg" };
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`dip-to-color: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`dip-to-color: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
+
+  E.fx["dip-to-color"] = (stage, o = {}) => {
+    const { tl, world } = stage;
+    const { r3, clamp01 } = E.util;
+    const color = o.color ?? "fg";
+    if (typeof color !== "string" || !/^[a-z0-9-]+$/.test(color) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${color}`).trim()) {
+      fail(`dip-to-color: color must name an --eidos-* token such as "fg", "accent" or "cat-4" (got ${JSON.stringify(o.color)})`);
+    }
+    if (o.title != null && (typeof o.title !== "string" || !o.title.trim())) fail(`dip-to-color: title must be a non-empty string (got ${JSON.stringify(o.title)})`);
+    const dur = durOf(o.dur ?? (o.title ? 2 : 1.2));
+    const hold = o.hold ?? (o.title ? 0.4 : 0.15);
+    if (!Number.isFinite(hold) || hold < 0 || hold >= 1) fail(`dip-to-color: hold must be a fraction in [0, 1) (got ${JSON.stringify(o.hold)})`);
+    const ease = easeOf(o.ease ?? "inOut");
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    const a = (1 - hold) / 2, b = a + hold; // fade in [0, a], hold [a, b], fade out [b, 1]
+    const mid = (a + b) / 2;
+
+    const veil = document.createElement("div");
+    veil.className = "eidos-fx-dip-to-color";
+    veil.setAttribute("aria-hidden", "true");
+    Object.assign(veil.style, {
+      position: "absolute", inset: "0", pointerEvents: "none", visibility: "hidden", background: `var(--eidos-${color})`,
+      display: "grid", placeItems: "center", padding: "8vw",
+    });
+    let title = null;
+    if (o.title) {
+      title = document.createElement("div");
+      title.textContent = o.title;
+      Object.assign(title.style, {
+        color: `var(--eidos-${Object.hasOwn(ON, color) ? ON[color] : "accent-fg"})`, fontWeight: "700", fontSize: "clamp(28px, 5.2vw, 64px)",
+        lineHeight: "1.2", textAlign: "center", wordBreak: "keep-all", letterSpacing: "-0.01em",
+      });
+      veil.append(title);
+    }
+    world.after(veil);
+
+    const cover = (p) => (p <= 0 || p >= 1 ? 0 : p < a ? ease(p / a) : p <= b ? 1 : 1 - ease((p - b) / (1 - b)));
+    tl.tween(veil, { style: (p) => { const c = cover(p); return { visibility: c > 0 ? "visible" : "hidden", opacity: String(r3(c)) }; } }, at);
+    if (title) {
+      // Title reads only while the colour fully covers the frame.
+      const span = Math.max(hold, 1e-6);
+      tl.tween(title, {
+        opacity: (p) => (p <= a || p >= b ? 0 : Math.min(1, ((p - a) / span) * 4, ((b - p) / span) * 4)),
+        y: (p) => (E.reduced ? 0 : r3(10 * (1 - E.ease.out(clamp01((p - a) / span))))),
+      }, at);
+    }
+    if (o.from) tl.tween(o.from, { opacity: (p) => (p < mid ? 1 : 0) }, at);
+    if (o.to) tl.tween(o.to, { opacity: (p) => (p >= mid ? 1 : 0) }, at);
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["dip-to-color"].kind = "transition";
 })();
 
 </script>
@@ -927,48 +2115,516 @@ body {
 })();
 
 </script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["stagger-reveal"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const items = E.$all(o.targets ?? o.target, stage.world);
+    const extra = E.$all(o.dim, stage.world);
+    const each = o.each ?? 0.1;
+    const dur = o.dur ?? 0.5;
+    const dist = o.dist ?? 14;
+    const dimTo = o.dimTo ?? 0.45;
+    const dimDur = o.dimDur ?? dur * 0.6;
+    const ease = o.ease ?? "out";
+    const per = Math.max(1, o.per ?? 1);
+    const offset = { up: { y: dist }, down: { y: -dist }, left: { x: dist }, right: { x: -dist }, none: {} }[o.dir ?? "up"] || {};
+    const labels = Array.isArray(o.stops) ? o.stops : [];
+    const groups = o.stops ? Array.from({ length: Math.ceil(items.length / per) }, (_, g) => items.slice(g * per, g * per + per)) : [items];
+    const level = (el) => el.__eidosLevel ?? 1;
+    const dim = (el, at) => {
+      if (level(el) <= dimTo + 1e-9) return;
+      tl.tween(el, { opacity: [level(el), dimTo] }, { at, dur: dimDur });
+      el.__eidosLevel = dimTo;
+    };
+    const start = tl.resolveAt(o.at);
+    const times = [];
+    let prev = null;
+    groups.forEach((group, g) => {
+      const base = g === 0 ? start : tl.end;
+      group.forEach((el, i) => {
+        const at = base + i * each;
+        const props = { opacity: [0, 1] };
+        if (offset.x != null) props.x = [offset.x, 0];
+        if (offset.y != null) props.y = [offset.y, 0];
+        tl.tween(el, props, { at, dur, ease });
+        el.__eidosLevel = 1;
+        if (!times.length) for (const d of extra) dim(d, at);
+        if (o.disclose && prev) dim(prev.el, Math.max(at, prev.at + dur));
+        times.push({ el, start: at, end: at + dur });
+        prev = { el, at };
+      });
+      if (o.stops) tl.stop(labels[g] ?? "");
+    });
+    const end = times.length ? Math.max(...times.map((t) => t.end)) : start;
+    return {
+      start,
+      end,
+      items: times,
+      restore(r = {}) {
+        const at = tl.resolveAt(r.at);
+        const d = r.dur ?? dimDur;
+        for (const el of [...items, ...extra]) {
+          if (level(el) >= 1) continue;
+          tl.tween(el, { opacity: [level(el), 1] }, { at, dur: d });
+          el.__eidosLevel = 1;
+        }
+        tl.extend(at + d);
+        return { start: at, end: at + d };
+      },
+    };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const { r3, clamp01 } = E.util;
+  const lin = (p) => p;
+  // A stop at a tween's end sees x = ((at + dur) - at) / dur, which floats can leave a hair under 1.
+  const snap = (x) => (x > 1 - 1e-9 ? 1 : x < 1e-9 ? 0 : x);
+  const expo = E.bezier(0.16, 1, 0.3, 1);
+  const SCALE = { slam: 2.6, "scale-in": 0.55, pulse: 1.18 };
+  const DUR = { sweep: 0.6, slam: 0.55, "scale-in": 0.6, pulse: 0.5 };
+  const DIR = { right: [-1, 0], left: [1, 0], up: [0, 1], down: [0, -1] };
+
+  // Words are whitespace-separated runs, so a Korean eojeol stays whole; child elements
+  // join the run they touch (<b>KV</b>캐시는 is one word) and each run becomes one nowrap inline-block.
+  function words(el) {
+    if (el.__eidosWords) return el.__eidosWords;
+    const toks = [];
+    for (const node of [...el.childNodes]) {
+      if (node.nodeType === 3) {
+        for (const part of node.nodeValue.split(/(\s+)/))
+          if (part) toks.push(/^\s+$/.test(part) ? { gap: document.createTextNode(part) } : { node: document.createTextNode(part) });
+      } else if (node.nodeType === 1 && node.tagName !== "BR") toks.push({ node });
+      else toks.push({ gap: node });
+    }
+    el.textContent = "";
+    const list = [];
+    let cur = null;
+    for (const t of toks) {
+      if (t.gap) {
+        cur = null;
+        el.appendChild(t.gap);
+        continue;
+      }
+      if (!cur) {
+        cur = document.createElement("span");
+        cur.className = "eidos-word";
+        cur.style.cssText = "display:inline-block;white-space:nowrap";
+        list.push(el.appendChild(cur));
+      }
+      cur.appendChild(t.node);
+    }
+    el.style.wordBreak = "keep-all";
+    return (el.__eidosWords = list);
+  }
+
+  const MOVES = {
+    sweep: (q, m) => {
+      const e = expo(q);
+      return { x: m.dx * (1 - e), y: m.dy * (1 - e), s: 1, op: clamp01(q / 0.45) };
+    },
+    slam: (q, m) => {
+      const hit = 0.72;
+      const s = q < hit ? 1 + (m.scale - 1) * (1 - (q / hit) ** 2) : 1 - 0.07 * Math.sin((Math.PI * (q - hit)) / (1 - hit));
+      return { x: 0, y: 0, s, op: clamp01(q / 0.2) };
+    },
+    "scale-in": (q, m) => ({ x: 0, y: 0, s: m.scale + (1 - m.scale) * expo(q), op: clamp01(q / 0.5) }),
+    pulse: (q, m) => ({ x: 0, y: 0, s: 1 + (m.scale - 1) * Math.sin(Math.PI * q), op: 1 }),
+  };
+
+  E.fx["kinetic-type"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const move = o.move ?? "sweep";
+    const emMove = o.emMove ?? "slam";
+    for (const m of [move, emMove]) if (!MOVES[m]) throw new Error(`kinetic-type: unknown move "${m}" (sweep, slam, scale-in, pulse)`);
+    const lines = E.$all(o.targets ?? o.target, stage.world);
+    if (!lines.length) throw new Error(`kinetic-type: no element for targets ${o.targets ?? o.target}`);
+    const list = lines.flatMap(words);
+    const isEm = (w, i) =>
+      Array.isArray(o.em) ? o.em.includes(i) : typeof o.em === "string" ? w.matches(o.em) || !!w.querySelector(o.em) : false;
+    const each = o.each ?? 0.09;
+    const beat = o.beat ?? 0.12;
+    const [ux, uy] = DIR[o.dir ?? "right"] ?? DIR.right;
+    const dist = o.dist ?? 40;
+    const spec = (name, own) => ({
+      fn: MOVES[name],
+      dur: own ? o.dur ?? DUR[name] : DUR[name] * 1.1,
+      m: { scale: own ? o.scale ?? SCALE[name] : SCALE[name], dx: ux * dist, dy: uy * dist },
+    });
+    let t = 0;
+    const plan = list.map((w, i) => {
+      const em = isEm(w, i);
+      if (em && i > 0) t += beat;
+      const sp = em ? spec(emMove, emMove === move) : spec(move, true);
+      const it = { w, em, at: t, ...sp };
+      t += each;
+      return it;
+    });
+    const total = plan.length ? Math.max(...plan.map((it) => it.at + it.dur)) : 0;
+    const start = tl.resolveAt(o.at);
+    if (E.reduced) {
+      for (const it of plan) tl.add(
+        (p) => {
+          it.w.style.transform = "translate(0px, 0px) scale(1)";
+          it.w.style.opacity = String(it.fn === MOVES.pulse ? 1 : p);
+        },
+        { at: start + it.at, dur: 0, ease: lin },
+      );
+    } else tl.add(
+      (x) => {
+        const T = snap(x) * total;
+        for (const it of plan) {
+          const q = it.dur > 0 ? clamp01((T - it.at) / it.dur) : 1;
+          const v = it.fn(q, it.m);
+          it.w.style.transform = `translate(${r3(v.x)}px, ${r3(v.y)}px) scale(${r3(v.s)})`;
+          it.w.style.opacity = String(r3(v.op));
+        }
+      },
+      { at: start, dur: total, ease: lin },
+    );
+    tl.prevStart = start;
+    tl.extend(start + total);
+    return {
+      start,
+      end: start + total,
+      items: plan.map((it) => ({ el: it.w, start: start + it.at, end: start + it.at + it.dur, em: it.em })),
+    };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const r3 = E.util.r3;
+  const expo = E.bezier(0.16, 1, 0.3, 1);
+  const clip = (dir, v) =>
+    dir === "left" ? `inset(0 0 0 ${v}%)` : dir === "down" ? `inset(0 0 ${v}% 0)` : dir === "up" ? `inset(${v}% 0 0 0)` : `inset(0 ${v}% 0 0)`;
+  E.fx["mask-reveal"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const lines = E.$all(o.targets ?? o.target, stage.world);
+    const mode = o.mode ?? "slide";
+    const dir = o.dir ?? (mode === "wipe" ? "right" : "up");
+    const dur = o.dur ?? (mode === "wipe" ? 0.6 : 0.8);
+    const each = o.each ?? 0.14;
+    const ease = o.ease ?? expo;
+    const start = tl.resolveAt(o.at);
+    const items = lines.map((line, i) => {
+      const at = start + i * each;
+      const inline = getComputedStyle(line).display === "inline";
+      if (inline) line.style.display = "inline-block";
+      if (mode === "wipe") {
+        tl.tween(line, { style: (p) => ({ clipPath: clip(dir, r3((1 - p) * 100)) }) }, { at, dur, ease });
+      } else {
+        const wrap = document.createElement(inline ? "span" : "div");
+        wrap.className = "eidos-mask";
+        wrap.style.cssText = `display:${inline ? "inline-block" : "block"};overflow:hidden;vertical-align:bottom;padding:0.1em 0.12em 0.16em;margin:-0.1em -0.12em -0.16em`;
+        line.parentNode.insertBefore(wrap, line);
+        wrap.appendChild(line);
+        const sign = dir === "down" ? -1 : 1;
+        tl.tween(line, { style: (p) => ({ transform: `translateY(${r3(sign * (1 - p) * 120)}%)` }) }, { at, dur, ease });
+      }
+      return { el: line, start: at, end: at + dur };
+    });
+    return { start, end: items.length ? items[items.length - 1].end : start, items };
+  };
+})();
+
+</script>
 <script>
   const s = Eidos.stage();
   const { tl } = s;
-  tl.tween("#scene-a header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" });
-  const seq = s.fx("sequence-message", {
-    el: "#seq",
-    at: "<+=0.2",
+  const { lerp, r3 } = Eidos.util;
+  const $ = (q) => document.querySelector(q);
+
+  // ---------- 이동하는 값(칩) ----------
+  // 칩은 start() 전에 모두 만들고, 위치는 레이아웃 좌표를 transform으로만 바꾼다.
+  const chips = [];
+  function chip(parent, cls, text) {
+    const el = document.createElement("span");
+    el.className = "chip " + cls;
+    el.textContent = text;
+    el.__w = 0; el.__h = 0;
+    $(parent).appendChild(el);
+    chips.push(el);
+    return el;
+  }
+  const pt = (x, y) => ({ x, y });
+  // from/to는 world 좌표 {x, y}를 돌려주는 함수. 모든 트윈이 x, y, opacity, scale을 명시한다.
+  function move(el, from, to, o = {}) {
+    const op = o.appear ? (p) => p : o.vanish ? (p) => 1 - p : () => 1;
+    const sc = o.pop ? (p) => lerp(0.6, 1, p) : o.shrink ? (p) => lerp(1, 0.6, p) : () => 1;
+    tl.tween(el, {
+      x: (p) => r3(lerp(from().x, to().x, p) - el.__w / 2),
+      y: (p) => r3(lerp(from().y, to().y, p) - el.__h / 2),
+      opacity: (p) => r3(op(p)),
+      scale: (p) => r3(sc(p)),
+    }, { at: o.at, dur: o.dur ?? 0.7, ease: o.ease ?? "inOut" });
+  }
+  const stay = (el, at, pos, o = {}) => move(el, pos, pos, { at, dur: 0.3, ease: "out", ...o });
+  // 상자 안 슬롯의 오른쪽 7/10 지점: 라벨 글자와 겹치지 않는 자리
+  const slotPt = (sel) => () => { const r = s.measure(sel); return pt(r.x + r.w * 0.7, r.y + r.h / 2); };
+  const below = (fn, dy) => () => { const q = fn(); return pt(q.x, q.y + dy); };
+  const mid = (a, b) => () => { const p = a(), q = b(); return pt((p.x + q.x) / 2, (p.y + q.y) / 2); };
+  // 체크/✗ 표시: 선이 그려지는 동안만 보인다
+  const draw = (sel, at, dur = 0.3) => tl.tween(sel, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at, dur, ease: "out" });
+  const BELOW = 21; // 두 번째 칩을 첫 칩 아래로 내리는 거리(px)
+
+  // ---------- 장면 1: flow ----------
+  const ACTORS = [
+    { id: "user", label: "브라우저" },
+    { id: "client", label: "우리 서비스" },
+    { id: "auth", label: "인증 서버" },
+    { id: "api", label: "리소스 서버" },
+  ];
+  const LANE = { user: 0, client: 1, auth: 2, api: 3 };
+  const MSG_DUR = 1.0;
+  const P = { lane: [0, 0, 0, 0], rowA: [], rowB: [] };
+  const rowsA = () => P.rowA, rowsB = () => P.rowB;
+  // 도착한 칩은 화살촉 바로 앞에 선다: 생명선 간격의 11%, 최대 30px (좁은 화면에서는 라벨과 겹치지 않게 더 가까이)
+  const PARK = () => Math.min(30, Math.abs(P.lane[1] - P.lane[0]) * 0.11);
+  // 행 i의 화살표 위, 행위자 id의 생명선에서 dx만큼 옆(숫자 또는 함수), dy만큼 아래
+  const onRow = (rows, i, id, dx = 0, dy = 0) => () => pt(P.lane[LANE[id]] + (typeof dx === "function" ? dx() : dx), rows()[i] + dy);
+  const dirOf = (from, to) => Math.sign(LANE[to] - LANE[from]) || 1;
+  // 메시지 i의 화살표가 그려지기 시작하는 시각 = 그 스톱 시각 - MSG_DUR
+  const rowAt = (stops, i) => stops[i] - MSG_DUR;
+  // 칩이 화살표를 타고 간다: 출발 생명선 → 도착 화살촉 바로 앞(30px). 도착점을 돌려준다
+  function ride(el, rows, stops, i, from, to, o = {}) {
+    const dir = dirOf(from, to);
+    const t0 = rowAt(stops, i) + (o.lead ?? 0.3);
+    const dest = onRow(rows, i, to, () => -dir * PARK(), o.dy ?? 0);
+    move(el, o.from ?? onRow(rows, i, from, 0, o.dy ?? 0), dest, { at: t0, dur: stops[i] - t0 });
+    return dest;
+  }
+  // 칩이 자기 생명선을 타고 다음 행으로 내려온다. 새 자리를 돌려준다
+  function drop(el, rows, stops, i, pos, id, dx, dy = 0) {
+    const next = onRow(rows, i, id, dx, dy);
+    move(el, pos, next, { at: rowAt(stops, i), dur: 0.3, ease: "out" });
+    return next;
+  }
+
+  s.scene("flow", { el: "#flow", title: "로그인 흐름" });
+  tl.tween("#flow header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" });
+  const MESSAGES_A = [
+    { from: "user", to: "client", label: "로그인 클릭", note: "1. 사용자가 \"구글로 로그인\"을 누릅니다" },
+    { from: "client", to: "user", label: "인증 서버로 리다이렉트", reply: true, note: "2. 서비스는 client_id와 state를 붙여 구글로 보냅니다" },
+    { from: "user", to: "auth", label: "로그인 + 권한 동의", note: "3. 비밀번호는 구글 화면에만 입력합니다" },
+    { from: "auth", to: "client", label: "code 전달 (리다이렉트)", reply: true, note: "4. 구글이 일회용 authorization code를 돌려줍니다" },
+    { from: "client", to: "auth", label: "code + secret으로 토큰 요청", note: "5. 서버끼리 직접, client_secret과 함께 code를 교환합니다" },
+  ];
+  const seqA = s.fx("sequence-message", {
+    el: "#seq-a", at: "<+=0.2", dur: MSG_DUR,
     intro: "등장인물은 넷: 사용자 브라우저, 우리 서비스, 구글 인증 서버, 구글 API",
-    actors: [
-      { id: "user", label: "브라우저" },
-      { id: "client", label: "우리 서비스" },
-      { id: "auth", label: "인증 서버" },
-      { id: "api", label: "리소스 서버" },
-    ],
-    messages: [
-      { from: "user", to: "client", label: "로그인 클릭", note: "1. 사용자가 \"구글로 로그인\"을 누릅니다" },
-      { from: "client", to: "user", label: "인증 서버로 리다이렉트", reply: true, note: "2. 서비스는 client_id와 state를 붙여 구글로 보냅니다" },
-      { from: "user", to: "auth", label: "로그인 + 권한 동의", note: "3. 비밀번호는 구글 화면에만 입력합니다" },
-      { from: "auth", to: "client", label: "code 전달 (리다이렉트)", reply: true, note: "4. 구글이 일회용 authorization code를 돌려줍니다" },
-      { from: "client", to: "auth", label: "code + secret으로 토큰 요청", note: "5. 서버끼리 직접, client_secret과 함께 code를 교환합니다" },
-      { from: "auth", to: "client", label: "access token", reply: true, note: "6. 토큰은 브라우저를 거치지 않고 서버로 옵니다" },
-      { from: "client", to: "api", label: "token으로 API 호출", note: "7. Authorization: Bearer 헤더로 API를 부릅니다" },
-      { from: "api", to: "client", label: "프로필 데이터", reply: true, note: "8. 이름과 이메일을 받아 로그인을 마칩니다" },
-    ],
+    actors: ACTORS, messages: MESSAGES_A,
   });
+  const stopsA = tl.stops.slice(-MESSAGES_A.length).map((st) => st.t);
+
+  const cId = chip("#flow", "chip-id", "client_id");
+  const cPw = chip("#flow", "chip-pw", "비밀번호");
+  const cCode = chip("#flow", "chip-code", "code");
+  const cSecret = chip("#flow", "chip-secret", "client_secret");
+  const cToken = chip("#flow", "chip-token", "access_token");
+  const cData = chip("#flow", "chip-data", "프로필");
+
+  // 2. 서비스 → 브라우저: client_id가 나타나 되돌아가는 화살표를 탄다
+  stay(cId, rowAt(stopsA, 1) + 0.05, onRow(rowsA, 1, "client"), { appear: true, dur: 0.25 });
+  let idPos = ride(cId, rowsA, stopsA, 1, "client", "user");
+  // 3. 브라우저 → 인증 서버: client_id는 한 행 내려오고, 비밀번호가 나타나 함께 간다. 둘은 거기 머문다
+  idPos = drop(cId, rowsA, stopsA, 2, idPos, "user", PARK, BELOW);
+  stay(cPw, rowAt(stopsA, 2) + 0.05, onRow(rowsA, 2, "user"), { appear: true, dur: 0.25 });
+  ride(cId, rowsA, stopsA, 2, "user", "auth", { from: idPos, dy: BELOW });
+  ride(cPw, rowsA, stopsA, 2, "user", "auth");
+  // 4. 인증 서버 → 서비스: code가 나타나 리다이렉트 화살표를 탄다
+  stay(cCode, rowAt(stopsA, 3) + 0.05, onRow(rowsA, 3, "auth"), { appear: true, dur: 0.25 });
+  let codePos = ride(cCode, rowsA, stopsA, 3, "auth", "client");
+  // 5. 서비스 → 인증 서버: code는 내려오고 secret이 그 아래 나타나 함께 간다
+  codePos = drop(cCode, rowsA, stopsA, 4, codePos, "client", PARK);
+  const secretStart = onRow(rowsA, 4, "client", PARK, BELOW);
+  stay(cSecret, rowAt(stopsA, 4) + 0.05, secretStart, { appear: true, dur: 0.25 });
+  const codeAtAuth = ride(cCode, rowsA, stopsA, 4, "client", "auth", { from: codePos });
+  const secretAtAuth = ride(cSecret, rowsA, stopsA, 4, "client", "auth", { from: secretStart, dy: BELOW });
+
+  // 프리즈: 교환 화살표 아래의 빈 자리에 주석을 단다
   const ff = s.fx("freeze-frame", {
-    target: "#seq",
-    dim: "#scene-a header",
+    target: "#seq-a",
+    dim: "#flow header",
     annotations: [
-      { target: seq.rows[2].label, text: "비밀번호는 여기서만 오갑니다", place: "above", dx: 300 },
-      { target: seq.rows[5].label, text: "토큰은 브라우저를 거치지 않습니다", place: "below", dx: -300 },
+      { target: seqA.rows[4].label, text: "code는 여기서 한 번 쓰이고 폐기됩니다", place: "below", dx: -300, width: 220 },
+      { target: seqA.rows[4].label, text: "client_secret은 우리 서버에만 있습니다", place: "below", dx: -70, width: 220 },
     ],
   });
-  tl.stop("멈춰서 보면: 비밀번호와 토큰이 지나가는 길이 서로 다릅니다");
+  tl.stop("멈춰서 보면: 이 교환에 브라우저는 없습니다");
   ff.release();
-  s.fx("cross-dissolve", { from: "#scene-a", to: "#scene-b", dur: 0.8 });
-  s.fx("stagger-reveal", { targets: ".point", at: "-=0.2", stops: ["1. 비밀번호는 구글만 봅니다", "2. 브라우저에는 일회용 code만", "3. 토큰 교환은 서버끼리"] });
-  tl.tween(".conclusion", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
-  s.fx("highlight-sweep", { targets: "#kw1" });
+
+  // ---------- 장면 2: inside (인증 서버 안) ----------
+  const AUTH_CARD = "#seq-a .eidos-seq-actor:nth-child(3)";
+  s.scene("inside", {
+    el: "#inside", via: "screen-dive", with: { screen: AUTH_CARD, dur: 1.4 },
+    reason: "인증 서버 카드라는 창 안으로 들어감", title: "인증 서버 안",
+  });
+  // 장부 행 취소선: 레이아웃 때 행의 위치를 재서 d를 정한다
+  s.onLayout(() => {
+    const card = s.measure(".ledger"), row = s.measure("#row-hit");
+    const x0 = row.x - card.x + 6, x1 = row.x + row.w - card.x - 6, y = row.y - card.y + row.h / 2;
+    $("#strike-hit").setAttribute("d", "M " + r3(x0) + " " + r3(y) + " L " + r3(x1) + " " + r3(y));
+  });
+  // inside.1 요청이 들어오고 장부에서 code를 찾는다
+  tl.tween("#req1", { opacity: [0, 1], x: [-60, 0] }, { dur: 0.6, ease: "out" });
+  s.fx("highlight-sweep", { targets: "#hit-code", at: "<+=0.4" });
+  draw("#chk1 path", "<+=0.2");
+  tl.tween("#chk1 span", { opacity: [0.55, 1] }, { at: "<", dur: 0.3 });
+  tl.stop("서버는 요청에 담긴 code를 자기 장부에서 찾습니다");
+  // inside.2 발급 조건 세 가지
+  for (const [k, c] of ["#chk2", "#chk3", "#chk4"].entries()) {
+    draw(c + " path", k === 0 ? undefined : "<+=0.3");
+    tl.tween(c + " span", { opacity: [0.55, 1] }, { at: "<", dur: 0.3 });
+  }
+  tl.stop("client_id, redirect_uri, client_secret이 발급 때와 같아야 합니다");
+  // inside.3 code 소모, token 발급
+  tl.tween("#strike-hit", { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { dur: 0.5, ease: "inOut" });
+  tl.tween("#hit-state", { text: (p) => (p >= 1 ? "사용됨" : "발급 2분 전") }, { at: "<", dur: 0.5, ease: "linear" });
+  tl.tween("#row-hit td", { opacity: [1, 0.55] }, { at: "<", dur: 0.5 });
+  tl.tween("#tok", { opacity: [0, 1], scale: [0.6, 1] }, { at: "<+=0.3", dur: 0.5, ease: "pop" });
+  tl.stop("검사가 끝나면 code는 사용됨으로 지워지고 token이 발급됩니다");
+  // inside.4 같은 code로 다시 오면 거절
+  tl.tween("#req2", { opacity: [0, 1], x: [-60, 0] }, { dur: 0.5, ease: "out" });
+  draw("#req2 .x1", "+=0.1", 0.2);
+  draw("#req2 .x2", undefined, 0.2);
+  tl.tween("#tag-used", { opacity: [0, 1], y: [6, 0] }, { at: "<+=0.1", dur: 0.3, ease: "out" });
+  tl.stop("같은 code로 다시 오면 거절됩니다: 한 번 쓴 code는 끝");
+
+  // ---------- 장면 3: exchange (흐름의 아래 절반) ----------
+  const tBack = tl.end;
+  s.scene("exchange", {
+    el: "#flow", via: "screen-dive", with: { out: true, screen: AUTH_CARD, dur: 1.4 },
+    reason: "서버 창에서 다시 전체 흐름으로 나옴", title: "로그인 흐름 (이어서)",
+  });
+  // 서버 안에서 소모된 code와 secret은 돌아올 때 사라져 있다
+  move(cCode, codeAtAuth, codeAtAuth, { at: tBack, dur: 1.4, vanish: true, shrink: true, ease: "in" });
+  move(cSecret, secretAtAuth, secretAtAuth, { at: tBack, dur: 1.4, vanish: true, shrink: true, ease: "in" });
+  const MESSAGES_B = [
+    { from: "auth", to: "client", label: "access token", reply: true, note: "6. 토큰은 브라우저를 거치지 않고 서버로 옵니다" },
+    { from: "client", to: "api", label: "token으로 API 호출", note: "7. Authorization: Bearer 헤더로 API를 부릅니다" },
+    { from: "api", to: "client", label: "프로필 데이터", reply: true, note: "8. 이름과 이메일을 받아 로그인을 마칩니다" },
+  ];
+  const seqB = s.fx("sequence-message", { el: "#seq-b", dur: MSG_DUR, actors: ACTORS, messages: MESSAGES_B });
+  const stopsB = tl.stops.slice(-MESSAGES_B.length).map((st) => st.t);
+  // 6. 인증 서버 → 서비스: token이 튀어나와 서비스로 간다
+  stay(cToken, rowAt(stopsB, 0) + 0.05, onRow(rowsB, 0, "auth"), { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  let tokenPos = ride(cToken, rowsB, stopsB, 0, "auth", "client", { lead: 0.35 });
+  // 7. 서비스 → 리소스 서버: token은 내려와서 API로 간다
+  tokenPos = drop(cToken, rowsB, stopsB, 1, tokenPos, "client", PARK);
+  ride(cToken, rowsB, stopsB, 1, "client", "api", { from: tokenPos });
+  // 8. 리소스 서버 → 서비스: 프로필이 돌아온다
+  stay(cData, rowAt(stopsB, 2) + 0.05, onRow(rowsB, 2, "api"), { appear: true, dur: 0.25 });
+  ride(cData, rowsB, stopsB, 2, "api", "client");
+
+  // 시퀀스 좌표: 생명선 x, 각 행의 화살표 y, 칩 크기 (기법의 레이아웃 뒤에 잰다)
+  s.onLayout(() => {
+    const actors = [...document.querySelectorAll("#seq-a .eidos-seq-actor")];
+    P.lane = actors.map((el) => { const r = s.measure(el); return r.x + r.w / 2; });
+    const rowY = (r) => { const m = s.measure(r.label); return m.y + m.h + 6; };
+    P.rowA = seqA.rows.map(rowY);
+    P.rowB = seqB.rows.map(rowY);
+    for (const c of chips) { c.__w = c.offsetWidth; c.__h = c.offsetHeight; }
+  });
+
+  // ---------- 장면 4: threat (secret이 없는 앱) ----------
+  s.scene("threat", {
+    el: "#threat", via: "smash-cut", with: { slam: "secret이 없다면?" },
+    reason: "안전하다는 기대를 뒤집음: secret을 숨길 서버가 없다면", title: "secret이 없다면",
+  });
+  const tSecret = chip("#threat", "chip-secret", "client_secret");
+  const tCode = chip("#threat", "chip-code", "code");
+  const tCode2 = chip("#threat", "chip-code", "code");
+  const tToken = chip("#threat", "chip-bad", "access_token");
+  const tSlotSecret = slotPt("#t-slot-secret"), tSrv = slotPt("#t-slot-out"), tAppCode = slotPt("#t-slot-code"), tStolen = slotPt("#t-slot-stolen");
+  // threat.1 secret은 앱 안에 머물 수 없다: 슬롯에서 떨어져 사라지고 "숨길 곳 없음"이 남는다
+  move(tSecret, tSlotSecret, below(tSlotSecret, 70), { at: "+=0.2", dur: 0.7, vanish: true, ease: "in" });
+  tl.tween("#t-nosecret", { opacity: [0, 1], x: [-6, 0] }, { at: "<+=0.45", dur: 0.35, ease: "out" });
+  tl.stop("앱과 SPA의 코드는 사용자 기기에 있어 client_secret을 숨길 수 없습니다");
+  // threat.2 리다이렉트로 돌아오는 code를 가로챈다: 하나는 앱으로, 복사본은 공격자로
+  stay(tCode, undefined, tSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  stay(tCode2, "<", tSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  move(tCode, tSrv, tAppCode, { dur: 1.0 });
+  move(tCode2, tSrv, mid(tSrv, tAppCode), { at: "<", dur: 0.5, ease: "in" });
+  move(tCode2, mid(tSrv, tAppCode), tStolen, { at: "<+=0.5", dur: 0.6, ease: "out" });
+  tl.stop("리다이렉트로 돌아오는 code는 기기 안에서 가로챌 수 있습니다");
+  // threat.3 훔친 code로 교환: 서버는 code만 확인할 수 있고 token을 내준다
+  move(tCode2, tStolen, tSrv, { dur: 0.8 });
+  draw("#t-chk-code path", "<+=0.6");
+  tl.tween("#t-chk-code span", { opacity: [0.45, 1] }, { at: "<", dur: 0.3 });
+  draw("#t-chk-secret path", "<+=0.25", 0.25);
+  tl.tween("#t-chk-secret span", { opacity: [0.45, 1] }, { at: "<", dur: 0.25 });
+  move(tCode2, tSrv, tSrv, { at: "<", dur: 0.3, vanish: true, shrink: true });
+  stay(tToken, undefined, tSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  move(tToken, tSrv, tStolen, { dur: 0.8 });
+  tl.stop("훔친 code로 교환을 요청해도, secret이 없으면 서버는 거절할 근거가 없습니다");
+
+  // ---------- 장면 5: pkce (같은 그림, verifier와 challenge가 더해진 상태) ----------
+  s.scene("pkce", {
+    el: "#pkce", via: "jump-cut",
+    reason: "같은 그림의 나중 상태: 같은 배치에 PKCE만 더해짐", title: "PKCE",
+  });
+  const pVer = chip("#pkce", "chip-verifier", "verifier");
+  const pCh = chip("#pkce", "chip-challenge", "challenge");
+  const pCode = chip("#pkce", "chip-code", "code");
+  const pCode2 = chip("#pkce", "chip-code", "code");
+  const pToken = chip("#pkce", "chip-ok", "access_token");
+  const pSlotVer = slotPt("#p-slot-verifier"), pSlotCh = slotPt("#p-slot-challenge"), pAppCode = slotPt("#p-slot-code");
+  const pSrv = slotPt("#p-slot-out"), pStolen = slotPt("#p-slot-stolen"), pSrvBelow = below(pSrv, BELOW);
+  // pkce.1 앱이 verifier를 만들고 그 해시(challenge)만 서버에 보낸다
+  stay(pVer, "+=0.2", pSlotVer, { appear: true, pop: true, dur: 0.4, ease: "pop" });
+  stay(pCh, "<+=0.25", pSlotVer, { appear: true, dur: 0.3 });
+  move(pCh, pSlotVer, pSlotCh, { dur: 0.9 });
+  tl.stop("PKCE: 앱이 먼저 비밀값 verifier를 만들고, 그 해시 challenge만 서버에 보냅니다");
+  // pkce.2 code는 여전히 가로챌 수 있다
+  stay(pCode, undefined, pSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  stay(pCode2, "<", pSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  move(pCode, pSrv, pAppCode, { dur: 1.0 });
+  move(pCode2, pSrv, mid(pSrv, pAppCode), { at: "<", dur: 0.5, ease: "in" });
+  move(pCode2, mid(pSrv, pAppCode), pStolen, { at: "<+=0.5", dur: 0.6, ease: "out" });
+  tl.stop("code는 여전히 가로챌 수 있습니다. 앱도, 공격자도 code를 갖습니다");
+  // pkce.3 앱의 교환: code + verifier → 해시 비교 → token
+  move(pCode, pAppCode, pSrv, { dur: 0.8 });
+  move(pVer, pSlotVer, pSrvBelow, { at: "<", dur: 0.8 });
+  draw("#p-chk-ok path", "<+=0.6");
+  tl.tween("#p-chk-ok span", { opacity: [0.45, 1] }, { at: "<", dur: 0.3 });
+  move(pCode, pSrv, pSrv, { at: "<", dur: 0.3, vanish: true, shrink: true });
+  move(pVer, pSrvBelow, pSrvBelow, { at: "<", dur: 0.3, vanish: true, shrink: true });
+  stay(pToken, undefined, pSrv, { appear: true, pop: true, dur: 0.3, ease: "pop" });
+  move(pToken, pSrv, pAppCode, { dur: 0.8 });
+  tl.stop("교환 때 verifier를 함께 보내면, 서버가 해시해서 challenge와 비교합니다");
+  // pkce.4 공격자의 교환: code만 → 거절
+  move(pCode2, pStolen, pSrv, { dur: 0.7 });
+  draw("#p-chk-no path", "<+=0.6", 0.25);
+  tl.tween("#p-chk-no span", { opacity: [0.45, 1] }, { at: "<", dur: 0.25 });
+  move(pCode2, pSrv, pStolen, { dur: 0.6, ease: "in" });
+  tl.stop("공격자는 code만 있고 verifier가 없어 교환이 거절됩니다");
+
+  // ---------- 장면 6: summary ----------
+  s.scene("summary", {
+    el: "#summary", via: "dip-to-color", with: { color: "fg", title: "정리: 왜 안전한가" },
+    reason: "장이 바뀜: 흐름에서 정리로", title: "정리",
+  });
+  tl.tween("#summary .eidos-label", { opacity: [0, 1] }, { dur: 0.4 });
+  s.fx("mask-reveal", { targets: "#summary .title-line", at: "<", dur: 0.8 });
+  const points = s.fx("stagger-reveal", {
+    targets: ".point", at: "-=0.3", disclose: true,
+    stops: ["1. 비밀번호는 구글만 봅니다", "2. 브라우저에는 일회용 code만", "3. 토큰 교환은 서버끼리", "4. secret이 없는 앱은 PKCE로"],
+  });
+  points.restore();
+  s.fx("kinetic-type", { targets: "#c1", at: "<", move: "sweep", em: ".hit", each: 0.11 });
   tl.stop("핵심: 브라우저를 믿지 않는다");
-  s.fx("highlight-sweep", { targets: "#kw2", circle: true });
+  tl.tween("#c2", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
+  s.fx("highlight-sweep", { targets: "#kw2", circle: true, at: "<+=0.3" });
   tl.stop("진짜 열쇠는 서버 사이로만 오갑니다");
+
   s.start();
 </script>
 </body>
