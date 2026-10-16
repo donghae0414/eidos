@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 스크린 다이브 (Screen Dive)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  code { font-family: var(--eidos-font-mono); font-size: 0.86em; }
+
+  #dash { align-items: center; }
+  #dash header { align-self: stretch; }
+  .window { display: flex; flex-direction: column; border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); background: var(--eidos-surface); box-shadow: var(--eidos-shadow); overflow: hidden; }
+  .chrome { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--eidos-border); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--eidos-border); }
+  .url { margin-left: 8px; padding: 2px 10px; border-radius: 999px; background: var(--eidos-bg); color: var(--eidos-muted-fg); font-family: var(--eidos-font-mono); font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .screen { width: 52vw; height: 52vh; display: grid; place-items: center; background: var(--eidos-bg); }
+  .app { width: min(440px, 86%); display: flex; flex-direction: column; gap: 14px; }
+  .app-head { display: flex; align-items: center; gap: 8px; }
+  .app-head b { font-size: 1.15rem; }
+  .chip { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-family: var(--eidos-font-mono); font-size: 0.72rem; }
+  .field { display: flex; flex-direction: column; gap: 2px; font-size: 0.92rem; }
+  .field .k { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: var(--eidos-muted-fg); }
+  .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .deploy { padding: 10px 18px; border-radius: var(--eidos-radius-sm); background: var(--eidos-accent); color: var(--eidos-accent-fg); font-weight: 700; }
+  .status-box { display: grid; }
+  .status { grid-area: 1 / 1; font-size: 0.92rem; }
+  .status.wait { color: var(--eidos-muted-fg); }
+  .status.ok { color: var(--eidos-success); font-weight: 700; }
+
+  .stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .stage { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .stage .top { display: flex; align-items: center; gap: 8px; }
+  .stage .n { flex: 0 0 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-fill-warm); font-size: 0.72rem; font-weight: 700; }
+  .stage b { font-size: 0.98rem; }
+  .stage .t { margin-left: auto; font-family: var(--eidos-font-mono); font-size: 0.74rem; color: var(--eidos-muted-fg); }
+  .stage code { color: var(--eidos-muted-fg); font-size: 0.76rem; }
+  .bar { height: 6px; border-radius: 999px; background: var(--eidos-border); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--eidos-success); transform-origin: left center; }
+  .prod { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+  .prod .k { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; color: var(--eidos-muted-fg); }
+  .pods { display: flex; gap: 8px; }
+  .pod { display: grid; place-items: center; width: 64px; height: 40px; border-radius: var(--eidos-radius-sm); border: 1px solid var(--eidos-border); background: var(--eidos-surface); font-family: var(--eidos-font-mono); font-size: 0.82rem; }
+  .pod .v { grid-area: 1 / 1; }
+  .pod .new { color: var(--eidos-success); font-weight: 700; }
+  .prod .note { font-size: 0.92rem; color: var(--eidos-muted-fg); }
+
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .screen { width: 62vw; height: 50vh; }
+    .app { gap: 10px; }
+    .app-head b { font-size: 1rem; }
+    .field { font-size: 0.8rem; }
+    .deploy { padding: 8px 14px; font-size: 0.9rem; }
+    .status { font-size: 0.8rem; }
+    .stages { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .stage { gap: 4px; padding: 0.5rem 0.75rem; }
+    .stage b { font-size: 0.9rem; }
+    .stage code { font-size: 0.7rem; }
+    .pod { width: 54px; height: 34px; font-size: 0.76rem; }
+    .prod .note { font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="dash">
+      <header>
+        <div class="eidos-label">배포 버튼 · 1 / 3</div>
+        <h1 class="eidos-title">개발자에게 보이는 건 버튼 하나다</h1>
+      </header>
+      <div class="window">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">deploy.example.dev/web-app</span></div>
+        <div class="screen">
+          <div class="app">
+            <div class="app-head"><b>web-app</b><span class="chip">main</span></div>
+            <div class="field"><span class="k">최근 커밋</span><span><code>a1b2c3d</code> fix: 결제 버튼 중복 클릭 막기</span></div>
+            <div class="field"><span class="k">마지막 배포</span><span>어제 18:04 · v41</span></div>
+            <div class="actions"><span class="deploy">배포하기</span><span class="status-box"><span class="status wait">대기 중</span><span class="status ok">배포 완료 · 3분 12초</span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="pipe">
+      <header>
+        <div class="eidos-label">배포 버튼 · 2 / 3 · 화면 속</div>
+        <h1 class="eidos-title">버튼 하나가 파이프라인 다섯 단계를 깨운다</h1>
+      </header>
+      <ol class="stages">
+        <li class="stage eidos-card s1"><div class="top"><span class="n">1</span><b>체크아웃</b><span class="t">4s</span></div><code>git fetch a1b2c3d</code><span class="bar"><i></i></span></li>
+        <li class="stage eidos-card s2"><div class="top"><span class="n">2</span><b>의존성 설치</b><span class="t">38s</span></div><code>npm ci</code><span class="bar"><i></i></span></li>
+        <li class="stage eidos-card s3"><div class="top"><span class="n">3</span><b>테스트</b><span class="t">1m 26s</span></div><code>412개 통과</code><span class="bar"><i></i></span></li>
+        <li class="stage eidos-card s4"><div class="top"><span class="n">4</span><b>이미지 빌드</b><span class="t">51s</span></div><code>web-app:v42</code><span class="bar"><i></i></span></li>
+        <li class="stage eidos-card s5"><div class="top"><span class="n">5</span><b>롤링 배포</b><span class="t">13s</span></div><code>파드 3개 교체</code><span class="bar"><i></i></span></li>
+      </ol>
+      <div class="prod">
+        <span class="k">프로덕션</span>
+        <div class="pods">
+          <span class="pod"><b class="v old">v41</b><b class="v new">v42</b></span>
+          <span class="pod"><b class="v old">v41</b><b class="v new">v42</b></span>
+          <span class="pod"><b class="v old">v41</b><b class="v new">v42</b></span>
+        </div>
+        <span class="note">하나씩 바꾸므로 요청이 끊기지 않는다</span>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("dash", { el: "#dash", title: "배포 대시보드" });
+  tl.tween("#dash header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#dash .window", { opacity: [0, 1], y: [16, 0] }, { at: "<+=0.15", dur: 0.6, ease: "out" })
+    .stagger("#dash .app > *", { opacity: [0, 1], y: [6, 0] }, { at: "<+=0.3", dur: 0.35, each: 0.08, ease: "out" })
+    .stop("개발자에게 보이는 건 '배포하기' 버튼 하나와 상태 한 줄이다");
+
+  tl.tween("#dash .deploy", { scale: [1, 0.93] }, { dur: 0.12, ease: "in" })
+    .tween("#dash .deploy", { scale: [0.93, 1] }, { dur: 0.2, ease: "out" })
+    .tween("#dash .status.wait", { text: (p) => (p > 0 ? "진행 중…" : "대기 중") }, { at: "<", dur: 0.2 });
+  s.scene("pipe", { el: "#pipe", via: "screen-dive", with: { screen: "#dash .screen" }, reason: "버튼 뒤, 화면 안으로 들어감", title: "화면 속 · 파이프라인" });
+  tl.stop("스크린 다이브 → 화면 속으로: 버튼 하나가 파이프라인 다섯 단계를 깨운다");
+
+  [["s1", 0.3], ["s2", 0.5], ["s3", 0.8], ["s4", 0.5]].forEach(([c, d]) => {
+    tl.tween(`#pipe .${c} .bar i`, { scaleX: [0, 1] }, { dur: d, ease: "inOut" })
+      .tween(`#pipe .${c} .t`, { opacity: [0, 1] }, { at: "-=0.1", dur: 0.2 });
+  });
+  tl.stop("체크아웃 → 설치 → 테스트 412개 → 이미지 빌드: 앞 단계가 통과해야 다음 단계가 돈다");
+
+  tl.tween("#pipe .s5 .bar i", { scaleX: [0, 1] }, { dur: 1.3, ease: "linear" });
+  const roll = tl.prevStart;
+  document.querySelectorAll("#pipe .pod").forEach((pod, i) => {
+    tl.tween(pod.querySelector(".old"), { opacity: [1, 0], y: [0, -6] }, { at: roll + 0.15 + i * 0.4, dur: 0.3, ease: "in" })
+      .tween(pod.querySelector(".new"), { opacity: [0, 1], y: [6, 0] }, { at: "<+=0.12", dur: 0.3, ease: "out" });
+  });
+  tl.tween("#pipe .s5 .t", { opacity: [0, 1] }, { at: roll + 1.2, dur: 0.2 })
+    .stop("롤링 배포: 파드 3개를 하나씩 v42로 바꿔서 요청이 끊기지 않는다");
+
+  s.scene("done", { el: "#dash", via: "screen-dive", with: { screen: "#dash .screen", out: true }, reason: "사용자가 보는 화면 밖으로 다시 나옴", title: "다시 대시보드" });
+  const back = s.scenes[s.scenes.length - 1].t0;
+  const swap = (sel, before, after) => tl.tween(sel, { text: (p) => (p > 0 ? after : before) }, { at: back, dur: 0.1 });
+  swap("#dash .eidos-label", "배포 버튼 · 1 / 3", "배포 버튼 · 3 / 3");
+  swap("#dash .eidos-title", "개발자에게 보이는 건 버튼 하나다", "밖에서 보면 '배포 완료' 한 줄로 끝난다");
+  swap("#dash .deploy", "배포하기", "v42 배포됨");
+  tl.tween("#dash .deploy", { opacity: [1, 0.55] }, { at: back, dur: 0.1 })
+    .tween("#dash .status.wait", { opacity: [1, 0] }, { at: back, dur: 0.1 })
+    .tween("#dash .status.ok", { opacity: [0, 1] }, { at: back, dur: 0.1 });
+  tl.stop("스크린 다이브(out) → 다시 화면 밖: 사용자에게 남는 건 '배포 완료 · 3분 12초' 한 줄이다");
+  s.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 글자 관통 줌</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+.scene { position:absolute; inset:0; padding:9vh 7vw 18vh; background:var(--eidos-bg); display:flex; flex-direction:column; gap:4vh; word-break:keep-all; }
+.hero { font-size:clamp(96px,22vw,250px); font-weight:900; letter-spacing:-0.08em; line-height:1; color:var(--eidos-accent); }
+.route { display:flex; gap:18px; align-items:center; flex-wrap:wrap; font-size:clamp(18px,2.5vw,30px); }
+.route b { padding:24px; background:var(--eidos-surface); border-radius:var(--eidos-radius); }
+.caption { font-size:clamp(17px,2vw,24px); max-width:42em; color:var(--eidos-muted-fg); }
+@media(max-width:640px) { .scene { padding:6vh 6vw 22vh; gap:3vh; } .route { flex-direction:column; align-items:stretch; gap:12px; } .route b { padding:18px; } .eidos-title { font-size:30px; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+<section class="scene" id="api"><div class="eidos-label">추상화 경계 · 1 / 3</div><h1 class="eidos-title">API 안에는 무엇이 있을까?</h1><div class="hero">API</div><p class="caption">하나의 인터페이스 뒤에 요청 처리 단계가 숨어 있습니다.</p></section>
+<section class="scene" id="request"><div class="eidos-label">요청의 내부 · 2 / 3</div><h1 class="eidos-title">요청은 세 관문을 지납니다</h1><div class="route"><b>인증 확인</b><span>→</span><b>입력 검증</b><span>→</span><b>핸들러 실행</b></div><p class="caption">성공한 요청만 다음 관문으로 갑니다. 인증 실패는 데이터베이스에 닿지 않습니다.</p></section>
+<section class="scene" id="storage"><div class="eidos-label">저장의 내부 · 3 / 3</div><h1 class="eidos-title">핸들러 아래에는 저장소가 있습니다</h1><div class="route"><b>트랜잭션 시작</b><span>→</span><b>행 갱신</b><span>→</span><b>커밋</b></div><p class="caption">응답을 보내기 전에 변경을 확정합니다. 실패하면 전체 변경을 되돌립니다.</p></section>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+const s = Eidos.stage();
+s.scene("api", { el:"#api", title:"API 경계" });
+s.tl.wait(0.8).stop("API라는 이름을 지나 요청 처리 내부로 들어갑니다");
+s.scene("request", { el:"#request", via:"zoom-through", with:{glyph:"API",scale:120}, reason:"추상화의 이름을 관통해 내부로", title:"요청 처리" });
+s.tl.wait(0.3).stop("인증 → 검증 → 핸들러 순서로 요청을 처리합니다");
+s.scene("storage", { el:"#storage", via:"zoom-through", with:{glyph:"DB",scale:160}, reason:"저장 계층으로 한 단계 더", title:"트랜잭션" });
+s.tl.wait(0.3).stop("트랜잭션은 변경 전체를 함께 확정하거나 되돌립니다");
+s.start();
+</script>
+</body>
+</html>

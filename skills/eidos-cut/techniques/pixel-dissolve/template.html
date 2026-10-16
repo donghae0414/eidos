@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 픽셀 디졸브</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+.scene { position:absolute; inset:0; padding:9vh 7vw 22vh; display:flex; flex-direction:column; gap:4vh; background:var(--eidos-bg); word-break:keep-all; }
+.layout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+.box { padding:28px; border-radius:var(--eidos-radius); background:var(--eidos-surface); font-size:clamp(18px,2.5vw,28px); display:flex; flex-direction:column; gap:14px; }
+.box small { font:17px var(--eidos-font-mono); color:var(--eidos-muted-fg); overflow-wrap:anywhere; }
+.note { font-size:clamp(17px,2vw,24px); max-width:42em; color:var(--eidos-muted-fg); }
+.version { font:700 clamp(48px,8vw,96px) var(--eidos-font-mono); color:var(--eidos-accent); }
+@media(max-width:640px) { .scene { padding:6vh 6vw 25vh; gap:2vh; } .layout { grid-template-columns:1fr; gap:12px; } .box { padding:18px; gap:8px; } .eidos-title { font-size:30px; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+<section class="scene" id="old"><div class="eidos-label">원자적 교체 · 이전 버전</div><h1 class="eidos-title">캐시는 옛 스냅숏을 읽습니다</h1><div class="version">v41</div><div class="layout"><div class="box"><b>상품 목록</b><small>snapshot: 41</small></div><div class="box"><b>가격 정보</b><small>snapshot: 41</small></div><div class="box"><b>재고 수량</b><small>snapshot: 41</small></div></div><p class="note">세 데이터가 같은 세대에 속합니다. 새 스냅숏은 별도 공간에서 준비합니다.</p></section>
+<section class="scene" id="fresh"><div class="eidos-label">원자적 교체 · 새 버전</div><h1 class="eidos-title">준비된 스냅숏으로 교체합니다</h1><div class="version">v42</div><div class="layout"><div class="box"><b>상품 목록</b><small>snapshot: 42</small></div><div class="box"><b>가격 정보</b><small>snapshot: 42</small></div><div class="box"><b>재고 수량</b><small>snapshot: 42</small></div></div><p class="note">픽셀은 버전 교체를 보여주는 편집 효과입니다. 실제 포인터 교체는 원자적이며 섞인 세대를 읽지 않습니다.</p></section>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script><script src="./technique.js"></script>
+<script>
+const s = Eidos.stage();
+s.scene("old", { el:"#old", title:"스냅숏 v41" });
+s.tl.wait(0.8).stop("이전 스냅숏 v41: 모든 데이터가 같은 세대입니다");
+s.scene("fresh", { el:"#fresh", via:"pixel-dissolve", with:{cols:10, seed:7, dur:1.4},
+  reason:"한 세대의 완성된 스냅숏을 다음 세대로 교체", title:"스냅숏 v42" });
+s.tl.wait(0.4).stop("새 스냅숏 v42: 효과의 픽셀 순서와 실제 원자적 교체를 구분합니다");
+s.start();
+</script>
+</body>
+</html>

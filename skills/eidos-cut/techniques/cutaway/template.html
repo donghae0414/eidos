@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 컷어웨이</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+.scene { position:absolute; inset:0; padding:9vh 7vw 22vh; display:flex; flex-direction:column; gap:4vh; background:var(--eidos-bg); word-break:keep-all; }
+.flow { display:flex; align-items:center; gap:20px; font-size:clamp(18px,2.4vw,30px); }
+.flow b { padding:28px; border-radius:var(--eidos-radius); background:var(--eidos-surface); }
+.note { max-width:42em; font-size:clamp(17px,2vw,24px); color:var(--eidos-muted-fg); }
+.record { padding:32px; background:var(--eidos-surface); border-radius:var(--eidos-radius); font:clamp(17px,2.2vw,26px)/1.8 var(--eidos-font-mono); white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:640px) { .scene { padding:6vh 6vw 25vh; gap:3vh; } .eidos-title { font-size:30px; } .flow { flex-direction:column; align-items:stretch; gap:12px; } .flow b { padding:18px; } .record { padding:20px; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+<section class="scene" id="hub"><div class="eidos-label">주 흐름 · 주문 처리</div><h1 class="eidos-title">재시도해도 결제는 한 번만</h1><div class="flow"><b>요청 수신</b><span>→</span><b>중복 확인</b><span>→</span><b>결제 처리</b></div><p class="note">잠시 멱등성 키의 저장 내용을 살펴본 뒤 같은 흐름으로 돌아옵니다.</p></section>
+<section class="scene" id="detail"><div class="eidos-label">짧은 곁가지 · 저장 레코드</div><h1 class="eidos-title">요청 키에 결과를 묶어 둡니다</h1><pre class="record">key: order-42
+status: completed
+payment: pay-019
+response: 200 OK</pre><p class="note">같은 키로 다시 요청하면 저장된 응답을 돌려줍니다. 결제 호출은 반복하지 않습니다.</p></section>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="../cross-dissolve/technique.js"></script><script src="./technique.js"></script>
+<script>
+const s = Eidos.stage();
+s.scene("hub", { el:"#hub", title:"주문 처리" });
+s.tl.wait(0.8).stop("주문 요청 → 중복 확인 → 결제. 멱등성 키를 잠시 살펴봅니다");
+s.fx("cutaway", { id:"record", hub:"hub", from:"#detail", via:"cross-dissolve",
+  with:{dur:0.7}, title:"멱등성 레코드", reason:"주 흐름을 끊지 않는 짧은 보충 설명",
+  build(stage) { stage.tl.wait(0.8).stop("같은 키에는 같은 응답. 결제를 다시 실행하지 않습니다"); },
+  label:"다시 주문 흐름: 저장된 결과가 중복 결제를 막습니다",
+});
+s.start();
+</script>
+</body>
+</html>

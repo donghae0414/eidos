@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 교차 편집</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+.scene { position:absolute; inset:0; padding:9vh 7vw 22vh; display:flex; flex-direction:column; gap:5vh; word-break:keep-all; }
+.panes { position:relative; flex:1; min-height:260px; }
+.pane { position:absolute; inset:0; padding:4vh 4vw; background:var(--eidos-surface); border-radius:var(--eidos-radius); display:flex; flex-direction:column; gap:3vh; }
+.pane h2 { margin:0; font-size:clamp(24px,4vw,42px); }
+.pane p { font-size:clamp(17px,2vw,24px); margin:0; max-width:40em; }
+.meter { height:24px; background:var(--eidos-border); border-radius:var(--eidos-radius-sm); overflow:hidden; }
+.meter i { display:block; height:100%; background:var(--eidos-cat-1); }
+#worker .meter i { background:var(--eidos-cat-2); }
+.value { font:700 clamp(32px,6vw,64px) var(--eidos-font-mono); }
+@media(max-width:640px) { .scene { padding:6vh 6vw 25vh; gap:3vh; } .eidos-title { font-size:30px; } .pane { padding:24px; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+<section class="scene" id="parallel"><div class="eidos-label">동시에 일어나는 두 흐름</div><h1 class="eidos-title">응답 뒤에도 작업은 계속됩니다</h1>
+<div class="panes">
+<article class="pane" id="requester"><div class="eidos-label">A · HTTP 요청</div><h2>큐에 넣고 먼저 응답</h2><p>요청 서버는 작업 ID를 돌려줍니다. 사용자는 완료될 때까지 연결을 붙잡지 않습니다.</p><div class="meter"><i data-eidos-cross-progress></i></div><div class="value" data-eidos-cross-value>0%</div></article>
+<article class="pane" id="worker"><div class="eidos-label">B · 백그라운드 워커</div><h2>큐에서 꺼내 실제 처리</h2><p>요청 서버가 응답한 뒤에도 워커가 처리합니다. 완료 결과는 별도로 조회합니다.</p><div class="meter"><i data-eidos-cross-progress></i></div><div class="value" data-eidos-cross-value>0%</div></article>
+</div></section>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script><script src="./technique.js"></script>
+<script>
+const s = Eidos.stage();
+s.scene("parallel", { el:"#parallel", title:"요청과 워커" });
+s.tl.wait(0.8).stop("A: 요청 서버가 작업을 받습니다. B: 워커는 아직 대기 중입니다");
+s.fx("cross-cutting", { a:"#requester", b:"#worker", dur:4,
+  beats:[[0.15,0],[0.45,0.25],[1,0.55],[1,1]] });
+s.tl.stop("B: 워커 처리 완료. A의 HTTP 응답과 작업 완료는 서로 다른 시점입니다");
+s.start();
+</script>
+</body>
+</html>
