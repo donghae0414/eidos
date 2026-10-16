@@ -89,25 +89,53 @@ PROMPT="$(cat "$PROMPT_FILE")
 
 $SUFFIX"
 
-# run_timeout <seconds> <cmd...>: portable (macOS has no timeout(1)); 124 on expiry.
+# run_timeout <seconds> <cmd...>: portable (macOS has no timeout(1)). The command runs in its
+# own process group; on expiry the whole group gets TERM, then KILL, and the status is 124.
 run_timeout() {
   local secs="$1"; shift
-  "$@" &
+  local flag; flag="$(mktemp)" || return 1
+  rm -f "$flag"
+  perl -e 'setpgrp(0,0); exec @ARGV or die "exec: $!"' -- "$@" &
   local pid=$!
-  ( sleep "$secs"; kill -TERM "$pid" 2>/dev/null; sleep 5; kill -KILL "$pid" 2>/dev/null ) &
+  ( trap 'kill "$s" 2>/dev/null; exit 0' TERM
+    sleep "$secs" & s=$!
+    wait "$s"
+    : > "$flag"
+    kill -TERM -- "-$pid" 2>/dev/null; sleep 5; kill -KILL -- "-$pid" 2>/dev/null ) &
   local wd=$!
   wait "$pid" 2>/dev/null
   local rc=$?
-  if kill -0 "$wd" 2>/dev/null; then kill "$wd" 2>/dev/null; wait "$wd" 2>/dev/null; else rc=124; fi
+  kill "$wd" 2>/dev/null; wait "$wd" 2>/dev/null
+  kill -KILL -- "-$pid" 2>/dev/null
+  if [ -e "$flag" ]; then rm -f "$flag"; return 124; fi
   return "$rc"
 }
 
-# sync_cache <cache-dir>: replace contents from `git archive HEAD` of EIDOS_REPO.
+# sync_cache <cache-dir>: replace contents from `git archive HEAD` of EIDOS_REPO. The archive is
+# extracted next to the cache first and swapped in only on success; the old cache is restored on failure.
 sync_cache() {
-  local dir="$1"
-  mkdir -p "$dir" || return 1
-  find "$dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} + || return 1
-  git -C "$EIDOS_REPO" archive HEAD | tar -x -C "$dir"
+  local dir="$1" tmp old parent
+  case "$dir" in
+    *..*) echo "refusing cache path with '..': $dir" >&2; return 1 ;;
+    "$HOME/.codex/plugins/cache/eidos/"?*|"$HOME/.claude/plugins/cache/eidos/"?*) ;;
+    *) echo "refusing cache path outside the eidos plugin caches: $dir" >&2; return 1 ;;
+  esac
+  git -C "$EIDOS_REPO" rev-parse --verify -q HEAD >/dev/null \
+    || { echo "no HEAD commit in $EIDOS_REPO; cache left untouched" >&2; return 1; }
+  parent="$(dirname "$dir")"
+  mkdir -p "$parent" || return 1
+  tmp="$(mktemp -d "$parent/.repro-new.XXXXXX")" || return 1
+  if ! git -C "$EIDOS_REPO" archive HEAD | tar -x -C "$tmp" || [ -z "$(ls -A "$tmp")" ]; then
+    rm -rf "$tmp"; echo "git archive failed or is empty; cache left untouched" >&2; return 1
+  fi
+  old="$dir.old.$$"
+  if [ -e "$dir" ]; then mv "$dir" "$old" || { rm -rf "$tmp"; return 1; }; fi
+  if mv "$tmp" "$dir"; then
+    rm -rf "$old"
+  else
+    rm -rf "$tmp"; [ -e "$old" ] && mv "$old" "$dir"
+    return 1
+  fi
 }
 
 # verify_cache <label> <cache-dir>: diff against repo; fall back to sync (always when --source).
@@ -157,6 +185,7 @@ FAIL=0
 ROWS=""
 evaluate() { # agent rc before
   local agent="$1" rc="$2" before="$3" tr="$OUT_DIR/$1.transcript.jsonl" after new f skill sb vias qa
+  [ "$rc" -eq 0 ] || FAIL=1
   skill=no; grep -qi 'storyboard' "$tr" 2>/dev/null && skill=yes
   after="$(list_html "$OUT_DIR/$agent")"
   new="$(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | sed '/^$/d')"
