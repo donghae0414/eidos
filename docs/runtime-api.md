@@ -155,14 +155,14 @@ s.onParams(({ batch }) => { /* params로 화면을 결정적으로 다시 계산
 | `options` | select 전용. 값 배열 또는 `{value, label}` 배열 |
 | `value` | 기본값 |
 | `label` | 화면 라벨. 단위를 함께 적습니다. |
-| `when` | 컨트롤을 보여 줄 장면 id나 id 배열. 없으면 항상 보입니다. |
-| `layout` | 독(dock) 안 배치 힌트 |
-| `sticky` | `true`면 `when` 밖에서도 값을 유지하며 보입니다. |
+| `when` | 컨트롤이 보이는 범위. 스톱 범위 `[stopA, stopB]`(스톱 id나 번호) 또는 장면 id. 없으면 항상 보입니다. 표시 여부는 이 옵션만으로 정합니다. |
+| `layout` | `true`면 값이 바뀔 때 `tl.seek(tl.t)` 대신 `layout()`(다시 측정)을 실행합니다. 값에 따라 요소 크기나 위치를 다시 재야 할 때 씁니다. |
+| `sticky` | `true`면 사용자가 바꾼 값이 스톱을 옮겨도 유지됩니다. 기본(`false`)은 스톱이 바뀌면 사용자 값이 지워지고 기본값과 drive 값으로 돌아갑니다. |
 
 - `drive(a, b, {at, dur, ease})`는 타임라인 위에서 값을 a에서 b로 옮기는 tween을 기록합니다. 시간의 순수 함수입니다.
 - `s.setControls(patch)`는 **원자적**입니다. 모든 키를 먼저 검증하고, 하나라도 틀리면 아무것도 바꾸지 않은 채 오류를 `__eidosErrors`에 넣습니다. 통과하면 범위로 clamp하고 `step`으로 양자화하며, 정확히 반 칸에 걸린 값은 위로 올립니다. 그다음 한 번에 반영하고 재생을 멈춥니다.
 - `s.params`는 현재 값 객체(읽기 전용), `s.onParams(fn)`은 값이 바뀔 때마다 `fn(params)`를 부릅니다.
-- 값 결정 순서: 컨트롤 기본값 < URL `?c.<name>=<v>` < `setControls`. 알 수 없는 키(`?c.zzz=1`)나 잘못된 값(`?c.n=x`)은 무시하고 오류를 `__eidosErrors`에 넣습니다. 범위 밖 값(`?c.n=99`)은 clamp합니다.
+- 값 결정 순서: 기본값 → 시각 `t`에서 계산한 drive 트랙(`c.drive(a, b, {at, dur, ease})`) → 사용자 값. 사용자 값은 URL `?c.<name>=<v>`, `setControls`, `set(v)`, 독 조작으로 들어오며, 뒤에 온 것이 앞의 것을 덮습니다. 알 수 없는 키(`?c.zzz=1`)나 잘못된 값(`?c.n=x`)은 무시하고 오류를 `__eidosErrors`에 넣습니다. 범위 밖 값(`?c.n=99`)은 clamp합니다.
 - **컨트롤은 값만 바꿉니다.** 스톱 시각, 장면 구간, DOM 구조(노드 추가와 삭제)는 바꾸지 않습니다. 필요한 노드는 `start()` 전에 모두 만들어 두고 opacity, scale, 속성으로만 바꿉니다.
 - 화면 상태를 전혀 바꾸지 않는 컨트롤은 QA에서 실패로 봅니다.
 - 컨트롤 독은 `.eidos-dock`으로 world 밖에 둡니다.
@@ -268,7 +268,7 @@ structure: hub-and-spoke (hub: map; spokes: scheduler, kv-cache, batching)
 
 ## 키보드와 클릭 포커스 규칙
 
-- `keydown`은 대상이 `input, select, textarea, [contenteditable], .eidos-dock, [data-eidos-nokeys]` 안에 있으면 처리하지 않습니다. 포커스된 슬라이더에서 화살표 키는 슬라이더 값을 바꾸고 스톱 번호는 그대로입니다.
+- `keydown`은 대상이 `input, select, textarea, [contenteditable], [data-eidos-nokeys]` 안에 있으면 처리하지 않습니다. 포커스된 슬라이더에서 화살표 키는 슬라이더 값을 바꾸고 스톱 번호는 그대로입니다.
 - 대상이 `button`이면(독과 HUD 버튼 포함) Space와 Enter만 버튼에 맡기고, 화살표 같은 나머지 탐색 키는 계속 동작합니다.
 - 클릭으로 다음 스톱에 가는 동작은 `a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]` 안의 클릭이면 건너뜁니다.
 - 수정자 키(meta, ctrl, alt)가 눌린 키 입력은 지금처럼 무시합니다.
