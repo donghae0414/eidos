@@ -38,6 +38,14 @@
   E.reduced = motion === "reduce" || (motion !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  // Track progress snapped at both ends: (t - at) / dur can land a hair under 1 at t = at + dur in floating
+  // point (e.g. (1.001 - 1) / 0.001 = 0.99999999999989), which would leave a transition one ulp short of done.
+  const progressOf = (t, at, dur) => {
+    if (!(dur > 0)) return 1;
+    if (t >= at + dur - 1e-9 * Math.max(1, dur)) return 1;
+    const p = (t - at) / dur;
+    return p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p;
+  };
   const lerp = (a, b, p) => a + (b - a) * p;
   const r3 = (v) => Math.round(v * 1000) / 1000;
   E.util = { clamp01, lerp, r3 };
@@ -239,7 +247,7 @@
       future.sort((a, b) => b.at - a.at || b.i - a.i);
       for (const tr of future) tr.fn(tr.ease(0));
       started.sort((a, b) => a.at - b.at || a.i - b.i);
-      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((u - tr.at) / tr.dur) : 1));
+      for (const tr of started) tr.fn(tr.ease(progressOf(u, tr.at, tr.dur)));
       for (const h of this.hooks) h(t);
       return this;
     }
@@ -316,7 +324,7 @@
       for (const kf of this.kfs) {
         if (t < kf.at) break;
         if (kf.after && t === kf.at) continue;
-        const p = kf.dur > 0 ? clamp01((t - kf.at) / kf.dur) : 1;
+        const p = progressOf(t, kf.at, kf.dur);
         st = Camera.mix(st, kf.resolved, kf.ease(p));
         if (p < 1) break;
       }
@@ -714,7 +722,7 @@
         let v = c.value;
         for (const tr of c.tracks) {
           if (t < tr.at) break;
-          const p = tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1);
+          const p = tr.ease(progressOf(t, tr.at, tr.dur));
           v = c.type === "range" ? normalize(c, lerp(tr.a, tr.b, p)).value : p < 1 ? tr.a : tr.b;
         }
         next[name] = overrides.has(name) ? overrides.get(name) : v;
