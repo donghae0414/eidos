@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 단계·패널 동기 진행 (Step Panel)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1240px; margin: auto; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .sub { margin: 8px 0 0; color: var(--eidos-muted-fg); font: clamp(0.8rem, 1.3vw, 0.95rem) var(--eidos-font-mono); }
+  .body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); grid-template-rows: minmax(0, 1fr); gap: 3vw; align-items: center; }
+  .diagram { margin: 0; padding: 16px; height: 100%; min-height: 0; display: flex; }
+  .diagram svg { display: block; width: 100%; height: 100%; min-height: 0; font-family: var(--eidos-font-sans); }
+  .svc rect { fill: var(--eidos-surface); stroke: var(--eidos-fg); stroke-width: 1.5; }
+  .svc text { font-size: 22px; font-weight: 700; fill: var(--eidos-fg); }
+  .wire { fill: none; stroke: var(--eidos-muted-fg); stroke-width: 2.5; stroke-linecap: round; }
+  .slot { fill: none; stroke: var(--eidos-border); stroke-width: 1.5; stroke-dasharray: 6 6; }
+  .pod rect { stroke-width: 2; }
+  .pod-v1 rect { fill: color-mix(in oklab, var(--eidos-cat-4) 14%, var(--eidos-surface)); stroke: var(--eidos-cat-4); }
+  .pod-v2 rect { fill: color-mix(in oklab, var(--eidos-cat-3) 16%, var(--eidos-surface)); stroke: var(--eidos-cat-3); }
+  .ver { font: 700 26px var(--eidos-font-mono); fill: var(--eidos-fg); }
+  .state { font-size: 17px; fill: var(--eidos-muted-fg); }
+  .meter { font-size: 20px; fill: var(--eidos-fg); }
+  .meter tspan { font-weight: 700; }
+  @media (max-width: 720px) {
+    .layout { padding: 4vh 5vw 15vh; gap: 2vh; }
+    .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 1.5vh; align-items: stretch; }
+    .diagram { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header>
+      <div class="eidos-label">Kubernetes · Deployment 롤링 업데이트</div>
+      <h1 class="eidos-title">v1에서 v2로, 한 개씩 끊김 없이</h1>
+      <p class="sub">replicas 4 · maxSurge 1 · maxUnavailable 0</p>
+    </header>
+    <section class="body">
+      <div id="steps"></div>
+      <figure class="diagram eidos-card">
+        <svg id="cluster" viewBox="0 0 560 336" role="img" aria-label="Service 하나와 파드 자리 다섯 칸의 롤링 업데이트">
+          <text class="meter" x="280" y="322" text-anchor="middle">Ready 파드 <tspan id="ready-n">4</tspan>개 · 최소 4개 유지</text>
+        </svg>
+      </figure>
+    </section>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const panel = s.fx("step-panel", {
+    el: "#steps",
+    steps: [
+      { title: "v2 파드를 하나 더 띄웁니다", detail: "maxSurge 1 · 기존 4개는 그대로 두고 잠깐 5개가 됩니다" },
+      { title: "Ready가 되면 트래픽을 보냅니다", detail: "readinessProbe를 통과한 파드만 Service 엔드포인트에 들어갑니다" },
+      { title: "v1 파드 하나를 정리합니다", detail: "maxUnavailable 0 · 엔드포인트에서 먼저 빼고 종료 신호를 보냅니다" },
+      { title: "모두 바뀔 때까지 반복합니다", detail: "Ready 파드가 내내 4개 이상이라 요청이 끊기지 않습니다" },
+    ],
+  });
+
+  // Cluster diagram: one Service, five slots (four replicas plus one surge) and the pods that pass through them.
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.querySelector("#cluster");
+  const node = (tag, attrs, parent = svg) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    parent.appendChild(n);
+    return n;
+  };
+  const X = [64, 172, 280, 388, 496];
+  const svc = node("g", { class: "svc" });
+  node("rect", { x: 190, y: 12, width: 180, height: 54, rx: 12 }, svc);
+  node("text", { x: 280, y: 46, "text-anchor": "middle" }, svc).textContent = "Service";
+  const wires = X.map((x) => node("path", { class: "wire", d: `M 280 66 C 280 118 ${x} 116 ${x} 168` }));
+  X.forEach((x) => node("rect", { class: "slot", x: x - 46, y: 170, width: 92, height: 104, rx: 12 }));
+  const STATUS = { ready: ["Ready", "var(--eidos-success)"], pending: ["생성 중", "var(--eidos-muted-fg)"], stopping: ["종료 중", "var(--eidos-warning)"] };
+  const pod = (version, slot, status) => {
+    const x = X[slot], g = node("g", { class: `pod pod-${version}` });
+    node("rect", { x: x - 42, y: 174, width: 84, height: 96, rx: 10 }, g);
+    node("text", { class: "ver", x, y: 218, "text-anchor": "middle" }, g).textContent = version;
+    const dot = node("circle", { cx: x - 27, cy: 246, r: 6 }, g);
+    dot.style.fill = STATUS[status][1];
+    const label = node("text", { class: "state", x: x - 16, y: 252 }, g);
+    label.textContent = STATUS[status][0];
+    return { g, dot, label, status };
+  };
+  const v1 = [0, 1, 2, 3].map((slot) => pod("v1", slot, "ready"));
+  const v2 = { 4: pod("v2", 4, "pending"), 0: pod("v2", 0, "pending"), 1: pod("v2", 1, "pending"), 2: pod("v2", 2, "pending") };
+
+  const mix = (a, b, p) => (p <= 0 ? a : p >= 1 ? b : `color-mix(in oklch, ${b} ${Math.round(p * 100)}%, ${a})`);
+  const status = (pd, next, at) => {
+    const [fromText, fromColor] = STATUS[pd.status], [toText, toColor] = STATUS[next];
+    s.tl.tween(pd.dot, { style: (p) => ({ fill: mix(fromColor, toColor, p) }) }, { at, dur: 0.35 });
+    s.tl.tween(pd.label, { text: (p) => (p < 0.5 ? fromText : toText) }, { at, dur: 0.35 });
+    pd.status = next;
+  };
+  let ready = 4;
+  const count = (n, at) => {
+    const from = ready;
+    s.tl.tween("#ready-n", { text: (p) => String(p < 0.5 ? from : n) }, { at, dur: 0.2 });
+    ready = n;
+  };
+  const appear = (pd, at) => s.tl.tween(pd.g, { opacity: [0, 1], scale: [0.6, 1] }, { at, dur: 0.5, ease: "pop" });
+  const leave = (pd, at) => s.tl.tween(pd.g, { opacity: [1, 0], scale: [1, 0.85] }, { at, dur: 0.45, ease: "in" });
+  const connect = (slot, at) => s.tl.tween(wires[slot], { draw: [0, 1] }, { at, dur: 0.5, ease: "out" });
+  const drain = (slot, at) => s.tl.tween(wires[slot], { draw: [1, 0] }, { at, dur: 0.4, ease: "in" });
+
+  s.tl.tween("header, #steps, .diagram", { opacity: [0, 1] }, { dur: 0.5 });
+  s.tl.tween(wires.slice(0, 4), { draw: [0, 1] }, { at: "<+=0.2", dur: 0.6, ease: "out" });
+  s.tl.stop("v1 파드 4개가 Service 뒤에서 요청을 나눠 받고 있습니다", { id: "start" });
+
+  let t = panel.to(0).start;
+  appear(v2[4], t + 0.15);
+  s.tl.stop("maxSurge 1: 파드를 잠시 5개로 늘려 v2를 먼저 띄웁니다", { id: "surge" });
+
+  t = panel.to(1).start;
+  status(v2[4], "ready", t + 0.1);
+  connect(4, t + 0.35);
+  count(5, t + 0.35);
+  s.tl.stop("readinessProbe를 통과하자 Service가 v2에도 요청을 보냅니다", { id: "ready" });
+
+  t = panel.to(2).start;
+  drain(0, t + 0.1);
+  status(v1[0], "stopping", t + 0.1);
+  count(4, t + 0.1);
+  leave(v1[0], t + 0.55);
+  s.tl.stop("maxUnavailable 0: v2가 Ready인 뒤에야 v1 하나를 빼고 종료합니다", { id: "drain" });
+
+  t = panel.to(3).start + 0.2;
+  for (const [slot, old] of [[0, 1], [1, 2], [2, 3]]) {
+    appear(v2[slot], t);
+    status(v2[slot], "ready", t + 0.45);
+    connect(slot, t + 0.6);
+    count(5, t + 0.6);
+    drain(old, t + 1.05);
+    status(v1[old], "stopping", t + 1.05);
+    count(4, t + 1.05);
+    leave(v1[old], t + 1.35);
+    t += 1.7;
+  }
+  s.tl.stop("반복이 끝나면 v2만 남고, Ready 파드는 내내 4개 이상", { id: "done" });
+  s.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 순위 경쟁 (Bar Race)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  /* Sixth category color, extended per docs/design-tokens.md: same L/C band as cat-1..5, hue 345. */
+  :root { --eidos-cat-6: oklch(0.58 0.15 345); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --eidos-cat-6: oklch(0.72 0.14 345); } }
+  :root[data-theme="dark"] { --eidos-cat-6: oklch(0.72 0.14 345); }
+  .layout { position: absolute; inset: 0; max-width: 1100px; margin: auto; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .sub { margin: 8px 0 0; max-width: 64ch; color: var(--eidos-muted-fg); font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .chart { flex: 1; min-height: 0; margin: 0; padding: 16px; display: flex; }
+  #race { flex: 1; min-width: 0; min-height: 0; }
+  @media (max-width: 720px) {
+    .layout { padding: 4vh 5vw 15vh; gap: 2vh; }
+    .chart { flex: 0 1 auto; padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header>
+      <div class="eidos-label">API 게이트웨이 · 엔드포인트별 월간 호출 (가상 데이터)</div>
+      <h1 class="eidos-title">새로 연 /feed가 1위가 되기까지</h1>
+      <p class="sub">상위 5개만 보여 줍니다. 값이 같으면 id 순서로 순위를 정하므로 몇 번을 다시 열어도 같은 그림입니다.</p>
+    </header>
+    <figure class="chart eidos-card"><div id="race"></div></figure>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const series = {
+    search: [48, 50, 51, 52, 53, 54],
+    login: [40, 41, 42, 40, 41, 43],
+    upload: [22, 24, 27, 30, 31, 33],
+    feed: [12, 30, 52, 60, 68, 80],
+    notify: [16, 17, 18, 19, 20, 21],
+    payments: [8, 12, 15, 30, 38, 47],
+  };
+  s.tl.tween("header, .chart", { opacity: [0, 1] }, { dur: 0.5 });
+  const race = s.fx("bar-race", {
+    el: "#race",
+    at: "<+=0.2",
+    top: 5,
+    unit: "단위: 만 건",
+    mono: true,
+    items: [
+      { id: "search", label: "/search", color: "var(--eidos-cat-4)" },
+      { id: "login", label: "/login", color: "var(--eidos-cat-2)" },
+      { id: "upload", label: "/upload", color: "var(--eidos-cat-3)" },
+      { id: "feed", label: "/feed", color: "var(--eidos-accent)" },
+      { id: "notify", label: "/notify", color: "var(--eidos-cat-5)" },
+      { id: "payments", label: "/payments", color: "var(--eidos-cat-6)" },
+    ],
+    rows: [1, 2, 3, 4, 5, 6].map((m) => ({
+      time: m,
+      label: `${m}월`,
+      values: Object.fromEntries(Object.entries(series).map(([id, v]) => [id, v[m - 1]])),
+    })),
+  });
+  s.tl.stop("1월: /search가 1위, 새로 연 /feed는 5위", { id: "jan" });
+  race.to(3);
+  s.tl.stop("3월: /feed가 /search를 앞질러 1위", { id: "mar" });
+  race.to(4);
+  s.tl.stop("4월: /payments와 /upload가 30으로 동률. id 순서로 /payments가 4위", { id: "tie" });
+  race.to(6);
+  s.tl.stop("6월: /payments는 3위까지, /notify는 상위 5개 밖으로", { id: "jun" });
+  s.start();
+</script>
+</body>
+</html>

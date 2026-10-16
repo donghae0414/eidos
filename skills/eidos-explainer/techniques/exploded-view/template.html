@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 분해도 (Exploded View)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1240px; margin: auto; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr); grid-template-rows: minmax(0, 1fr); gap: 3vw; align-items: center; }
+  .dockerfile { padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .dockerfile ol { margin: 0; padding: 0; list-style: none; font: clamp(0.8rem, 1.2vw, 0.95rem)/1.9 var(--eidos-font-mono); }
+  .dockerfile li { padding-inline-start: 0.6rem; border-inline-start: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note { margin: 0; padding-top: 0.75rem; border-top: 1px solid var(--eidos-border); font-size: clamp(0.85rem, 1.3vw, 1rem); min-height: 3em; }
+  .figure { margin: 0; height: 100%; min-height: 0; display: flex; }
+  .figure svg { display: block; width: 100%; height: 100%; min-height: 0; font-family: var(--eidos-font-sans); }
+  .slab polygon { stroke: var(--c); stroke-width: 1.5; stroke-linejoin: round; }
+  .slab .top { fill: color-mix(in oklab, var(--c) 22%, var(--eidos-surface)); }
+  .slab .left { fill: color-mix(in oklab, var(--c) 48%, var(--eidos-surface)); }
+  .slab .right { fill: color-mix(in oklab, var(--c) 70%, var(--eidos-surface)); }
+  .tag { font: 700 24px var(--eidos-font-mono); fill: var(--eidos-fg); }
+  @media (max-width: 720px) {
+    .layout { padding: 4vh 5vw 15vh; gap: 2vh; }
+    .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; align-content: start; gap: 1.5vh; align-items: stretch; }
+    .figure, .figure svg { height: auto; }
+    .dockerfile { padding: 0.75rem 0.9rem; gap: 0.5rem; }
+    .dockerfile ol { line-height: 1.6; }
+    .note { padding-top: 0.5rem; min-height: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header>
+      <div class="eidos-label">Docker · 이미지 레이어와 빌드 캐시 (크기는 예시)</div>
+      <h1 class="eidos-title">이미지 한 개 = 레이어 다섯 장</h1>
+    </header>
+    <section class="body">
+      <article class="dockerfile eidos-card">
+        <div class="eidos-label">Dockerfile</div>
+        <ol>
+          <li id="line-base">FROM node:20-slim</li>
+          <li id="line-pkg">COPY package*.json ./</li>
+          <li id="line-deps">RUN npm ci</li>
+          <li id="line-src">COPY . .</li>
+          <li id="line-dist">RUN npm run build</li>
+        </ol>
+        <p class="note" id="note">myapp:1.4 · 레이어 5장 · 약 358 MB</p>
+      </article>
+      <figure class="figure eidos-card">
+        <svg id="image" viewBox="0 0 600 540" role="img" aria-label="Docker 이미지 레이어 다섯 장의 분해도">
+          <text id="tag" class="tag" x="240" y="262" text-anchor="middle">myapp:1.4</text>
+        </svg>
+      </figure>
+    </section>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.querySelector("#image");
+  const LAYERS = [
+    { id: "base", color: "--eidos-cat-4", label: "FROM node:20-slim", detail: "베이스 이미지 · 약 200 MB" },
+    { id: "pkg", color: "--eidos-cat-5", label: "COPY package*.json", detail: "의존성 목록 · 1 KB" },
+    { id: "deps", color: "--eidos-cat-3", label: "RUN npm ci", detail: "node_modules · 약 150 MB" },
+    { id: "src", color: "--eidos-cat-1", label: "COPY . .", detail: "소스 코드 · 3 MB" },
+    { id: "dist", color: "--eidos-cat-2", label: "RUN npm run build", detail: "빌드 결과 dist · 5 MB" },
+  ];
+  const CX = 240, W = 120, H = 60, D = 22, BASE = 440, GAP = 66;
+  const points = (list) => list.map(([x, y]) => `${x},${y}`).join(" ");
+  LAYERS.forEach((layer, k) => {
+    const cy = BASE - k * D;
+    const g = document.createElementNS(NS, "g");
+    g.id = `layer-${layer.id}`;
+    g.setAttribute("class", "slab");
+    g.style.setProperty("--c", `var(${layer.color})`);
+    const faces = {
+      left: [[CX - W, cy], [CX, cy + H], [CX, cy + H + D], [CX - W, cy + D]],
+      right: [[CX, cy + H], [CX + W, cy], [CX + W, cy + D], [CX, cy + H + D]],
+      top: [[CX, cy - H], [CX + W, cy], [CX, cy + H], [CX - W, cy]],
+    };
+    for (const [cls, list] of Object.entries(faces)) {
+      const poly = document.createElementNS(NS, "polygon");
+      poly.setAttribute("class", cls);
+      poly.setAttribute("points", points(list));
+      g.appendChild(poly);
+    }
+    svg.appendChild(g);
+  });
+
+  const s = Eidos.stage();
+  const ex = s.fx("exploded-view", {
+    el: "#image",
+    mono: true,
+    size: 24,
+    labelX: 318,
+    parts: [...LAYERS].reverse().map((layer) => ({
+      el: `#layer-${layer.id}`,
+      id: layer.id,
+      label: layer.label,
+      detail: layer.detail,
+      vector: [-90, -GAP * LAYERS.indexOf(layer)],
+    })),
+  });
+  const swap = (target, from, to, at) =>
+    s.tl.tween(target, { text: (p) => (p < 0.5 ? from : to), opacity: (p) => Math.abs(1 - 2 * p) }, { at, dur: 0.5 });
+
+  s.tl.tween("header, .dockerfile, .figure", { opacity: [0, 1] }, { dur: 0.5 });
+  s.tl.stop("myapp:1.4 이미지는 레이어 다섯 장이 겹친 것입니다", { id: "image" });
+
+  let t = s.tl.end;
+  s.tl.tween("#tag", { opacity: [1, 0] }, { at: t, dur: 0.3 });
+  ex.explode({ at: t + 0.1 });
+  s.tl.stop("Dockerfile 한 줄이 레이어 한 장. 아래에서 위로 쌓입니다", { id: "layers" });
+
+  t = s.tl.end;
+  ex.focus(["src", "dist"], { at: t });
+  for (const layer of LAYERS.slice(0, 3)) swap(ex.part(layer.id).detail, layer.detail, "캐시 그대로 사용", t);
+  swap(ex.part("src").detail, LAYERS[3].detail, "바뀐 파일을 다시 복사", t);
+  swap(ex.part("dist").detail, LAYERS[4].detail, "그 위라서 다시 빌드", t);
+  s.tl.tween("#line-src, #line-dist", { style: (p) => ({ borderInlineStartColor: `color-mix(in oklch, var(--eidos-accent) ${Math.round(p * 100)}%, transparent)` }) }, { at: t, dur: 0.45 });
+  swap("#note", "myapp:1.4 · 레이어 5장 · 약 358 MB", "다시 만드는 레이어 2장 · 약 8 MB", t);
+  s.tl.stop("소스만 바뀌면 그 위 두 장만 다시 만들고, 아래 세 장은 캐시 그대로", { id: "cache" });
+
+  t = s.tl.end;
+  const back = ex.assemble({ at: t });
+  ex.focus(null, { at: t });
+  s.tl.tween("#tag", { opacity: [0, 1], text: (p) => (p > 0 ? "myapp:1.5" : "myapp:1.4") }, { at: back.end - 0.2, dur: 0.4 });
+  swap("#note", "다시 만드는 레이어 2장 · 약 8 MB", "myapp:1.5 · 새로 받을 것은 약 8 MB", t);
+  s.tl.stop("다시 겹치면 myapp:1.5. 배포 서버가 새로 받을 것은 바뀐 레이어뿐", { id: "rebuilt" });
+  s.start();
+</script>
+</body>
+</html>

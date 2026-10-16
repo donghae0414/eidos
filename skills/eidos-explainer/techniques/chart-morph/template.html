@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 차트 간 전환 (Chart Morph)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1100px; margin: auto; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .sub { margin: 8px 0 0; max-width: 62ch; color: var(--eidos-muted-fg); font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .chart { flex: 1; min-height: 0; margin: 0; padding: 16px; display: flex; }
+  #memory { flex: 1; min-width: 0; min-height: 0; }
+  @media (max-width: 720px) {
+    .layout { padding: 4vh 5vw 15vh; gap: 2vh; }
+    .chart { flex: 0 1 auto; padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <main class="layout">
+    <header>
+      <div class="eidos-label">vLLM · GPU 메모리 예산 (예시 수치)</div>
+      <h1 class="eidos-title">GPU 80 GB는 어디에 쓰일까</h1>
+      <p class="sub">H100 80 GB에서 Llama 3 8B(FP16)를 띄울 때, gpu_memory_utilization이 0.9면 vLLM은 최대 72 GB를 씁니다. 가중치와 활성값 등을 빼고 남은 만큼이 KV 캐시가 됩니다.</p>
+    </header>
+    <figure class="chart eidos-card"><div id="memory"></div></figure>
+  </main>
+</div></div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header, .chart", { opacity: [0, 1] }, { dur: 0.5 });
+  const chart = s.fx("chart-morph", {
+    el: "#memory",
+    at: "<+=0.2",
+    unit: "GB",
+    max: 60,
+    ticks: [0, 20, 40, 60],
+    items: [
+      { id: "weights", label: "가중치", value: 16, color: "var(--eidos-cat-4)" },
+      { id: "kv", label: "KV 캐시", value: 52, color: "var(--eidos-accent)" },
+      { id: "act", label: "활성값 등", value: 4, color: "var(--eidos-cat-5)" },
+      { id: "free", label: "여유", value: 8, color: "var(--eidos-muted-fg)" },
+    ],
+  });
+  s.tl.stop("절대량: KV 캐시 52 GB가 가중치 16 GB의 세 배가 넘습니다", { id: "amount" });
+  chart.to("strip");
+  s.tl.stop("비율: 한 줄로 이으면 KV 캐시가 전체의 65%", { id: "share" });
+  chart.to("waffle");
+  s.tl.stop("100칸으로 접으면 한 칸이 0.8 GB, KV 캐시는 65칸", { id: "cells" });
+  chart.focus(["kv"]);
+  s.tl.stop("동시에 처리하는 요청들이 이 65칸을 블록 단위로 나눠 씁니다", { id: "kv" });
+  s.start();
+</script>
+</body>
+</html>
