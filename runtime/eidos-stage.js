@@ -112,6 +112,7 @@
     constructor() {
       this.tracks = [];
       this.hooks = [];
+      this.ramps = [];
       this.stops = [{ t: 0, label: "", hold: 1.5, scene: null }];
       this.end = 0;
       this.t = 0;
@@ -166,18 +167,60 @@
       this.hooks.push(fn);
       return this;
     }
+    ramp({ at, dur, rate }) {
+      if (![at, dur, rate].every(Number.isFinite) || at < 0 || dur < 0 || rate < 0) {
+        errors.push("tl.ramp requires finite nonnegative at, dur and rate");
+        return this;
+      }
+      this.ramps.push({ at, dur, rate });
+      this.ramps.sort((a, b) => a.at - b.at);
+      return this;
+    }
+    rateAt(t) {
+      return this.ramps.reduce((rate, r) => t >= r.at && t < r.at + r.dur ? rate * r.rate : rate, 1);
+    }
+    segments(a, b) {
+      const points = [a, b];
+      for (const r of this.ramps) for (const t of [r.at, r.at + r.dur]) if (t > a && t < b) points.push(t);
+      return [...new Set(points)].sort((x, y) => x - y);
+    }
+    sourceTime(t) {
+      const points = this.segments(0, t);
+      let u = 0;
+      for (let i = 1; i < points.length; i++) u += (points[i] - points[i - 1]) * this.rateAt((points[i] + points[i - 1]) / 2);
+      return u;
+    }
+    // Travel integrates reciprocal rate, split exactly at every ramp boundary.
+    travel(from, to, budget) {
+      const forward = to >= from;
+      const points = this.segments(Math.min(from, to), Math.max(from, to));
+      if (!forward) points.reverse();
+      let cost = 0, t = from;
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], rate = this.rateAt((a + b) / 2);
+        const duration = Math.abs(b - a) / rate;
+        if (budget - cost < duration || rate === 0) {
+          t = a + (forward ? 1 : -1) * Math.max(0, budget - cost) * rate;
+          return { t, cost: budget };
+        }
+        cost += duration;
+        t = b;
+      }
+      return { t, cost };
+    }
     // Tracks that have not started are applied first, latest-start first, at p=0;
     // started tracks are then applied in start order. The result depends only on t,
     // so seeking forward, backward or directly to t always yields the same state.
     seek(t) {
       t = Math.min(Math.max(t, 0), this.end);
       this.t = t;
+      const u = this.sourceTime(t);
       const future = [], started = [];
-      for (const tr of this.tracks) (tr.at > t + 1e-9 ? future : started).push(tr);
+      for (const tr of this.tracks) (tr.at > u + 1e-9 ? future : started).push(tr);
       future.sort((a, b) => b.at - a.at || b.i - a.i);
       for (const tr of future) tr.fn(tr.ease(0));
       started.sort((a, b) => a.at - b.at || a.i - b.i);
-      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1));
+      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((u - tr.at) / tr.dur) : 1));
       for (const h of this.hooks) h(t);
       return this;
     }
@@ -260,7 +303,7 @@
       return st;
     }
     apply(t) {
-      const st = (this.state = this.stateAt(t));
+      const st = (this.state = this.stateAt(this.tl.sourceTime(t)));
       this.world.style.transform =
         `translate(${r3(this.W / 2)}px, ${r3(this.H / 2)}px) rotate(${r3(st.r)}deg) scale(${r3(st.s)}) translate(${r3(-st.x)}px, ${r3(-st.y)}px)`;
     }
@@ -275,6 +318,8 @@
     tl.onSeek((t) => camera.apply(t));
     const layoutFns = [];
     let hud = null, raf = 0, anim = null;
+    const manual = params.get("clock") === "manual";
+    let playing = false, speed = 1, holding = null, lastFrame = 0;
     let ended = false;
 
     const api = {
@@ -284,6 +329,38 @@
       get stops() { return tl.stops; },
       get end() { return tl.end; },
       get t() { return tl.t; },
+      get playing() { return playing; },
+      speed(x) {
+        if (x == null && arguments.length === 0) return speed;
+        if (typeof x !== "number" || !Number.isFinite(x) || x <= 0) {
+          errors.push(`Invalid playback speed: ${String(x)}`);
+          speed = 1;
+        } else speed = x;
+        updateHud();
+        return api;
+      },
+      play(o = {}) {
+        if (o.speed !== undefined) api.speed(o.speed);
+        if (playing) return api;
+        playing = true;
+        ended = false;
+        const current = tl.stops[stopIndexAt(tl.t)];
+        if (!anim && holding == null && Math.abs(tl.t - current.t) < 1e-9) holding = current.hold;
+        if (!anim && tl.t >= tl.end) finish();
+        schedule();
+        updateHud();
+        return api;
+      },
+      pause() {
+        playing = false;
+        cancel();
+        updateHud();
+        return api;
+      },
+      advance(ms) {
+        if (manual && Number.isFinite(ms) && ms >= 0) tick(ms / 1000);
+        return api;
+      },
       measure: (target) => unionRect($all(target, world).map((n) => rectIn(n, world))),
       onLayout(fn) { layoutFns.push(fn); return api; },
       fx(name, o = {}) {
@@ -298,9 +375,10 @@
         world.style.transform = tf;
         tl.seek(tl.t);
       },
-      seek(t) { cancel(); tl.seek(t); setIndex(stopIndexAt(tl.t)); updateHud(); return api; },
+      seek(t) { api.pause(); holding = null; tl.seek(t); setIndex(stopIndexAt(tl.t)); updateHud(); return api; },
       jump(i) {
-        cancel();
+        api.pause();
+        holding = null;
         i = Math.min(Math.max(i, 0), tl.stops.length - 1);
         tl.seek(tl.stops[i].t);
         setIndex(i);
@@ -308,6 +386,8 @@
         return api;
       },
       goto(i) {
+        api.pause();
+        holding = null;
         i = Math.min(Math.max(i, 0), tl.stops.length - 1);
         if (E.reduced) {
           api.jump(i);
@@ -316,25 +396,15 @@
           world.classList.add("eidos-fade");
           return api;
         }
-        cancel();
         const from = tl.t, to = tl.stops[i].t;
         setIndex(i);
-        const ms = (Math.abs(to - from) * 1000) / (to < from ? 3 : 1);
-        if (ms < 1) { tl.seek(to); updateHud(); return api; }
-        const t0 = performance.now();
         anim = { to };
-        const step = (now) => {
-          const k = Math.min((now - t0) / ms, 1);
-          tl.seek(lerp(from, to, k));
-          updateHud();
-          if (k < 1) raf = requestAnimationFrame(step);
-          else anim = null;
-        };
-        raf = requestAnimationFrame(step);
+        if (Math.abs(to - from) < 1e-9) { anim = null; tl.seek(to); updateHud(); return api; }
+        schedule();
         return api;
       },
       next() {
-        if (anim) { const to = anim.to; cancel(); tl.seek(to); updateHud(); return api; }
+        if (anim) { const to = anim.to; api.pause(); tl.seek(to); setIndex(stopIndexAt(to)); updateHud(); return api; }
         return api.goto(api.index + 1);
       },
       prev() { return api.goto(api.index - 1); },
@@ -361,10 +431,17 @@
         if (opts.hud !== false && params.get("hud") !== "0") buildHud();
         bindControls();
         addEventListener("resize", () => api.layout());
+        addEventListener("visibilitychange", () => { if (document.hidden) api.pause(); });
+        if (params.has("speed")) api.speed(Number(params.get("speed")));
         const qt = params.get("t"), qs = params.get("stop");
+        const [scene, local] = location.hash.slice(1).split("&")[0].split(".");
+        const sceneStops = tl.stops.map((s, i) => ({ ...s, i })).filter((s) => s.scene === scene);
+        const hashStop = sceneStops.find((s, i) => s.id === local || (s.id == null && String(i) === local));
         if (qt != null) api.seek(parseFloat(qt));
         else if (qs != null) api.jump(parseInt(qs, 10));
-        else if (opts.autoplay !== false) api.goto(1);
+        else if (hashStop) api.jump(hashStop.i);
+        else if (opts.intro !== false) api.goto(1);
+        if (params.get("autoplay") === "1") api.play();
         api.started = true;
         window.__eidos = api;
         api.ready = document.fonts.ready.then(() => { api.layout(); });
@@ -376,6 +453,62 @@
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       anim = null;
+      lastFrame = 0;
+    }
+    function schedule() {
+      if (manual || raf || (!playing && !anim)) return;
+      lastFrame = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+    function frame(now) {
+      raf = 0;
+      const elapsed = (now - lastFrame) / 1000;
+      lastFrame = now;
+      tick(elapsed);
+      if (playing || anim) raf = requestAnimationFrame(frame);
+    }
+    function finish() {
+      playing = false;
+      anim = null;
+      holding = 0;
+      if (!ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      }
+    }
+    function tick(seconds) {
+      let budget = seconds * speed;
+      while (budget > 0 && (playing || anim)) {
+        if (holding > 0 && playing) {
+          const spent = Math.min(holding, budget);
+          holding -= spent;
+          if (holding < 1e-9) holding = 0;
+          budget -= spent;
+          if (holding > 0 || (budget <= 0 && !E.reduced)) break;
+        }
+        if (!anim) {
+          const current = stopIndexAt(tl.t);
+          if (current === tl.stops.length - 1) { finish(); break; }
+          anim = { to: tl.stops[current + 1].t };
+        }
+        const to = anim.to;
+        if (E.reduced && playing) {
+          tl.seek(to);
+        } else {
+          const reverse = to < tl.t ? 3 : 1;
+          const step = tl.travel(tl.t, to, budget * reverse);
+          tl.seek(step.t);
+          budget = Math.max(0, budget - step.cost / reverse);
+          if (Math.abs(tl.t - to) > 1e-9) break;
+        }
+        anim = null;
+        setIndex(stopIndexAt(to));
+        if (playing) {
+          if (api.index === tl.stops.length - 1) { finish(); break; }
+          holding = tl.stops[api.index].hold;
+        }
+      }
+      updateHud();
     }
     function stopIndexAt(t) {
       let idx = 0;
@@ -392,7 +525,8 @@
       hud = document.createElement("div");
       hud.className = "eidos-hud";
       hud.innerHTML =
-        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-transport" data-eidos-noclick><button type="button" class="eidos-hud-play" data-eidos-noclick></button><span class="eidos-hud-speed"></span></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+      hud.querySelector("button").addEventListener("click", () => playing ? api.pause() : api.play());
       document.body.appendChild(hud);
       updateHud();
     }
@@ -403,6 +537,10 @@
         dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
       } else if (!atEnd) ended = false;
       if (!hud) return;
+      const button = hud.querySelector(".eidos-hud-play");
+      button.textContent = playing ? "Pause" : "Play";
+      button.setAttribute("aria-pressed", String(playing));
+      hud.querySelector(".eidos-hud-speed").textContent = `${speed}x`;
       hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
       hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  →/Space 다음 · ← 이전 · P 재생 · 스크롤`;
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
@@ -418,13 +556,21 @@
         else if (k === "Home") api.jump(0);
         else if (k === "End") api.jump(tl.stops.length - 1);
         else if (k === "r" || k === "R") { api.jump(0); api.goto(1); }
+        else if (k === "p" || k === "P") { playing ? api.pause() : api.play(); }
+        else if (k === "[" || k === "]") {
+          const steps = [0.5, 1, 1.5, 2];
+          api.speed(k === "]" ? steps.find((s) => s > speed) ?? 2 : steps.findLast((s) => s < speed) ?? 0.5);
+        }
         else return;
         e.preventDefault();
       });
       el.addEventListener("click", (e) => {
+        api.pause();
         if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });
+      addEventListener("input", () => api.pause());
+      addEventListener("change", () => api.pause());
     }
     return api;
   };

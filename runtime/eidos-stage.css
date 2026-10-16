@@ -116,6 +116,25 @@ body {
 }
 .eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
 .eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-transport { display: flex; align-items: center; gap: 0.75rem; pointer-events: auto; }
+.eidos-hud-play {
+  min-width: 4.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-hud-play:hover, .eidos-hud-play:active { background: var(--eidos-border); }
+.eidos-hud-play:focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-hud-speed { min-width: 3ch; color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-count { grid-column: 1 / -1; }
+@media (max-width: 480px) {
+  .eidos-hud-count { font-size: 0.8rem; }
+}
 .eidos-hud-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--eidos-border); overflow: hidden; }
 .eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
 .eidos-hud[hidden] { display: none; }
