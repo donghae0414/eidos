@@ -139,6 +139,10 @@ async function trustedArrow(c, query, sel, param) {
 // expected to FAIL until those runtime features land (TDD red phase).
 // ---------------------------------------------------------------------------
 const Q = "motion=full&hud=0";
+// Controls fixture helpers: the time where declared controls are live, and a control's min/max declared values.
+const at = (c) => c.fixture.controlsAt ?? c.end;
+const note = (k, what, vs) => console.log(`      controls ${k}: ${what} ok (${vs.join(", ")})`);
+const bounds = (vs) => (vs.every((v) => typeof v === "number") ? [Math.min(...vs), Math.max(...vs)] : [vs[0], vs[vs.length - 1]]);
 const QM = "clock=manual&autoplay=0&hud=0&motion=full";
 
 const HUB_ORDER = ["hub.0", "A.0", "A.1", "hub.ret-A", "B.0", "B.1", "hub.ret-B", "outro.0"];
@@ -410,27 +414,55 @@ const FEATURES = {
     api: `return [...["control", "setControls", "onParams"].filter((k) => typeof A[k] !== "function").map((k) => "__eidos." + k + "()"), ...(A.params && typeof A.params === "object" ? [] : ["__eidos.params"])];`,
     skipOnMissing: true,
     steps: [
+      // Generic steps iterate every control the fixture declares: controls: { name: [values...] }
+      // (non-sticky overrides clear when a seek crosses a stop, so the page seeks, sets, then re-seeks the same t;
+      // min/max = numeric min/max, else first/last) and optional controlsAt: a time inside the scene where they are live.
       ["setControls+seek == fresh ?c load", async (c) => {
         const out = [];
-        const ts = [c.stops[1], c.end / 2, c.end].map((t) => Math.round(t * 1000) / 1000);
-        for (const v of c.fixture.controls.n ?? []) {
-          await c.open(`${Q}&t=0`);
-          const snaps = await ev(c.view, `return ${JSON.stringify(ts)}.map((t) => (A.setControls({ n: ${JSON.stringify(v)} }), A.seek(t), A.snapshot()));`);
-          for (let i = 0; i < ts.length; i++) {
-            await c.open(`${Q}&t=${ts[i]}&c.n=${encodeURIComponent(v)}`);
-            if ((await ev(c.view, `return A.snapshot();`)) !== snaps[i]) out.push(`n=${v} t=${ts[i]}`);
+        const ts = [...new Set([c.stops[1], c.end / 2, c.end, ...(c.fixture.controlsAt == null ? [] : [c.fixture.controlsAt])].map((t) => Math.round(t * 1000) / 1000))];
+        for (const [k, vs] of Object.entries(c.fixture.controls)) {
+          const n0 = out.length;
+          for (const v of vs) {
+            await c.open(`${Q}&t=0`);
+            const snaps = await ev(c.view, `return ${JSON.stringify(ts)}.map((t) => (A.seek(t), A.setControls({ [${JSON.stringify(k)}]: ${JSON.stringify(v)} }), A.seek(t), A.snapshot()));`);
+            for (let i = 0; i < ts.length; i++) {
+              await c.open(`${Q}&t=${ts[i]}&c.${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+              if ((await ev(c.view, `return A.snapshot();`)) !== snaps[i]) out.push(`${k}=${v} t=${ts[i]}`);
+            }
           }
+          if (out.length === n0) note(k, "setControls+seek == fresh ?c", vs);
         }
         return out.length ? `in-page setControls+seek != fresh load at ${out.join(", ")}` : "";
       }],
       ["every control changes the scene", async (c) => {
-        await c.open(`${Q}&t=${c.end}`);
+        await c.open(`${Q}&t=${at(c)}`);
         // scene() excludes the params line of snapshot(), so a control that only updates params fails.
         return ev(c.view, `const S = ${JSON.stringify(c.fixture.controls)}, dead = []; for (const k in S) { const seen = new Set(); for (const v of S[k]) { A.setControls({ [k]: v }); await frames(); seen.add(scene()); } if (seen.size < 2) dead.push(k); } return dead.length ? "controls never change the visible scene: " + dead.join(", ") : "";`);
       }],
+      ["fresh ?c min vs max differ", async (c) => {
+        const out = [];
+        for (const [k, vs] of Object.entries(c.fixture.controls)) {
+          const [lo, hi] = bounds(vs), seen = [];
+          for (const v of [lo, hi]) {
+            await c.open(`${Q}&t=${at(c)}&c.${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+            await ev(c.view, `await frames(); return 0;`);
+            seen.push(await ev(c.view, `return scene();`));
+          }
+          if (seen[0] === seen[1]) out.push(`${k}=${lo} and ${k}=${hi} load the same scene`);
+          else note(k, "fresh min vs max differ", [lo, hi]);
+        }
+        return out.join("; ");
+      }],
       ["A->B->A restores", async (c) => {
-        await c.open(`${Q}&t=${c.end}`);
-        return ev(c.view, `A.setControls({ n: 2 }); await frames(); const a = scene(), sa = A.snapshot(); A.setControls({ n: 7 }); await frames(); if (scene() === a) return "n 2->7 did not change the scene"; A.setControls({ n: 2 }); await frames(); return a === scene() && sa === A.snapshot() ? "" : "n 2->7->2 did not restore the scene/snapshot";`);
+        const out = [];
+        for (const [k, vs] of Object.entries(c.fixture.controls)) {
+          const [lo, hi] = bounds(vs);
+          await c.open(`${Q}&t=${at(c)}`);
+          const m = await ev(c.view, `const k = ${JSON.stringify(k)}; A.setControls({ [k]: ${JSON.stringify(lo)} }); await frames(); const a = scene(), sa = A.snapshot(); A.setControls({ [k]: ${JSON.stringify(hi)} }); await frames(); if (scene() === a) return k + " ${lo}->${hi} did not change the scene"; A.setControls({ [k]: ${JSON.stringify(lo)} }); await frames(); return a === scene() && sa === A.snapshot() ? "" : k + " ${lo}->${hi}->${lo} did not restore the scene/snapshot";`);
+          if (m) out.push(m);
+          else note(k, "A->B->A restores", [lo, hi]);
+        }
+        return out.join("; ");
       }],
       ["URL clamp", async (c) => {
         await c.open(`${Q}&t=${c.end}&c.n=99`);
@@ -729,6 +761,10 @@ const FEATURES = {
   },
 };
 
+// The remaining controls steps probe behaviour of the fixture's own control `n`; pages that declare other controls skip them.
+const GENERIC_CONTROLS = new Set(["setControls+seek == fresh ?c load", "every control changes the scene", "fresh ?c min vs max differ", "A->B->A restores"]);
+FEATURES.controls.steps = FEATURES.controls.steps.map(([label, fn]) => GENERIC_CONTROLS.has(label) ? [label, fn] : [label, (c) => ("n" in c.fixture.controls ? fn(c) : "")]);
+
 async function runFeature(name, ctx) {
   const spec = FEATURES[name];
   if (!spec) return [`unknown fixture feature "${name}"`];
@@ -945,7 +981,7 @@ async function runOne(file) {
       res.expectFailList = Array.isArray(fx.expectFail) ? fx.expectFail : [];
       const keep = consoleErrors.length;
       const ctx = { view, file, fixture: fx, stops: stopTs, end: info.end, open: (q, h) => open(view, file, q, h) };
-      for (const feat of Object.keys(fx).filter((k) => k !== "expectFail")) {
+      for (const feat of Object.keys(fx).filter((k) => k !== "expectFail" && k !== "controlsAt")) {
         const build = [...new Set(info.build.filter((m) => m.startsWith(`${feat}: `)).map((m) => `build: ${m.slice(feat.length + 2).split(". (In ")[0]}`))];
         res.features[feat] = [...build, ...(await runFeature(feat, ctx))];
       }

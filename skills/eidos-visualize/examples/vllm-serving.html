@@ -2479,6 +2479,8 @@ E2E    ∝ (1 + 대기 / max_num_seqs) × iter         <span class="c">→ 대�
   maxCtl.drive(32, 1, { at: L0, dur: 0.5, ease: "inOut" });
   maxCtl.drive(1, 128, { at: L0 + 0.6, dur: 2.8, ease: "inOut" });
   tl.stop("max_num_seqs를 키우면 처리량은 오르다 포화하고 iteration은 조금 느려집니다");
+  // qa fixture: declared controls (min/default/max) and a time inside the lab scene where they are live.
+  window.__eidosFixture = { controls: { "max-num-seqs": [1, 32, 256], users: [1, 64, 256] }, controlsAt: tl.end };
   // concept "대기열과 E2E": max_num_seqs 32에서 사용자를 8→128로 올린다
   const L1 = tl.end;
   usersCtl.drive(128, 8, { at: L1 + 0.05, dur: 0.5, ease: "inOut" });
