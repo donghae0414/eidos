@@ -315,6 +315,7 @@
       let st = this.home();
       for (const kf of this.kfs) {
         if (t < kf.at) break;
+        if (kf.after && t === kf.at) continue;
         const p = kf.dur > 0 ? clamp01((t - kf.at) / kf.dur) : 1;
         st = Camera.mix(st, kf.resolved, kf.ease(p));
         if (p < 1) break;
@@ -647,7 +648,11 @@
         to = nestedOut ? siblings : null;
       }
       const trackStart = tl.tracks.length;
-      if (o.via === "camera") camera.to(target, { ...o.with, at });
+      if (o.via === "camera") {
+        camera.to(target, { ...o.with, at });
+        // A spoke starts from its hub, even beside a zero-duration return.
+        if (parent != null) camera.kfs[camera.kfs.length - 1].after = true;
+      }
       else if (o.via === "cut") {
         if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
         if (to) tl.tween(to, { opacity: [0, 1] }, { at, dur: 0 });
