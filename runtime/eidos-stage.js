@@ -3,6 +3,25 @@
   E.version = "0.1.0";
   E.fx = E.fx || {};
 
+  const gesturePageHeight = innerHeight;
+  E.gesture = (state, { dx, dy, mode, t, kind }) => {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(t)) return { state, action: null };
+    if (kind === "swipe") {
+      let action = null;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) >= 1.5 * Math.abs(dy)) action = dx < 0 ? "next" : "prev";
+      else if (Math.abs(dy) >= 48 && Math.abs(dy) >= 1.5 * Math.abs(dx)) action = dy < 0 ? "next" : "prev";
+      return { state, action };
+    }
+    if (kind !== "wheel" || ![0, 1, 2].includes(mode)) return { state, action: null };
+    const factor = mode === 1 ? 16 : mode === 2 ? gesturePageHeight : 1;
+    const delta = (Math.abs(dy) >= Math.abs(dx) ? dy : dx) * factor;
+    const fresh = !state || t - state.t >= 160 || t < state.t;
+    const next = { t, total: (fresh ? 0 : state.total) + delta, fired: fresh ? false : state.fired };
+    const action = !next.fired && Math.abs(next.total) > 80 ? next.total > 0 ? "next" : "prev" : null;
+    if (action) next.fired = true;
+    return { state: next, action };
+  };
+
   const errors = (window.__eidosErrors = []);
   addEventListener("error", (e) => {
     errors.push(String(e.message));
@@ -871,6 +890,68 @@
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
     }
     function bindControls() {
+      const gestureControls = "a, button, input, select, textarea, label, [contenteditable], .eidos-dock, .eidos-hud, [data-eidos-nokeys], [data-eidos-noclick]";
+      const ownsGesture = (target, dx, dy) => {
+        if (target.closest(gestureControls)) return false;
+        for (let node = target; node && node !== el; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          const canScroll = (overflow, delta, pos, max) =>
+            /^(auto|scroll|overlay)$/.test(overflow) && (delta > 0 ? pos < max : delta < 0 && pos > 0);
+          if (canScroll(style.overflowY, dy, node.scrollTop, node.scrollHeight - node.clientHeight) ||
+              canScroll(style.overflowX, dx, node.scrollLeft, node.scrollWidth - node.clientWidth)) return false;
+        }
+        return true;
+      };
+      let wheelState, wheelOwner = false;
+      el.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || !Number.isFinite(e.deltaX) || !Number.isFinite(e.deltaY) || ![0, 1, 2].includes(e.deltaMode)) return;
+        if (!wheelState || e.timeStamp - wheelState.t >= 160 || e.timeStamp < wheelState.t) {
+          wheelOwner = ownsGesture(e.target, e.deltaX, e.deltaY);
+        }
+        // Page units use the current viewport, including after a resize.
+        const page = e.deltaMode === 2;
+        const result = E.gesture(wheelState, {
+          dx: e.deltaX * (page ? innerHeight : 1), dy: e.deltaY * (page ? innerHeight : 1),
+          mode: page ? 0 : e.deltaMode, t: e.timeStamp, kind: "wheel",
+        });
+        wheelState = result.state;
+        if (!wheelOwner) return;
+        e.preventDefault();
+        if (api.playing) api.pause();
+        if (result.action) api[result.action]();
+      }, { passive: false });
+      let pointer = null, swipeClick = false;
+      el.addEventListener("pointerdown", (e) => {
+        swipeClick = false;
+        if (e.pointerType === "mouse" || !e.isPrimary) return;
+        pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target, owner: null };
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        if (pointer.owner === null && (dx || dy)) pointer.owner = ownsGesture(pointer.target, -dx, -dy);
+        if (pointer.owner && api.playing) api.pause();
+      });
+      el.addEventListener("pointerup", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        const owner = pointer.owner ?? ownsGesture(pointer.target, -dx, -dy);
+        pointer = null;
+        if (!owner) return;
+        const { action } = E.gesture(undefined, { dx, dy, mode: 0, t: e.timeStamp, kind: "swipe" });
+        if (!action) return;
+        swipeClick = true;
+        api[action]();
+      });
+      el.addEventListener("pointercancel", (e) => {
+        if (pointer?.id === e.pointerId) pointer = null;
+      });
+      el.addEventListener("click", (e) => {
+        if (!swipeClick) return;
+        swipeClick = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }, true);
       addEventListener("keydown", (e) => {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.target.closest("input, select, textarea, [contenteditable], [data-eidos-nokeys]")) return;

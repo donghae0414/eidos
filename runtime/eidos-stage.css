@@ -86,6 +86,7 @@ body {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  touch-action: pan-y pinch-zoom;
 }
 .eidos-world {
   position: absolute;
