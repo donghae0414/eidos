@@ -190,16 +190,16 @@
       for (let i = 1; i < points.length; i++) u += (points[i] - points[i - 1]) * this.rateAt((points[i] + points[i - 1]) / 2);
       return u;
     }
-    // Travel integrates reciprocal rate, split exactly at every ramp boundary.
+    // Positive rates integrate reciprocally; freezes consume presentation time.
     travel(from, to, budget) {
       const forward = to >= from;
       const points = this.segments(Math.min(from, to), Math.max(from, to));
       if (!forward) points.reverse();
       let cost = 0, t = from;
       for (let i = 1; i < points.length; i++) {
-        const a = points[i - 1], b = points[i], rate = this.rateAt((a + b) / 2);
+        const a = points[i - 1], b = points[i], rate = this.rateAt((a + b) / 2) || 1;
         const duration = Math.abs(b - a) / rate;
-        if (budget - cost < duration || rate === 0) {
+        if (budget - cost < duration) {
           t = a + (forward ? 1 : -1) * Math.max(0, budget - cost) * rate;
           return { t, cost: budget };
         }
@@ -321,7 +321,7 @@
     let hud = null, raf = 0, anim = null;
     const manual = params.get("clock") === "manual";
     let playing = false, speed = 1, holding = null, lastFrame = 0;
-    let ended = false;
+    let ended = false, generation = 0;
     const controls = new Map(), overrides = new Map(), paramFns = [];
     let values = Object.freeze({}), renderedValues = values, paramStop = 0, paramsRaf = 0, needsLayout = false, dock = null;
     tl.paramsAt = resolveParams;
@@ -649,6 +649,7 @@
       updateDock(stopIndexAt(tl.t));
     }
     function cancel() {
+      generation++;
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       anim = null;
@@ -657,14 +658,16 @@
     function schedule() {
       if (manual || raf || (!playing && !anim)) return;
       lastFrame = performance.now();
-      raf = requestAnimationFrame(frame);
+      const token = generation;
+      raf = requestAnimationFrame((now) => frame(now, token));
     }
-    function frame(now) {
+    function frame(now, token) {
+      if (token !== generation) return;
       raf = 0;
       const elapsed = (now - lastFrame) / 1000;
       lastFrame = now;
       tick(elapsed);
-      if (playing || anim) raf = requestAnimationFrame(frame);
+      if (token === generation) schedule();
     }
     function finish() {
       playing = false;
