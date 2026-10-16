@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "active_work_id": "eidos-dynamic-default",
+  "works": {
+    "eidos-dynamic-default": {
+      "work_id": "eidos-dynamic-default",
+      "active_plan": ".omo/plans/eidos-dynamic-default.md",
+      "plan_name": "eidos-dynamic-default",
+      "session_ids": [
+        "senpi:01a14276-de09-7ef9-a558-58662f44e4e0"
+      ],
+      "status": "active",
+      "worktree_path": "/Users/a451174/apps/eidos-wt/eidos-dynamic-default",
+      "branch": "feat/eidos-dynamic-default",
+      "delivery": "branch-only: no merge, no push (user instruction)"
+    }
+  }
+}

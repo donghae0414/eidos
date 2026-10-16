@@ -1,0 +1,15 @@
+$ bun scripts/qa.mjs --only "skills/eidos-camera/techniques/{orbit,dolly-zoom,fpv-flight,infinite-zoom}/template.html" --contact /Users/a451174/apps/eidos/.omo/evidence/task-12-contact
+# exit 0 in 5.1s at 2026-10-16T06:39:00.476Z on worktree 4c6e246 fix(runtime): built-in zero-duration cut takes effect after its start (final code)
+PASS  skills/eidos-camera/techniques/dolly-zoom/template.html  (stops 4)
+      contact: /Users/a451174/apps/eidos/.omo/evidence/task-12-contact/skills__eidos-camera__techniques__dolly-zoom__template.contact.png
+PASS  skills/eidos-camera/techniques/fpv-flight/template.html  (stops 6)
+      contact: /Users/a451174/apps/eidos/.omo/evidence/task-12-contact/skills__eidos-camera__techniques__fpv-flight__template.contact.png
+PASS  skills/eidos-camera/techniques/infinite-zoom/template.html  (stops 5)
+      contact: /Users/a451174/apps/eidos/.omo/evidence/task-12-contact/skills__eidos-camera__techniques__infinite-zoom__template.contact.png
+PASS  skills/eidos-camera/techniques/orbit/template.html  (stops 5)
+      contact: /Users/a451174/apps/eidos/.omo/evidence/task-12-contact/skills__eidos-camera__techniques__orbit__template.contact.png
+
+TEMPLATES 4/4 PASS
+DETERMINISM 4/4
+REDUCED 4/4
+CONTACT 4 -> /Users/a451174/apps/eidos/.omo/evidence/task-12-contact

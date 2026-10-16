@@ -1,0 +1,10 @@
+# HEAD b1f4655 test(runtime): integrate runtime features and extend reduced-motion checks; qa.mjs + runtime from git archive HEAD at /tmp/t12-head, my four folders copied in
+# exit 0
+PASS  skills/eidos-camera/techniques/dolly-zoom/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/fpv-flight/template.html  (stops 6)
+PASS  skills/eidos-camera/techniques/infinite-zoom/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/orbit/template.html  (stops 5)
+
+TEMPLATES 4/4 PASS
+DETERMINISM 4/4
+REDUCED 4/4

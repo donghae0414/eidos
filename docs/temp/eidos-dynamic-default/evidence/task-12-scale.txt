@@ -1,0 +1,5 @@
+# exit 0
+PASS  full 1280x800  samples=607 visibleLevelWrites=1631 minVisibleScale=0.05 maxLevelsVisible=4 hiddenCanonical=true at={"t":2.318,"level":"lv3","tf":"translate(55.69%, 27.341%) scale(0.05)"}
+PASS  full 390x844  samples=607 visibleLevelWrites=1492 minVisibleScale=0.05 maxLevelsVisible=3 hiddenCanonical=true at={"t":1.098,"level":"lv2","tf":"translate(29.917%, 46.622%) scale(0.05)"}
+PASS  reduce 1280x800  samples=607 visibleLevelWrites=1386 minVisibleScale=0.051 maxLevelsVisible=3 hiddenCanonical=true at={"t":0,"level":"lv2","tf":"translate(80.131%, 27.308%) scale(0.051)"}
+SCALE PASS

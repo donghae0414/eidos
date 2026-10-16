@@ -1,0 +1,69 @@
+Read-only baseline QA evidence
+Worktree: /Users/a451174/apps/eidos-wt/eidos-dynamic-default
+Branch: feat/eidos-dynamic-default
+Command: time bun scripts/qa.mjs (Bun: /Users/a451174/.bun/bin/bun)
+Initial git status --short: ?? .omo/
+Initial git log --oneline -1: 8c2149e (HEAD -> main, origin/main, origin/HEAD, feat/eidos-dynamic-default) docs: record P0 completion, install steps for Claude Code and Codex
+
+===== RUN 1 =====
+Stdout:
+PASS  skills/eidos-camera/techniques/establishing-shot/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/freeze-frame/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/pan/template.html  (stops 8)
+PASS  skills/eidos-camera/techniques/rack-focus/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/tracking/template.html  (stops 7)
+PASS  skills/eidos-camera/techniques/zoom-in/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/cross-dissolve/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/match-cut/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/split-screen/template.html  (stops 5)
+PASS  skills/eidos-explainer/techniques/chart-annotate/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/chart-grow/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/code-diff/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/graph-build/template.html  (stops 3)
+PASS  skills/eidos-explainer/techniques/sequence-message/template.html  (stops 9)
+PASS  skills/eidos-explainer/techniques/state-transition/template.html  (stops 6)
+PASS  skills/eidos-motion/techniques/count-up/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/highlight-sweep/template.html  (stops 5)
+PASS  skills/eidos-motion/techniques/mask-reveal/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/path-drawing/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/stagger-reveal/template.html  (stops 5)
+
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+Stderr: (empty)
+Exit code: 0
+Wall time: 2.64 s (time real)
+
+===== RUN 2 =====
+Stdout:
+PASS  skills/eidos-camera/techniques/establishing-shot/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/freeze-frame/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/pan/template.html  (stops 8)
+PASS  skills/eidos-camera/techniques/rack-focus/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/tracking/template.html  (stops 7)
+PASS  skills/eidos-camera/techniques/zoom-in/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/cross-dissolve/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/match-cut/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/split-screen/template.html  (stops 5)
+PASS  skills/eidos-explainer/techniques/chart-annotate/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/chart-grow/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/code-diff/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/graph-build/template.html  (stops 3)
+PASS  skills/eidos-explainer/techniques/sequence-message/template.html  (stops 9)
+PASS  skills/eidos-explainer/techniques/state-transition/template.html  (stops 6)
+PASS  skills/eidos-motion/techniques/count-up/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/highlight-sweep/template.html  (stops 5)
+PASS  skills/eidos-motion/techniques/mask-reveal/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/path-drawing/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/stagger-reveal/template.html  (stops 5)
+
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+Stderr: (empty)
+Exit code: 0
+Wall time: 2.57 s (time real)
+
+Agreement: YES; exit codes, stdout, and stderr agree across runs.
+

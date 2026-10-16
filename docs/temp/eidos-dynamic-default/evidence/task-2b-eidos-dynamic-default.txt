@@ -1,0 +1,78 @@
+task: 2b - trusted-input slider check via Chrome-backed Bun.WebView (closes T2-FOCUSED-SLIDER gap)
+commit: 315b2cdeb48e6fbe69820a05f546a344f2bdc0e3  test(qa): verify focused slider with trusted keyboard input
+parent: cc4738695b9aaaa5aa13e9442822ab5a660028d8
+files: scripts/qa.mjs only (+37 -4). Fixtures unchanged.
+bun: /Users/a451174/.bun/bin/bun
+
+CHANGE
+- New helper trustedArrow(c, query, sel, param) in scripts/qa.mjs. It opens the page in
+  new Bun.WebView({ backend: { type: "chrome", url: false } }), focuses the slider, records value/step/params/scene()/index,
+  registers a keyup listener on the slider, calls view.press("ArrowRight"), waits for the trusted keyup (2s bound)
+  and two rAF frames, then asserts: value == v0 + step exactly; params[param] == same (controls: n); scene() changed;
+  __eidos.index unchanged; __eidosErrors empty; keyup isTrusted.
+- If Chrome is unavailable (spawn error, websocket failure, or a 20s page-load timeout), the step FAILS with
+  "chrome backend unavailable: <reason>". It is never skipped. Setup, press, and verify each have a 10s bound. The view is closed in finally.
+- New steps: controls "focused slider + trusted ArrowRight (Chrome)" on .eidos-dock input[type=range] (param n);
+  focus "focused range + trusted ArrowRight (Chrome)" on #r (no param).
+- Existing WebKit steps are unchanged. Only the guard step's comment changed, to point to the new Chrome step.
+
+DIRTY-WORKTREE ISOLATION
+All verification ran in a detached worktree /tmp/t2b-head at cc47386 (git diff --quiet HEAD -- runtime skills => clean)
+with only the edited qa.mjs copied in. The worker checkout has other workers' uncommitted runtime/skills edits
+(M runtime/eidos-stage.js, ?? orbit/, ?? shape-morph/). Those were not used, staged, or committed. Before commit: cmp of the worktree qa.mjs
+against the tested copy reported SAME_AS_TESTED. Only scripts/qa.mjs was staged.
+
+FAILURE PROOF (reviewer stale-keyup reproducer, rebuilt from the gate-review "Reproduction source", on the clean HEAD runtime)
+cmd: bun scripts/qa.mjs /tmp/t2b/controls-good.html /tmp/t2b/controls-keyup.html /tmp/t2b/focus-good.html /tmp/t2b/focus-keyup.html
+PASS  /tmp/t2b/controls-good.html  (stops 3)
+FAIL  /tmp/t2b/controls-keyup.html  (stops 3)
+      controls: focused slider + trusted ArrowRight (Chrome): trusted ArrowRight on focused slider: slider value 4 -> 4 (want 5); params.n 4 -> 4 (want 5); visible scene unchanged
+FAIL  /tmp/t2b/focus-keyup.html: focus: focused range + trusted ArrowRight (Chrome): trusted ArrowRight on focused slider: slider value 3 -> 3 (want 4); visible scene unchanged
+(focus-good/focus-keyup also fail unrelated focus steps because the reviewer's minimal fake page lacks #play/#lab/#dot.
+ The new Chrome step PASSES on focus-good and FAILS only on focus-keyup. focus-keyup is an extra scratch variant whose keyup restores r.value.)
+EXIT=1
+Before this change, the reviewer recorded FULL_CONTROLS_KEYUP_EXIT=0 for controls-keyup.
+
+CHROME-UNAVAILABLE (scratch copies of qa.mjs with only the backend option changed)
+- backend.path=/nonexistent/chrome: "chrome backend unavailable: Failed to spawn Chrome (set BUN_CHROME_PATH, backend.path, or install Chrome/Chromium)" EXIT=1 (515ms)
+- url=ws://127.0.0.1:1 (refused): "chrome backend unavailable: Chrome WebSocket closed (code 1006)" EXIT=1 (497ms)
+- url=ws://127.0.0.1:9333 (silent listener, hung handshake): "chrome backend unavailable: Chrome page load timed out after 20s" EXIT=1 (20507ms)
+- real fixtures with Chrome made unavailable: both controls and focus FAIL on the new step, FEATURES 0/2, EXIT=1.
+  This proves the step really executes on the real fixtures and does not pass vacuously.
+
+HAPPY PATH (committed real runtime, clean worktree), 3x
+bun scripts/qa.mjs scripts/fixtures/controls.html scripts/fixtures/focus.html
+ run1: PASS controls, PASS focus, TEMPLATES 2/2 PASS, DETERMINISM 2/2, REDUCED 2/2, FEATURES 2/2, EXIT=0, 1989ms
+ run2: same, EXIT=0, 1635ms
+ run3: same, EXIT=0, 1930ms
+--step trusted only: FEATURES 2/2 EXIT=0 (1344ms)
+
+TEMPLATES (default target set), 3x, exit captured with set -o pipefail, no FAIL lines
+ run1: TEMPLATES 20/20 PASS, DETERMINISM 20/20, REDUCED 20/20, EXIT=0, 3441ms
+ run2: same, EXIT=0, 3390ms
+ run3: same, EXIT=0, 3389ms
+(An earlier template triple was piped through tail without pipefail, so its EXIT=0 was tail's. It was discarded and rerun as above.)
+
+WALL-TIME IMPACT
+- controls+focus fixtures: new avg 1851ms (1989/1635/1930) vs baseline qa.mjs at HEAD avg 1498ms (1446/1534/1514). The difference is +~350ms (~+24%),
+  which is two Chrome launches run in parallel across workers.
+- templates: no change (no fixture => the Chrome steps never run). New 3389-3441ms vs baseline 3755ms (noise).
+- worst case with Chrome hung: +20s per affected fixture, bounded, then a loud FAIL.
+
+ADVERSARIAL
+- flaky_tests: fixtures 3/3 identical PASS, templates 3/3 identical PASS. The keyup wait is event-driven (listener registered before press,
+  2s bound). The only setTimeout is the bound itself, with no fixed sleep.
+- misleading_success_output: real-fixture PASS was cross-checked by the Chrome-unavailable run, which shows the step executes. Template exits were rerun with pipefail.
+- dirty_worktree: see isolation above.
+- hung_or_long_commands: Chrome page load is bounded at 20s, setup/press/verify at 10s each, and the view is closed in finally. The hung-endpoint probe ended in 20.5s.
+
+CLEANUP RECEIPTS
+- git worktree remove --force /tmp/t2b-head; rm -rf /tmp/t2b; git worktree prune => "TMP_CLEAN", worktree list count for t2b-head = 0
+  (scratch qa-base/qa-nochrome*/qa-hang copies lived only in /tmp/t2b-head and are gone).
+- Bun.listen test server on 9333 stopped (srv.stop(true)).
+- pgrep after runs: no headless Chrome and no qa process left. The only --remote-debugging match was the user's Postman app, which is unrelated.
+- Post-commit worker status: M runtime/eidos-stage.js, ?? orbit/, ?? shape-morph/ (other workers' files, untouched). .omo not staged.
+
+RESIDUAL
+- No LSP is installed for .mjs. The syntax check is bun build --no-bundle, plus successful runs.
+- The check requires a local Chrome/Chromium. On a machine without one, the controls/focus fixtures now fail loudly, by design.

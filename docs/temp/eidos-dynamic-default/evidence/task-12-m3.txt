@@ -1,0 +1,7 @@
+# M3 infinite-zoom with the 0.05 guard lowered to 0.001 -> scale probe must FAIL
+# mutated: true
+# exit 1
+FAIL  full 1280x800  samples=607 visibleLevelWrites=1872 minVisibleScale=0.012 maxLevelsVisible=4 hiddenCanonical=true at={"t":0,"level":"lv3","tf":"translate(83.792%, 28.45%) scale(0.012)"}
+FAIL  full 390x844  samples=607 visibleLevelWrites=1872 minVisibleScale=0.01 maxLevelsVisible=4 hiddenCanonical=true at={"t":0,"level":"lv3","tf":"translate(30.109%, 49.228%) scale(0.01)"}
+FAIL  reduce 1280x800  samples=607 visibleLevelWrites=1597 minVisibleScale=0.012 maxLevelsVisible=4 hiddenCanonical=true at={"t":0,"level":"lv3","tf":"translate(83.792%, 28.45%) scale(0.012)"}
+SCALE FAIL

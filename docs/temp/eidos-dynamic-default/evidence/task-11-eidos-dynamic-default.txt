@@ -1,0 +1,405 @@
+task-11 eidos-dynamic-default: eidos-camera A (crane-up, ken-burns, parallax, fly-to, speed-ramp, time-lapse)
+plan: /Users/a451174/apps/eidos/.omo/plans/eidos-dynamic-default.md, todo 11
+worktree: /Users/a451174/apps/eidos-wt/eidos-dynamic-default (branch feat/eidos-dynamic-default)
+bun: 1.4.0 (/Users/a451174/.bun/bin/bun)
+written: 2026-10-16T06:37:08.998Z
+pre-commit base: 4c6e24654f5ac921c652738b59ee952bd0d97f00 fix(runtime): built-in zero-duration cut takes effect after its start
+commit: section 9 (appended after the commit)
+
+1. WHAT CHANGED
+runtime/eidos-stage.js, Camera region only (3 hunks):
+  - camera.to(target, {arc}): arc is a number from 0 to 1, default 0. A non-number, NaN or out-of-range
+    value pushes "camera.to arc must be a number from 0 to 1, got <v>" to __eidosErrors; numbers clamp to
+    [0, 1] and anything else becomes 0, the plain move.
+  - Camera.mix(a, b, e, arc = 0, W = 0, H = 0): with arc > 0 the view extent v = 1/s widens by h*sin(pi*e),
+    so the move zooms out, travels and zooms in. h = arc * max(0, fit - sqrt(va*vb)) and
+    fit = max(|dx|/W, |dy|/H) + (va + vb)/2. Position follows the accumulated extent in closed form, the
+    rule the plain mix already uses, so screen-space travel speed stays even. With no lift (arc 0, or both
+    endpoints already fit one view) the original expression runs unchanged, so existing camera moves are
+    bit-identical.
+  - Camera.stateAt passes kf.arc, W and H to mix, so s.scene, s.spoke and s.back with via "camera" and
+    with: {arc} fly as well.
+skills/eidos-camera/techniques/<id>/{card.md, technique.js, template.html} for the six ids. Every card has
+kind technique, priority P1, group eidos-camera, the cross-dissolve section order and a "장면 관계" line.
+Every template.html is a standalone Korean developer topic that loads ../../../../runtime/* and ./technique.js.
+  - crane-up: fx({from, context, tilt = 12, rig = world's first child, openZoom, pad, introDur}) opens on
+    "from" with the rig tilted back (rotateX pivoted on that detail); rise({to = "world", dur = 2.2}) climbs
+    and pulls back, flattens the tilt over 85% of the rise and reveals the context lowest element first.
+    Reduced motion: tilt 0, so no rotateX track and no transform-origin. Template: fs.readFile() down to
+    sys_read through Node.js, libuv and libc.
+  - ken-burns: fx({to, from, in, dur = 4.5, ease, pad}) and drift(to, opts). A rect is [x, y, w, h] as
+    fractions of "in" (default world's first child), framed with pad 0; selectors, elements, {x, y, w, h}
+    and "world" work too. A bad rect pushes an error and falls back to the whole "in" box. Template: CPU
+    flame graph, loadConfig 41% and compileTemplate 22%.
+  - parallax: fx({layers = [data-parallax] elements, axis}) binds layers to camera translation in an onSeek
+    hook: translate(-depth*dx, -depth*dy), dx and dy being the camera offset from home. Screen speed is
+    (1 + depth) x camera speed; depth -1 pins to the screen. A depth that is not a number >= -1 pushes an
+    error and that layer is skipped. Template: pace layering (UI weekly, API quarterly, schema yearly, infra
+    every few years).
+  - fly-to: fx({target, arc = 0.6, dur = 2.4, zoom, pad, ease, route, from, bend = 0.2, reveal}) is camera.to
+    with arc, plus an optional route path drawn as a quadratic curve computed in the route SVG's own box and
+    an arrival reveal. Template: CDN cache miss, Seoul edge to us-east-1 and back.
+  - speed-ramp: fx({focus = [a, b], rate = 0.5, at = last stop, dur = tl.end - at}) is a thin wrapper over
+    tl.ramp: three ramps (fast, slow, fast) keep display time equal to source time at both window edges, so
+    stops and tweens outside the window stay put; fast = (dur - F) / (dur - F/rate). It rejects with an error
+    and no ramp: focus outside the window, rate outside (0, 1), focus/rate >= dur, a stop or ramp inside the
+    window, non-numbers. Template: lost update, two orders both read stock 1 and write 0.
+  - time-lapse: fx({frames, render(frame, u), counter, format, from, to, dur = 4, ease = "linear"}) and
+    to(u, opts). Progress maps to source time u; render gets the last frame with at <= u (the first frame
+    before the first record), found by binary search. Unsorted or empty frames, a non-function render or a
+    non-finite from or to push an error and record nothing. Template: HPA autoscaling over one day.
+
+2. ACCEPTANCE ON THE FINAL FILE STATE (before the commit)
+State: HEAD 4c6e246 plus this todo's changes. The runtime diff is 3 hunks, all in the Camera
+region. Other workers' untracked technique folders are present in the shared worktree.
+
+2a. The six new templates, twice (the acceptance command)
+$ bun scripts/qa.mjs --only "skills/eidos-camera/techniques/{crane-up,ken-burns,parallax,fly-to,speed-ramp,time-lapse}/template.html" --shots /Users/a451174/apps/eidos/.omo/evidence/task-11-shots
+exit 0
+PASS  skills/eidos-camera/techniques/crane-up/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/fly-to/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/ken-burns/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/parallax/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/speed-ramp/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/time-lapse/template.html  (stops 4)
+
+TEMPLATES 6/6 PASS
+DETERMINISM 6/6
+REDUCED 6/6
+SHOTS 24 -> /Users/a451174/apps/eidos/.omo/evidence/task-11-shots
+
+$ bun scripts/qa.mjs --only "skills/eidos-camera/techniques/{crane-up,ken-burns,parallax,fly-to,speed-ramp,time-lapse}/template.html" --shots /Users/a451174/apps/eidos/.omo/evidence/task-11-shots
+exit 0
+PASS  skills/eidos-camera/techniques/crane-up/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/fly-to/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/ken-burns/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/parallax/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/speed-ramp/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/time-lapse/template.html  (stops 4)
+
+TEMPLATES 6/6 PASS
+DETERMINISM 6/6
+REDUCED 6/6
+SHOTS 24 -> /Users/a451174/apps/eidos/.omo/evidence/task-11-shots
+Screenshots on disk: 24 PNG in /Users/a451174/apps/eidos/.omo/evidence/task-11-shots (6 templates x desktop/mobile x light/dark, last stop).
+
+2b. Every camera template
+$ bun scripts/qa.mjs --only "skills/eidos-camera/**/template.html"
+exit 0
+PASS  skills/eidos-camera/techniques/crane-up/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/dolly-zoom/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/establishing-shot/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/fly-to/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/fpv-flight/template.html  (stops 6)
+PASS  skills/eidos-camera/techniques/freeze-frame/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/infinite-zoom/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/ken-burns/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/orbit/template.html  (stops 5)
+PASS  skills/eidos-camera/techniques/pan/template.html  (stops 8)
+PASS  skills/eidos-camera/techniques/parallax/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/rack-focus/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/speed-ramp/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/time-lapse/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/tracking/template.html  (stops 7)
+PASS  skills/eidos-camera/techniques/zoom-in/template.html  (stops 4)
+
+TEMPLATES 16/16 PASS
+DETERMINISM 16/16
+REDUCED 16/16
+The six original camera templates: zoom-in PASS, establishing-shot PASS, pan PASS, tracking PASS, rack-focus PASS, freeze-frame PASS.
+
+2c. The original 20-template suite (template.html files tracked at 686aa38), three runs
+run 1: exit 0 | TEMPLATES 20/20 PASS | DETERMINISM 20/20 | REDUCED 20/20 | FAIL lines: 0
+run 2: exit 0 | TEMPLATES 20/20 PASS | DETERMINISM 20/20 | REDUCED 20/20 | FAIL lines: 0
+run 3: exit 0 | TEMPLATES 20/20 PASS | DETERMINISM 20/20 | REDUCED 20/20 | FAIL lines: 0
+Run 1 in full:
+$ bun scripts/qa.mjs <the 20 template.html files tracked at 686aa38>
+exit 0
+PASS  skills/eidos-camera/techniques/establishing-shot/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/freeze-frame/template.html  (stops 3)
+PASS  skills/eidos-camera/techniques/pan/template.html  (stops 8)
+PASS  skills/eidos-camera/techniques/rack-focus/template.html  (stops 4)
+PASS  skills/eidos-camera/techniques/tracking/template.html  (stops 7)
+PASS  skills/eidos-camera/techniques/zoom-in/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/cross-dissolve/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/match-cut/template.html  (stops 4)
+PASS  skills/eidos-cut/techniques/split-screen/template.html  (stops 5)
+PASS  skills/eidos-explainer/techniques/chart-annotate/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/chart-grow/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/code-diff/template.html  (stops 4)
+PASS  skills/eidos-explainer/techniques/graph-build/template.html  (stops 3)
+PASS  skills/eidos-explainer/techniques/sequence-message/template.html  (stops 9)
+PASS  skills/eidos-explainer/techniques/state-transition/template.html  (stops 6)
+PASS  skills/eidos-motion/techniques/count-up/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/highlight-sweep/template.html  (stops 5)
+PASS  skills/eidos-motion/techniques/mask-reveal/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/path-drawing/template.html  (stops 4)
+PASS  skills/eidos-motion/techniques/stagger-reveal/template.html  (stops 5)
+
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+
+2d. Every tracked template plus the six
+bun scripts/qa.mjs <the 32 tracked template.html files + the six new ones>
+exit 0 | TEMPLATES 38/38 PASS | DETERMINISM 38/38 | REDUCED 38/38 | FAIL lines: none
+
+3. PROBE (scratch page, not committed)
+Files: /Users/a451174/apps/eidos/.omo/evidence/task-11-probe/probe.html and /Users/a451174/apps/eidos/.omo/evidence/task-11-probe/run.mjs. Command: cd /tmp && bun /Users/a451174/apps/eidos/.omo/evidence/task-11-probe/run.mjs
+Each case moves the camera from #a to #b (dur 2, zoom 2.4): plain camera.to; fly0 = fx("fly-to", {arc: 0})
+with the same move; cam0 = camera.to with arc 0; arc -1, "x", NaN, 2 and 1; fly-to with arc 0.6.
+snapshot() and camera.state are compared at t = 0, 0.2, 0.5, 0.8, 1.2, 1.6, 2.0, 2.2. Further cases:
+speed-ramp mapping and transport speed (manual clock), the time-lapse pick rule, and malformed speed-ramp,
+time-lapse, ken-burns and parallax input.
+exit 0; checks 33/33
+PASS  plain: no errors
+PASS  fly0: snapshot equals plain camera.to at all 8 t
+PASS  fly0: no errors
+PASS  cam0: snapshot equals plain camera.to at all 8 t
+PASS  cam0: no errors
+PASS  arcneg: arc error reported
+PASS  arcneg: falls back to the plain path
+PASS  arcstr: arc error reported
+PASS  arcstr: falls back to the plain path
+PASS  arcnan: arc error reported
+PASS  arcnan: falls back to the plain path
+PASS  arc1: no errors
+PASS  arc2: arc error reported
+PASS  arc2: clamped, equals arc1 at all t
+PASS  fly06: equals plain at t=0, 0.2 (start) and 2.2 (end)
+PASS  fly06: mid-flight differs and zooms out below the plain scale
+PASS  Camera.mix(a, b, e) === Camera.mix(a, b, e, 0, W, H) for e in 0..1
+PASS  arc 1: e=0 gives the start state and e=1 the end state
+PASS  arc 1, equal zoom: mid-flight view holds both endpoint views
+PASS  arc 1, zoom 3 vs 1.5: mid-flight view still sees both centers
+PASS  speed-ramp: no errors, three ramps
+PASS  speed-ramp: fast = (dur - F) / (dur - F / rate) = 2
+PASS  speed-ramp: source time equals display time at window start and end (|d| < 1e-9)
+PASS  speed-ramp: slow segment maps onto focus [T+1.6, T+3.2]
+PASS  speed-ramp: next stop sits exactly at window end
+PASS  transport: slow segment content speed = rate^2 = 0.25 per wall second
+PASS  transport: fast segments content speed = fast^2 = 4 per wall second
+PASS  manual clock goto: after 0.4 s at the slow start; next 1 s advances content 0.25 s
+PASS  speed-ramp malformed: 6 bad calls -> 6 errors, 0 ramps registered
+PASS  time-lapse: last frame with at <= u (u=-0.5 f0, 0.999 f0, 1.001 f1, 1.5 f1, 2 f2)
+PASS  time-lapse malformed: 3 bad calls + to(NaN) -> 4 errors; bad calls add no track, the valid call adds 1, to(NaN) adds none
+PASS  ken-burns malformed rects: 2 errors
+PASS  parallax malformed depths: 2 errors, valid layer still moves (-0.5 * W/2 px)
+arc 1 with unequal zoom (3 vs 1.5): {"apex":{"x":463.20623503177177,"y":281.60311751588586,"s":0.8888888888888888,"r":0},"holdsStartView":true,"holdsEndView":false,"seesBothCenters":true}
+
+4. NEGATIVE CONTROL (the harness can fail)
+neg-random.html is the time-lapse template with absolute runtime paths whose render adds
+Math.round(Math.random() * 1000) to the p99 text. Copy: /Users/a451174/apps/eidos/.omo/evidence/task-11-probe/neg-random.html.
+Command: bun scripts/qa.mjs <that file>
+exit 1
+FAIL  /tmp/eidos-t11/neg/neg-random.html  (stops 4)
+      determinism: t=0: forward seek != fresh load
+      determinism: t=0: backward seek != fresh load
+      determinism: t=0: out-of-order seek != fresh load
+      determinism: t=2.323: forward seek != fresh load
+      ...
+TEMPLATES 1/1 PASS
+DETERMINISM 0/1
+REDUCED 1/1
+
+5. STATIC CHECKS (folder contents, frontmatter, section order, scene-relation line, registration, no kind on
+techniques, banned APIs, external URLs, runtime refs, lang)
+all six pass: true
+{"t":"crane-up","files":"card.md,technique.js,template.html","missingKeys":[],"id":"crane-up","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+{"t":"ken-burns","files":"card.md,technique.js,template.html","missingKeys":[],"id":"ken-burns","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+{"t":"parallax","files":"card.md,technique.js,template.html","missingKeys":[],"id":"parallax","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+{"t":"fly-to","files":"card.md,technique.js,template.html","missingKeys":[],"id":"fly-to","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+{"t":"speed-ramp","files":"card.md,technique.js,template.html","missingKeys":[],"id":"speed-ramp","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+{"t":"time-lapse","files":"card.md,technique.js,template.html","missingKeys":[],"id":"time-lapse","kind":"technique","priority":"P1","group":"eidos-camera","sectionsInOrder":true,"sceneRelation":true,"registers":true,"setsKind":false,"banned":[],"external":[],"runtimeRefs":true,"lang":true}
+
+6. VISUAL REVIEW
+Each template was rendered with qa --contact (every stop plus 25/50/75% boundary frames) and --shots (last
+stop at 1280x800 and 390x844, light and dark) during the build, viewed, fixed where needed and re-rendered:
+  - crane-up: stop 1 shows the syscall card close up with the rig tilted back (a trapezoid), context hidden;
+    the 1->2 frames rise, flatten the tilt and reveal the context lowest layer first, header last; stop 3
+    draws the call path down the left of the call cards. No fix needed.
+  - ken-burns: the first render left a large empty band above the graph at both widths. Fix: centered the
+    figure and raised the row height (clamp(1.75rem, 6vh, 3rem)). After: stop 2 frames the loadConfig tower,
+    stop 3 pushes in and pans to compileTemplate, stop 4 returns to the whole graph; legible in dark and on
+    mobile.
+  - parallax: the first render let chips slide past the lane bands into the page margin, and color-mix in
+    oklch gave chip borders an off hue. Fix: full-bleed bands, oklab mix for borders, a tone dot on lane names,
+    larger chips. After: the mid-pan frame shows the UI lane far ahead and the infra lane nearly still; chips
+    only cross the screen edges.
+  - fly-to: the map's dot grid painted over the route lines (the routes sat under .map). Fix: the route SVG is
+    the first child of .map and the technique computes the curve in that SVG's own box; larger desktop cards.
+    After: the mid-flight frames show both endpoints at the apex; stop 4 swaps MISS for HIT; stop 5 shows both
+    routes cleanly on desktop light and mobile dark.
+  - speed-ramp: the "빨리 감기" chip stayed visible at stop 2, because the remapped source time at the window
+    end lands a float hair below 4.8 and a p < 1 style test failed. Fix: chip visibility uses two short opacity
+    tweens inside the window. The stop 3 caption was shortened to fit above the HUD on mobile. After: no chip
+    at stop 2; the slow-motion frames show A's UPDATE in flight while B reads stock 1.
+  - time-lapse: the stop 4 caption ran four lines on mobile and overlapped the chart panel. Fix: shorter stop 2
+    and stop 4 captions. After: three lines above the HUD; 20:00 shows the red over-capacity bar and p99 380ms,
+    24:00 shows 4 pods.
+Final review grid of all 24 shots: /Users/a451174/apps/eidos/.omo/evidence/task-11-shots-grid.png (not rebuilt: no screenshot changed in the final runs). Every cell is present; none is
+blank, clipped or misframed. Final contact sheets, regenerated from the committed tree: section 9.
+
+7. ADVERSARIAL CLASSES
+  - flaky_tests: probed. The acceptance command ran twice back to back and the 20-template suite three times
+    with identical results (section 2). The probe drives time with ?clock=manual and advance(ms), no sleeps.
+    Every new technique is a pure function of t: no Math.random, Date.now, timers, rAF or CSS animation
+    (section 5).
+  - misleading_success_output: probed. Per-file PASS lines and exit codes are checked, not only the summary
+    lines, and the 24 PNGs are counted on disk. Negative control (section 4): a copy of the time-lapse
+    template with Math.random in render fails determinism with exit 1. The probe also failed loudly once on a
+    wrong expectation of mine (the time-lapse track count); the probe was corrected, not the code.
+  - dirty_worktree: probed. The worktree is shared with concurrent workers (runtime pause hunks, qa.mjs,
+    fixtures and other technique folders came and went during this todo). The staged runtime blob is HEAD plus
+    my three Camera replacements, each asserted unique, and is checked with git diff --cached; the committed
+    tree is exported with git archive and re-tested in isolation (section 9).
+  - malformed_input: probed. arc 2 -> error, clamped (equals arc 1 at all t); arc -1, "x", NaN -> error, plain
+    path (equals plain camera.to at all t); speed-ramp 6 bad calls -> 6 errors, 0 ramps; time-lapse 3 bad calls
+    + to(NaN) -> 4 errors, no stray track; ken-burns 2 bad rects -> 2 errors; parallax 2 bad depths -> 2 errors
+    while the valid layer still moves (section 3).
+
+8. NOTES, RISKS, FOLLOW-UPS (not changed in this todo)
+  1. The transport plays a ramp at about rate^2 on screen: goto and play spend |dt|/rate wall seconds per
+     display second (todo 4: "goto duration integrates 1/rate") while tracks advance rate source seconds per
+     display second. The probe measures 0.25 content s per wall s at rate 0.5 and 4 at fast 2.
+     docs/runtime-api.md (f) ("2초 동안 1/4 속도") reads as if rate were the screen speed. The speed-ramp card
+     states the effect, and the template labels the chip with words, not multipliers. Owner: runtime
+     transport (todos 4 and 8).
+  2. camera.to {arc} is documented only in the fly-to card. docs/runtime-api.md has no camera section, and the
+     group SKILL.md files belong to todo 15 (no SKILL.md or scripts/* file was edited here).
+  3. arc = 1 sizes the mid-flight view to the span of both endpoint views. It holds both full endpoint views
+     exactly when their zooms match (probe: equal zoom holds both; zoom 3 vs 1.5 keeps both centers in view but
+     not the whole end view). The fly-to card says this.
+  4. No LSP in this environment (typescript-language-server and biome are not installed). Syntax was checked
+     with bun build --no-bundle on each technique.js and the runtime; behavior through the browser QA above.
+
+9. attempt 2 - gate blockers corrected (2026-10-16)
+Executor worktree: /Users/a451174/apps/eidos-wt/eidos-dynamic-default
+Starting HEAD: 6a499183f6e4a6a84ccd82d85cb3460e97044345
+Gate input read fully: eidos-dynamic-default-task-11-gate-review.md.
+This section supersedes earlier claims for the two-stage crane and malformed-option behavior.
+No runtime, harness, fixture or unrelated technique source was changed in this attempt.
+
+9a. T11-STOP-IDENTITY
+Before editing, the exact reviewer repro at t=2.6 returned opacity 0 in full and reduced, and
+perspective(900px) rotateX(14deg) in full. This was reproduced in Bun.WebView.
+Each rise now captures immutable fromTilt/fromOpacity values when its own tracks are constructed:
+the first starts tilted/hidden; subsequent rises start flat/visible. Later rise calls cannot overwrite
+earlier track captures. The build-time risen flag is never read or mutated during playback.
+
+Saved reproduction and probe:
+  task-11-attempt-2-probe.html
+  task-11-attempt-2-run.mjs
+  task-11-attempt-2-probe.log
+Command: bun /Users/a451174/apps/eidos/.omo/evidence/task-11-attempt-2-run.mjs
+Final result: 684/684 checks PASS; failed []; process exit 0.
+Exact reviewer samples, including reverse reseek:
+  time        full opacity  full rig                                  reduced opacity / rig
+  0.6         0             perspective(900px) rotateX(14deg)          0 / empty
+  2.599999    1             perspective(900px) rotateX(0deg)           1 / empty
+  2.6         1             perspective(900px) rotateX(0deg)           1 / empty
+  2.600001    1             perspective(900px) rotateX(0deg)           1 / empty
+  4.6         1             perspective(900px) rotateX(0deg)           1 / empty
+  2.6         1             perspective(900px) rotateX(0deg)           1 / empty
+  0.6         0             perspective(900px) rotateX(14deg)          0 / empty
+  2.6         1             perspective(900px) rotateX(0deg)           1 / empty
+No __eidosErrors on the valid repro.
+All six templates: exact stops and all track/camera/ramp onsets compared after forward, backward,
+out-of-order seeks and independent fresh URL loads in full AND reduced motion.
+
+9b. T11-OPTION-VALIDATION / malformed_input
+All six option boundaries, including crane.rise, ken-burns.drift and time-lapse.to, use own-property
+allowlists and finite typed number checks. Unknown own keys (including toString, constructor,
+__proto__, symbols and non-enumerable keys via Reflect.ownKeys), unsupported enum/easing values,
+bad element/rectangle/callback types, malformed nested layers/frames, sparse tuples/frames, null,
+arrays/scalars as option containers, inherited option objects, NaN/Infinity/strings/booleans in numeric
+options and null-prototype malformed values are rejected before recording tracks/camera/ramp/hooks.
+Each failure records "<id>: ..." in __eidosErrors before throwing TypeError; the probe asserts that
+the thrown message equals the one newly recorded error and that track registration is unchanged.
+Representative final messages in BOTH modes:
+  parallax: invalid axis (string)
+  crane-up: invalid tilt (string)
+  crane-up: invalid tilt (number)
+  crane-up: invalid tilt (object)
+Numeric values are not coerced. Optional undefined uses the existing defaults; at retains supported
+Timeline time expressions. Parallax accepts x/y/both (both documented); no arbitrary tilt range was added.
+time-lapse frame data fields besides its required own finite at remain author-defined.
+The six cards now describe throwing after error reporting instead of the obsolete silent fallback/skip.
+speed-ramp/template.html resets borderColor explicitly to var(--eidos-border).
+
+9c. Required two six-template QA runs, final source state
+Command repeated twice:
+  bun scripts/qa.mjs --only "skills/eidos-camera/techniques/{crane-up,ken-burns,parallax,fly-to,speed-ramp,time-lapse}/template.html" --shots /Users/a451174/apps/eidos/.omo/evidence/task-11-attempt-2-shots --contact /Users/a451174/apps/eidos/.omo/evidence/task-11-attempt-2-contact
+Saved complete per-file outputs: task-11-attempt-2-six-1.log and task-11-attempt-2-six-2.log.
+Both logs contain each of these per-file lines:
+  PASS  skills/eidos-camera/techniques/crane-up/template.html  (stops 3)
+  PASS  skills/eidos-camera/techniques/fly-to/template.html  (stops 5)
+  PASS  skills/eidos-camera/techniques/ken-burns/template.html  (stops 4)
+  PASS  skills/eidos-camera/techniques/parallax/template.html  (stops 4)
+  PASS  skills/eidos-camera/techniques/speed-ramp/template.html  (stops 3)
+  PASS  skills/eidos-camera/techniques/time-lapse/template.html  (stops 4)
+Both end TEMPLATES 6/6 PASS, DETERMINISM 6/6, REDUCED 6/6, SHOTS 24, CONTACT 6.
+Observed RUN-1-EXIT-0 and RUN-2-EXIT-0; monitor exit 0. Pipeline status came from PIPESTATUS[0],
+not tee. An initial monitor command with an executor-authored shell escape error was killed and is
+not counted. A host reconnect restarted the final monitors; only complete captured runs are counted.
+
+9d. Required regressions, final source state
+  bun scripts/qa.mjs --only "skills/eidos-camera/**/template.html"
+  task-11-attempt-2-camera.log: 16 individual PASS lines; all three summaries 16/16; CAMERA-EXIT-0.
+  The current HEAD includes todo 12's committed camera techniques, hence 16 rather than the gate's 12.
+
+  bun scripts/qa.mjs skills/eidos-camera/techniques/{establishing-shot,freeze-frame,pan,rack-focus,tracking,zoom-in}/template.html skills/eidos-cut/techniques/{cross-dissolve,match-cut,split-screen}/template.html skills/eidos-explainer/techniques/{chart-annotate,chart-grow,code-diff,graph-build,sequence-message,state-transition}/template.html skills/eidos-motion/techniques/{count-up,highlight-sweep,mask-reveal,path-drawing,stagger-reveal}/template.html
+  task-11-attempt-2-original20.log: all 20 named files individually PASS; TEMPLATES, DETERMINISM and
+  REDUCED all 20/20; ORIGINAL20-EXIT-0.
+
+  bun scripts/qa.mjs scripts/fixtures/*.html
+  task-11-attempt-2-fixtures.log: 12 individual PASS lines; TEMPLATES 12/12 PASS, DETERMINISM 12/12,
+  REDUCED 12/12, FEATURES 10/10; FIXTURES-EXIT-0; monitor exit 0.
+  Negative fixture EXPECTED-FAIL lines were inspected: reduced 3D, dock/control visibility, layout,
+  URL writes, caption timing, never-start errors/determinism/reduced were rejected as intended.
+  Counts reflect the fixtures at starting HEAD, including bad-dock-hidden and hub-return.
+
+9e. Arc-zero equivalence and actual rendered middle stop
+  bun /Users/a451174/apps/eidos/.omo/evidence/task-11-attempt-2-arc-visual.mjs
+  task-11-attempt-2-arc-visual.log: all 6 groups PASS; ARC-VISUAL-EXIT-0.
+fly-to arc:0 and plain camera.to snapshots agree at 0,0.2,0.5,0.8,1.2,1.6,2,2.2 in both modes.
+Four two-rise middle-stop screenshots at 1280x800 and 390x844 in full/reduced were saved as
+task-11-attempt-2-crane-{desktop,mobile}-{full,reduce}.png and actually viewed: Context B is visible,
+flat and centered, not blank. Reduced has no 3D transform.
+The first scratch screenshot script produced blank reduced captures despite correct computed state;
+those captures were rejected, not accepted as proof. Separating readiness from seeking, flushing the
+target geometry and awaiting two paint frames corrected the capture. Final reduced captures were
+re-read and visibly contain Context B. No sleep, product workaround or assertion weakening was used.
+Six technique contact sheets were viewed for all narrative stops and 25/50/75% boundary frames.
+The final mobile/dark shot for every technique was also viewed. Existing intended edge cropping in
+parallax and camera framing in ken-burns remains; no new blank narrative stop was observed.
+
+9f. Adversarial and scope receipts
+  flaky_tests: two complete consecutive final QA runs plus forward/reverse/fresh exact-time probes.
+  All scratch checks use manual time/readiness/paint signals; no random value or fixed sleep.
+  misleading_success_output: task-11-attempt-2-misleading.html deliberately increments a counter on
+  seek. Saved task-11-attempt-2-misleading.log has per-file FAIL and forward/backward/fresh mismatches,
+  TEMPLATES 1/1 PASS, DETERMINISM 0/1, REDUCED 1/1. Actual command exit 1 was asserted; wrapper exit 0
+  means the expected rejection occurred, not that the intentionally broken fixture passed.
+  dirty_worktree: executor changes are only the 13 intended files in the six allowed directories.
+  Existing untracked explainer folders bar-race, chart-morph, exploded-view, pinned-scrollytelling
+  and step-panel were left untouched. During final scope inspection another worker's modifications
+  appeared in eidos-cut/techniques/cutaway/{card.md,technique.js}; these were not inspected or changed
+  for this task and will not be included. No runtime edits. git diff --check passed.
+  The index was empty before staging. Only the six explicit allowed directory pathspecs will be
+  staged/committed; .omo evidence stays outside the commit. No push or merge.
+  Direct source/diff review found no placeholder, skipped test, random/ambient timing API or unrelated
+  cleanup. The only playback composition state change is immutable per-rise start values.
+  LSP diagnostics were attempted: typescript-language-server is not installed; biome is also absent.
+  No package/tool installation or unsupported typecheck claim. The browser suites parsed/executed
+  all six scripts. No separate reviewer was delegated, per the explicit executor instruction.
+  Pre-existing transport rate-squared ambiguity in section 8 remains outside this fix.
+
+9g. Commit receipt
+Commit: 81190a856500b9f41248cf6c7900b8cced0fe8b1
+Subject: fix(camera): compose repeated crane rises and validate camera options
+git commit --only used all six explicit allowed directory pathspecs. Commit contains exactly the
+13 reviewed files, 165 insertions and 30 deletions; no .omo, runtime or unrelated source.
+Post-commit git diff --exit-code HEAD -- <six allowed paths> exited 0; index is empty.
+The concurrent cutaway edits and five untracked explainer folders remain in the worktree untouched.
+All QA/probe monitors and terminal runs completed before this receipt. Nothing pushed or merged.

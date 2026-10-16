@@ -1,0 +1,123 @@
+$ git status --short
+[exit 0]
+?? docs/runtime-api.md
+
+$ test -f docs/runtime-api.md && echo exists
+[exit 0]
+exists
+
+$ rg -c "s.scene|s.spoke|s.back|s.play|s.control|setControls|tl.ramp|eidos:stop|clock=manual|kind: transition" docs/runtime-api.md
+[exit 0]
+32
+
+$ rg -o "s.scene|s.spoke|s.back|s.play|s.control|setControls|tl.ramp|eidos:stop|clock=manual|kind: transition" docs/runtime-api.md | sort | uniq -c
+[exit 0]
+   3 clock=manual
+   1 eidos:stop
+   4 kind: transition
+   2 s-spoke
+   2 s:scene
+   5 s.back
+   3 s.control
+   2 s.play
+   6 s.scene
+   5 s.spoke
+   3 setControls
+   2 tl.ramp
+
+$ rg -n "^## " docs/runtime-api.md
+[exit 0]
+7:## 기본 원칙
+15:## (a) 스톱: tl.stop(label, {id, hold})
+31:## (b) 전환 fx 계약
+48:## (c) 장면: s.scene(id, opts)
+73:## (d) 갈래: s.spoke, s.back, s.enter, s.exit, s.where
+110:## (e) 전송(transport): 자동 재생, 속도, 수동 시계
+131:## (f) 시간 재매핑: tl.ramp({at, dur, rate})
+142:## (g) 컨트롤: s.control, s.setControls, s.params
+171:## (h) 이벤트
+182:## (i) URL 상태
+190:## (j) 제스처: 휠, 트랙패드, 터치 스와이프
+211:## (k) 기법 카드의 kind 필드
+224:## (l) storyboard.md 형식
+261:## (m) 3D와 입자
+269:## 키보드와 클릭 포커스 규칙
+276:## snapshot() 확장
+289:## 준비 신호
+
+$ rg -n "TODO|TBD" docs/runtime-api.md
+[exit 1]
+
+$ rg -n "[—–]" docs/runtime-api.md
+[exit 1]
+
+$ git add docs/runtime-api.md && git commit -q -m "docs(runtime): freeze runtime API for scenes, transport, controls, gestures" && git log --oneline -1 && git show --stat --oneline HEAD | tail -2
+[exit 0]
+13db3d6 docs(runtime): freeze runtime API for scenes, transport, controls, gestures
+ docs/runtime-api.md | 292 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 292 insertions(+)
+
+$ git status --short
+[exit 0]
+
+===== attempt 2 =====
+$ git status --short
+[exit 0]
+ M docs/runtime-api.md
+
+$ test -f docs/runtime-api.md && echo exists
+[exit 0]
+exists
+
+$ rg -c "s\.scene|s\.spoke|s\.back|s\.play|s\.control|setControls|tl\.ramp|eidos:stop|clock=manual|kind: transition" docs/runtime-api.md
+[exit 0]
+29
+
+$ rg -n "^## " docs/runtime-api.md
+[exit 0]
+7:## 기본 원칙
+15:## (a) 스톱: tl.stop(label, {id, hold})
+31:## (b) 전환 fx 계약
+48:## (c) 장면: s.scene(id, opts)
+73:## (d) 갈래: s.spoke, s.back, s.enter, s.exit, s.where
+110:## (e) 전송(transport): 자동 재생, 속도, 수동 시계
+131:## (f) 시간 재매핑: tl.ramp({at, dur, rate})
+142:## (g) 컨트롤: s.control, s.setControls, s.params
+171:## (h) 이벤트
+182:## (i) URL 상태
+190:## (j) 제스처: 휠, 트랙패드, 터치 스와이프
+211:## (k) 기법 카드의 kind 필드
+224:## (l) storyboard.md 형식
+261:## (m) 3D와 입자
+269:## 키보드와 클릭 포커스 규칙
+276:## snapshot() 확장
+289:## 준비 신호
+
+$ rg -n "TODO|TBD" docs/runtime-api.md
+[exit 1]
+
+$ rg -n "eidos-dock|layout`|sticky`|when`|값 결정" docs/runtime-api.md
+[exit 2]
+/bin/sh: -c: line 0: unexpected EOF while looking for matching ``'
+/bin/sh: -c: line 1: syntax error: unexpected end of file
+
+$ rg -n "[—–]" docs/runtime-api.md
+[exit 1]
+
+$ git add docs/runtime-api.md && git commit -q -m "docs(runtime): fix controls semantics and dock key rule" && git log --oneline -2 && git show --stat --oneline HEAD | tail -1
+[exit 0]
+dfeae40 docs(runtime): fix controls semantics and dock key rule
+13db3d6 docs(runtime): freeze runtime API for scenes, transport, controls, gestures
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+$ git status --short
+[exit 0]
+
+$ rg -n 'eidos-dock|^\| .(layout|sticky|when).|값 결정' docs/runtime-api.md
+[exit 0]
+158:| `when` | 컨트롤이 보이는 범위. 스톱 범위 `[stopA, stopB]`(스톱 id나 번호) 또는 장면 id. 없으면 항상 보입니다. 표시 여부는 이 옵션만으로 정합니다. |
+159:| `layout` | `true`면 값이 바뀔 때 `tl.seek(tl.t)` 대신 `layout()`(다시 측정)을 실행합니다. 값에 따라 요소 크기나 위치를 다시 재야 할 때 씁니다. |
+160:| `sticky` | `true`면 사용자가 바꾼 값이 스톱을 옮겨도 유지됩니다. 기본(`false`)은 스톱이 바뀌면 사용자 값이 지워지고 기본값과 drive 값으로 돌아갑니다. |
+165:- 값 결정 순서: 기본값 → 시각 `t`에서 계산한 drive 트랙(`c.drive(a, b, {at, dur, ease})`) → 사용자 값. 사용자 값은 URL `?c.<name>=<v>`, `setControls`, `set(v)`, 독 조작으로 들어오며, 뒤에 온 것이 앞의 것을 덮습니다. 알 수 없는 키(`?c.zzz=1`)나 잘못된 값(`?c.n=x`)은 무시하고 오류를 `__eidosErrors`에 넣습니다. 범위 밖 값(`?c.n=99`)은 clamp합니다.
+168:- 컨트롤 독은 `.eidos-dock`으로 world 밖에 둡니다.
+273:- 클릭으로 다음 스톱에 가는 동작은 `a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]` 안의 클릭이면 건너뜁니다.

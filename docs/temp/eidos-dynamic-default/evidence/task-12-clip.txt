@@ -1,0 +1,41 @@
+# clip probe (scratch /tmp/t12/probe-clip.mjs): every visible plane's getBoundingClientRect inside the viewport at every stop; "info under-hud" = bottom edge below the HUD top (not a failure)
+
+## webkit full 390x844 -> exit 0
+PASS  orbit  webkit full 390x844  stops=5 visiblePlaneChecks=18
+PASS  dolly-zoom  webkit full 390x844  stops=4 visiblePlaneChecks=29
+PASS  fpv-flight  webkit full 390x844  stops=6 visiblePlaneChecks=20
+CLIP PASS (0 clipped)
+
+## webkit reduce 390x844 -> exit 0
+PASS  orbit  webkit reduce 390x844  stops=5 visiblePlaneChecks=18
+PASS  dolly-zoom  webkit reduce 390x844  stops=4 visiblePlaneChecks=29
+PASS  fpv-flight  webkit reduce 390x844  stops=6 visiblePlaneChecks=20
+CLIP PASS (0 clipped)
+
+## chrome full 390x844 -> exit 0
+PASS  orbit  chrome full 390x844  stops=5 visiblePlaneChecks=18
+   stop 2: info under-hud side [250,445,471,698] hudTop=653
+   stop 3: info under-hud side [122,465,458,655] hudTop=653
+   stop 4: info under-hud side [122,465,458,655] hudTop=653
+PASS  dolly-zoom  chrome full 390x844  stops=4 visiblePlaneChecks=29
+PASS  fpv-flight  chrome full 390x844  stops=6 visiblePlaneChecks=20
+CLIP PASS (0 clipped)
+
+## chrome full 1280x800 -> exit 0
+PASS  orbit  chrome full 1280x800  stops=5 visiblePlaneChecks=18
+   stop 2: info under-hud side [640,424,878,698] hudTop=609
+   stop 3: info under-hud side [501,446,865,651] hudTop=609
+   stop 4: info under-hud side [501,446,865,651] hudTop=609
+PASS  dolly-zoom  chrome full 1280x800  stops=4 visiblePlaneChecks=29
+PASS  fpv-flight  chrome full 1280x800  stops=6 visiblePlaneChecks=20
+CLIP PASS (0 clipped)
+
+## webkit full 1280x800 -> exit 0
+PASS  orbit  webkit full 1280x800  stops=5 visiblePlaneChecks=18
+   stop 2: info under-hud side [640,471,907,778] hudTop=697
+   stop 3: info under-hud side [484,496,893,725] hudTop=697
+   stop 4: info under-hud side [484,496,893,725] hudTop=697
+PASS  dolly-zoom  webkit full 1280x800  stops=4 visiblePlaneChecks=29
+PASS  fpv-flight  webkit full 1280x800  stops=6 visiblePlaneChecks=20
+CLIP PASS (0 clipped)
+

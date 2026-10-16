@@ -1,0 +1,303 @@
+Todo 6: scenes, branches, hash state
+Worktree: /Users/a451174/apps/eidos-wt/eidos-dynamic-default
+Baseline: d770ce8; concurrent transport worker committed 057a5a7 during investigation.
+
+RED: bun scripts/qa.mjs scripts/fixtures/hub.html
+Exit code: 1
+FAIL  scripts/fixtures/hub.html  (stops 6)
+      hub: build: s.scene is not a function
+      hub: build: s.spoke is not a function
+      hub: build: s.back is not a function
+      hub: missing runtime API: __eidos.scene(), __eidos.spoke(), __eidos.back(), __eidos.enter(), __eidos.exit(), __eidos.where(), __eidos.scenes
+TEMPLATES 1/1 PASS
+DETERMINISM 1/1
+REDUCED 1/1
+FEATURES 0/1
+
+The summary's template/determinism/reduced PASS does not imply feature success;
+the fixture FAIL, FEATURES 0/1 and exit 1 are the red evidence.
+
+Decisions:
+- The bootstrap t=0 stop remains scene:null, path:[], local:0, of:1.
+  It is not hub.0. Authored scene stops are numbered without that bootstrap stop.
+- Return stops retain their hub scene and explicit ret-<spoke> IDs.
+  Navigation history is separate from deterministic scene/time state.
+- A camera return restores the hub camera pose, rather than fitting the hub
+  element again (which would change the hub snapshot).
+- enter() seeks to the selected spoke's hub-equivalent t0 before animating to
+  its first stop. It does not traverse unrelated branches. The first hub run
+  caught that the earlier full-timeline traversal to B exceeded its 5s settle
+  deadline; the corrected enter path passes the complete hub fixture.
+- Malformed #nope.9 falls through to the normal intro, without throwing, then
+  canonicalizes to #hub.0 on arrival.
+
+GREEN: bun scripts/qa.mjs scripts/fixtures/hub.html scripts/fixtures/controls.html scripts/fixtures/focus.html scripts/fixtures/autoplay.html
+Exit code: 0
+PASS scripts/fixtures/autoplay.html (stops 3)
+PASS scripts/fixtures/controls.html (stops 3)
+PASS scripts/fixtures/focus.html (stops 3)
+PASS scripts/fixtures/hub.html (stops 8)
+TEMPLATES 4/4 PASS
+DETERMINISM 4/4
+REDUCED 4/4
+FEATURES 4/4
+
+GREEN: bun scripts/qa.mjs && bun scripts/qa.mjs
+Exit code: 0
+Run 1:
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+Run 2:
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+
+Metadata:
+All 20 existing cards have kind frontmatter: 2 transition, 18 technique.
+FINDING: The requested command rg -L '^kind: ' prints all matching cards:
+in ripgrep -L means --follow, not files-without-match. Its literal no-output
+acceptance condition contradicts the required metadata.
+Correct check: rg --files-without-match '^kind: ' skills/*/techniques/*/card.md
+Result: no output, exit 1 (no files without the field).
+
+Diagnostics:
+node --check succeeds for runtime and both transition scripts.
+git diff --check succeeds.
+TypeScript language server and Biome are unavailable on this host; LSP
+diagnostics could not run. No dependencies or configuration were changed.
+
+Concurrency:
+The transport worker committed 057a5a7 before scene edits were staged.
+The QA author committed e9d1a7c while verification was running.
+This executor did not edit scripts/qa.mjs or scripts/fixtures/*.
+Todo 7 owns gesture code; its hunks must stay out of this commit.
+
+Adversarial probes:
+Source: .omo/evidence/task-6-probes.mjs (not staged).
+The initial extended probe run hit a WebView evaluate expression syntax error
+in the screenshot helper, after all navigation/error assertions passed.
+The helper was changed to an IIFE, without changing runtime or harness code.
+
+Final probe run: bun /Users/a451174/apps/eidos/.omo/evidence/task-6-probes.mjs
+Exit code: 0
+PASS bootstrap stop is not hub.0
+PASS nested return stack, empty exit, repeated enter
+PASS enter cancels in-flight goto and preserves return stack
+PASS hash writes only when a stop is reached
+PASS fresh return hash keeps next target and clears navigation history
+PASS malformed hash follows normal intro without errors
+PASS query stop takes priority over scene hash
+PASS query time takes priority over stop and hash
+PASS descriptive novia error captured on file URL:
+  ["Scene via is required after the first scene","Script error."]
+PASS descriptive kind error captured on file URL:
+  ["Scene via \"qa-plain\" must name an fx with kind \"transition\"","Script error."]
+PASS unclosed spokes automatically return before the next scene
+PASS scene transitions and J/L captions use the single timeline
+
+Visual evidence:
+Command: bun scripts/qa.mjs scripts/fixtures/hub.html --step '^stop order$' --contact /Users/a451174/apps/eidos/.omo/evidence/task-6-contact
+Exit code: 0
+TEMPLATES 1/1 PASS; DETERMINISM 1/1; REDUCED 1/1; FEATURES 1/1; CONTACT 1
+Viewed final image:
+  .omo/evidence/task-6-contact/scripts__fixtures__hub.contact.png
+The nine stop frames (bootstrap plus eight authored stops) and all 25/50/75%
+boundary frames show A focus, restoration of the hub, B focus, hub restoration,
+and the final dip transition. No missing or blank authored stop.
+
+Viewed additional captures:
+  .omo/evidence/task-6-shots/hub-breadcrumb-desktop-light.png
+  .omo/evidence/task-6-shots/hub-breadcrumb-desktop-dark.png
+  .omo/evidence/task-6-shots/hub-breadcrumb-mobile-light.png
+  .omo/evidence/task-6-shots/hub-breadcrumb-mobile-dark.png
+PASS: breadcrumb outside world, readable captions and transport, no HUD overlap
+or clipping at 1280x800 and 390x844 in either theme.
+FINDING (fixture, not changed): hub.html fixes both nodes at width 360px and
+left/right 8%; at 390px viewport they overlap and B obscures A. The desktop
+contact sheet is correct. No fixture/CSS layout workaround was added.
+
+Staged review:
+Used git add -p for runtime, CSS, both transition registrations and all cards.
+Split the mixed HUD/gesture/keyboard hunk; accepted caption and spoke-key edits,
+rejected the gesture bindings. Rejected E.gesture and touch-action hunks.
+Inspected the complete git diff --cached and ran git diff --cached --check.
+Staged: exactly 24 files, 165 insertions, 8 deletions.
+Excluded: scripts/*, .omo/*, transport/ramp/play/pause changes and todo 7 code.
+Unstaged at review: only todo 7's 81 JS additions and one touch-action CSS line.
+The staged runtime blob prefix is 31cddc9, matching the scene implementation
+verified before the concurrent gesture edit.
+
+Commit: a76f5388bddcee723f1e0631d7357d1e3a6082f3
+Subject: feat(runtime): add scenes, hub-and-spoke branches and URL hash state
+Commit command exited 0; 24 files, 165 insertions, 8 deletions.
+After commit runtime/eidos-stage.js and runtime/eidos-stage.css remain modified
+by todo 7. Those changes were preserved. No push, merge, or .omo staging.
+
+## Attempt 2
+
+Review: eidos-dynamic-default-task-6-gate-review.md, T6-HUB-VIA.
+Baseline HEAD: 315b2cd. Concurrent gesture edits are present; Camera edits and
+new technique folders belong to other workers and are outside this fix.
+Scratch regression: task-6-nested.html and task-6-nested-probe.mjs.
+Command: bun /Users/a451174/apps/eidos/.omo/evidence/task-6-nested-probe.mjs
+RED exit code: 1
+cut: startEquals=false, startVisible=false, entered=false,
+     returnEquals=true, returnVisible=false, errors=[]
+cross-dissolve: startEquals=true, startVisible=false, entered=false,
+     returnEquals=true, returnVisible=false, errors=[]
+camera: all visibility, snapshot, return hash and determinism checks PASS.
+
+Root cause: scene dispatch passes an ancestor and its descendant as disjoint
+outgoing/incoming targets. Hiding the outgoing ancestor hides the destination.
+The future incoming fade also initializes the branch to opacity 0 in the hub.
+The zero-duration cut additionally changes the exact spoke boundary snapshot.
+
+First correction: remap nested transition endpoints to sibling subtrees along
+the entire ancestor path. Leave the shared ancestors and selected branch out
+of both opacity tracks. Reverse the sibling targets when returning to the hub.
+The selected branch is already present in the hub, so it must not be faded in
+from zero. Nested cut preserves the exact t0 hub state and cuts immediately
+after t0 without adding timeline duration.
+Nested cut, cross-dissolve (.4s) and camera (.4s) then passed all assertions:
+entry boundary snapshot, effective ancestor-chain visibility, entered scene,
+return snapshot and visibility, hash, backward seek and repeated enter.
+Inspected cut/cross-dissolve screenshots: branch text is visible; other hub
+subtrees are hidden, with breadcrumb and controls intact.
+
+Boundary follow-up:
+Added a zero-duration cross-dissolve case. It exposed the same boundary mismatch
+as cut (startEquals=false), while visibility stayed correct. The final fix
+wraps only the newly registered nested-entry transition tracks so their initial
+frame is used at t0, regardless of via. Camera and transport code are untouched.
+
+Final desktop nested regression: exit 0.
+PASS nested cut dur=0.4
+PASS nested cross-dissolve dur=0.4
+PASS nested cross-dissolve dur=0
+PASS nested camera dur=0.4
+All cases report startEquals/startVisible/entered/returnEquals/returnVisible/
+reverseStartEquals/deterministic=true, returnHash=#hub.ret-A, errors=[].
+Final cut and cross-dissolve screenshots were viewed after the last runtime edit.
+
+Five-fixture regression command:
+bun scripts/qa.mjs scripts/fixtures/hub.html scripts/fixtures/controls.html scripts/fixtures/focus.html scripts/fixtures/autoplay.html scripts/fixtures/gestures.html
+Exit code: 0.
+PASS autoplay (3 stops), controls (3), focus (3), gestures (4), hub (8).
+TEMPLATES 5/5 PASS
+DETERMINISM 5/5
+REDUCED 5/5
+FEATURES 5/5
+
+Original 20-template regression: two runs, combined exit 0.
+Run 1: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20.
+Run 2: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20.
+Both bun scripts/qa.mjs invocations received the 20 original template paths
+explicitly (the same paths listed in attempt 1), frozen before launching.
+This excludes other workers' in-progress, untracked technique templates;
+the default glob now includes those unrelated additions.
+
+node --check runtime/eidos-stage.js and git diff --check: exit 0.
+LSP attempted again: typescript-language-server remains unavailable.
+Concurrent gesture correction committed as c82544f; Camera arc edits remain
+unstaged and are excluded from this fix.
+
+Mobile check: bun .omo/evidence/task-6-nested-probe.mjs --mobile
+(executed with the absolute evidence script path from the worktree).
+Exit 0; all four nested cases PASS at 390x844. Viewed final nested cut and
+cross-dissolve mobile PNGs: branch content is visible and readable; HUD does
+not overlap it.
+
+Staging: git add -p runtime/eidos-stage.js; rejected both Camera hunks and
+accepted only openScene's nested-via hunk. Inspected git diff --cached in full;
+git diff --cached --check passed. No other file, .omo artifact, fixture, gesture
+or Camera change is staged by this executor.
+
+Attempt 2 commit: 617af19d395cf7f2f9103b429dc571f8f92bb3da
+Subject: fix(runtime): keep hub ancestors visible for nested spoke transitions
+Commit exited 0: one file, 23 insertions, 3 deletions.
+Concurrent Camera work and untracked technique directories remain intact.
+No push or merge; evidence and scratch regression are retained only under .omo.
+
+## Attempt 3
+
+Review: eidos-dynamic-default-task-6-attempt-2-gate-review.md, T6-HUB-VIA/B2.
+Baseline HEAD: 617af19. The Camera worker's arc changes are uncommitted.
+Extended the retained nested fixture/probe with sibling spokes A/B and fresh
+loads of both hub.ret-A and hub.ret-B. The matrix includes cut, cross-dissolve,
+and camera at durations 0 and .4, plus camera-zero with no gap before A and
+with an explicitly zoomed hub pose. Initial hub pose is checked against an
+independent Camera.home()/Camera.resolve() oracle so a contaminated initial
+snapshot cannot make the equality checks pass vacuously.
+
+Planned mechanism: mark scene-authored spoke-entry camera keyframes as starting
+strictly after their exact timestamp. Ordinary keyframes, including hub returns,
+remain inclusive. This preserves authored equal-time ordering without epsilon
+offsets or changing durations. Camera.stateAt needs one conditional skip; all
+other fix logic belongs in openScene. No arc calculations will be changed.
+
+RED command:
+bun /Users/a451174/apps/eidos/.omo/evidence/task-6-nested-probe.mjs
+Exit 1: 10 passing cases and 8 camera-zero failures.
+For camera dur=0, gap=.1, ordinary hub, A reported startEquals=false,
+returnEquals=false and fresh.same=false despite #hub.ret-A; B reported
+startEquals=false. With gap=0, initialPoseCorrect=false also detected that
+the initial hub snapshot was already contaminated. Explicitly zoomed hubs
+failed the same cases.
+
+Implementation:
+openScene marks each spoke-entry camera keyframe with after=true.
+Camera.stateAt has exactly one added condition:
+  if (kf.after && t === kf.at) continue;
+Only spoke-entry frames are exclusive at their start. The preceding return
+frame at that timestamp still applies, and the later entry wins strictly
+afterward under the existing stable authored ordering. Hub return targets
+still resolve the original hub pose; no hard-coded home pose, added keyframes,
+epsilon offsets, or timeline duration changes were needed.
+The Camera worker's arc, Camera.to and Camera.mix edits were not modified.
+
+GREEN commands:
+bun /Users/a451174/apps/eidos/.omo/evidence/task-6-nested-probe.mjs
+bun /Users/a451174/apps/eidos/.omo/evidence/task-6-nested-probe.mjs --mobile
+Combined exit 0: 36 PASS, zero FAIL (18 per viewport).
+Every case asserts initial pose, A/B t0 hub equality, destination visibility
+and camera pose after enter, exit snapshot and hash, backward seek, repeated
+entry, and fresh return-hash equality. Every runtime error array is empty.
+Camera-zero passes with gap .1 or 0 and with default or zoomed hub poses.
+Cut/cross-dissolve at 0 and .4 and camera at .4 also pass for both siblings.
+
+Viewed final screenshots:
+  task-6-attempt-3-ret-A.png
+  task-6-attempt-3-ret-B.png
+  task-6-attempt-3-ret-A-mobile.png
+  task-6-attempt-3-ret-B-mobile.png
+Both return hashes show the full hub and both branches at 1280x800 and 390x844,
+not B's zoomed pose; captions and breadcrumb correctly say Hub.
+
+Five-fixture command:
+bun scripts/qa.mjs scripts/fixtures/hub.html scripts/fixtures/controls.html scripts/fixtures/focus.html scripts/fixtures/autoplay.html scripts/fixtures/gestures.html
+Exit 0: all five individual fixtures PASS.
+TEMPLATES 5/5 PASS; DETERMINISM 5/5; REDUCED 5/5; FEATURES 5/5.
+
+Original template runs: bun scripts/qa.mjs --expect 20 with the original 20
+explicit paths, twice. Combined exit 0.
+Run 1: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20.
+Run 2: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20.
+Concurrent new technique folders were excluded from this fixed regression
+corpus, as in attempt 2.
+node --check and git diff --check passed. LSP was attempted but the TypeScript
+language server remains unavailable.
+
+Attempt 3 staging:
+Used git add -p on runtime/eidos-stage.js. Split the mixed Camera hunk,
+rejected the arc signature/math/call changes, accepted only the one-line
+stateAt boundary guard and openScene's spoke-entry flag. Inspected the complete
+git diff --cached and ran git diff --cached --check successfully.
+The remaining unstaged Camera diff is 20 insertions and 5 deletions, owned by
+todo 11. No fixture, technique folder, .omo file, or gesture code is staged.
+
+Attempt 3 commit: ca7931ad59e1a805b13c8d94f3750609f39223b9
+Subject: fix(runtime): exact hub camera state for zero-duration spoke transitions
+Commit exited 0: one file, 6 insertions, 1 deletion.
+Concurrent Camera arc work and untracked technique directories remain intact.
+No push or merge; all evidence and scratch probes remain outside the commit.

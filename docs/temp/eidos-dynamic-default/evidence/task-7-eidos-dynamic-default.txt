@@ -1,0 +1,230 @@
+Todo 7: wheel, trackpad and Pointer Events swipe navigation
+Date: 2026-10-16
+Workdir: /Users/a451174/apps/eidos-wt/eidos-dynamic-default
+Bun: /Users/a451174/.bun/bin/bun
+Files authored: runtime/eidos-stage.js and runtime/eidos-stage.css only.
+This evidence file is operational, outside the worktree, and must not be staged.
+
+RED
+Command: bun scripts/qa.mjs scripts/fixtures/gestures.html
+Exit: 1
+FAIL scripts/fixtures/gestures.html (stops 4)
+  gestures: missing runtime API: Eidos.gesture()
+TEMPLATES 1/1 PASS
+DETERMINISM 1/1
+REDUCED 1/1
+FEATURES 0/1
+The template/determinism/reduced summaries alone were not accepted as success.
+
+IMPLEMENTATION
+Pure Eidos.gesture returns new wheel burst state, never mutating its input.
+Finite deltas and timestamps are required; unknown wheel modes are ignored.
+Wheel accumulation fires above 80px; 160ms quiet gaps reset the burst.
+Line units multiply by 16; direct reducer page units use the captured initial
+viewport height. DOM page units are normalized by the caller with the current
+viewport height, so resized stage input remains correct.
+Pointer release submits one swipe, with 48px distance and 1.5 axis dominance.
+Wheel ownership is frozen at burst start, including scrollable ancestors and
+editable/control ownership. Only stage-owned wheel events prevent default.
+Ctrl-wheel does nothing. Stage-owned gestures pause autoplay. Pointer swipe
+suppresses its following click to prevent an extra advance. Mouse clicks remain.
+CSS adds touch-action: pan-y pinch-zoom; body overflow remains hidden.
+No transport, scene, controls, fixture or QA harness changes were authored.
+
+An initial green attempt failed final-state settlement despite index becoming 2.
+Cause: every inertia-tail event called pause(), cancelling the active goto.
+Fixed by pausing only if autoplay is playing; discrete actions already pause.
+No fixture changes were needed; no objectively incorrect fixture was found.
+
+GREEN: NONDETERMINISM AND RELATED FIXTURES
+Command: for i in 1 2 3; do bun scripts/qa.mjs scripts/fixtures/gestures.html || exit; done
+Exit: 0
+Each of three runs:
+PASS scripts/fixtures/gestures.html (stops 4)
+TEMPLATES 1/1 PASS
+DETERMINISM 1/1
+REDUCED 1/1
+FEATURES 1/1
+Checks cover explicit caller timestamps, 150/170ms gaps, 79/81px thresholds,
+line/page modes, all swipe directions, diagonal rejection, reduced motion,
+child-of-scrollable ownership, ownership frozen until a new burst, panel bottom
+new-burst navigation, preventDefault ownership, touch-action, body overflow,
+autoplay pause and final snapshot equality against a fresh stop load.
+
+Command: bun scripts/qa.mjs scripts/fixtures/controls.html scripts/fixtures/focus.html scripts/fixtures/autoplay.html
+Exit: 0
+PASS scripts/fixtures/autoplay.html (stops 3)
+PASS scripts/fixtures/controls.html (stops 3)
+PASS scripts/fixtures/focus.html (stops 3)
+TEMPLATES 3/3 PASS
+DETERMINISM 3/3
+REDUCED 3/3
+FEATURES 3/3
+
+GREEN: FULL ACCEPTANCE
+Command: for i in 1 2; do bun scripts/qa.mjs || exit; done
+Exit: 0
+Run 1: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20
+Run 2: TEMPLATES 20/20 PASS; DETERMINISM 20/20; REDUCED 20/20
+All 20 individual template lines reported PASS in both runs.
+
+MALFORMED INPUT / PURITY
+In Bun.WebView, seed state = {t:0,total:79,fired:false}.
+NaN dx, NaN dy, NaN t and unknown deltaMode 99 each returned action:null and
+the identical seed state. JSON.stringify(seed) remained unchanged.
+A following valid dy:2 at t:16 returned next.
+Result: {ignored:true,immutable:true,normal:"next"}.
+
+MANUAL QA: RECORDED MACOS-LIKE INERTIA TRACE
+Surface: skills/eidos-camera/techniques/pan/template.html
+Fresh Bun.WebView: 1280x800
+Query: ?clock=manual&autoplay=0&motion=full&stop=1
+Awaited __eidos.ready before dispatch.
+Record format: event i has dx=0, deltaMode=0, kind=wheel, timeStamp=i*16ms.
+All 30 recorded dy values, in order:
+[60.5,51.5,43.85,37.3475,31.820375,27.122319,23.128971,19.734625,
+16.849432,14.397017,12.312464,10.540595,9.034505,7.75433,6.66618,
+5.741253,4.955065,4.286805,3.718785,3.235967,2.825572,2.476736,
+2.180226,1.928192,1.713963,1.531869,1.377088,1.245525,1.133696,1.038642]
+Dispatch:
+for each record:
+  const e = new WheelEvent("wheel", {bubbles:true,cancelable:true,deltaY:dy});
+  Object.defineProperty(e, "timeStamp", {value:i*16});
+  __eidos.world.dispatchEvent(e);
+After dispatch: __eidos.advance(4000), using the fixture-supported manual clock.
+Observed result: {before:1,after:2,advances:1,t:2.2,target:2.2,errors:[]}.
+Observed per-event index: i=0 -> 1; i=1..29 -> 2.
+All 30 stage-owned events had defaultPrevented:true.
+Exactly one next; full-motion timeline settled on target rather than merely
+updating its index. A rendered real-template screenshot was inspected.
+An earlier reused WebView retained an old script cache; final evidence above
+comes from a fresh WebView with the final runtime.
+
+DIRTY WORKTREE / DIAGNOSTICS
+Todo 6 concurrently modified runtime scene code, HUD CSS, technique kind flags
+and cards. Its staged changes were not unstaged or modified by this executor.
+Waited for the other worker's index to clear. Todo 6 committed as a76f538.
+Used git add -p runtime/ and individually accepted three gesture-only hunks:
+one CSS hunk, the reducer hunk, and the input-binding hunk.
+Inspected git diff --cached: runtime/eidos-stage.js +81 lines and
+runtime/eidos-stage.css +1 line, no other paths. Cached diff check exited 0.
+git diff --exit-code exited 0: no unstaged drift after staging.
+No .omo file is staged. No push or merge is performed.
+git diff --check: exit 0.
+LSP diagnostics unavailable: typescript-language-server and biome are not
+installed. No dependency or configuration changes were made to install them.
+Browser execution and the full acceptance suite validate the edited runtime.
+
+COMMIT
+686aa382c958e47b36836eb2e4c803384494a882
+feat(runtime): add wheel, trackpad and swipe navigation
+Exit: 0. Two runtime files, 82 insertions. Post-commit worktree clean.
+No .omo staging, no push, no merge.
+
+ATTEMPT 2 - T7-J-NORMALIZATION
+Verifier rejection:
+/Users/a451174/apps/eidos/.omo/evidence/eidos-dynamic-default-task-7-gate-review.md
+The attempt 1 captured initial-height reducer behavior described above is
+superseded by this fix. It was a contract defect, despite the green fixtures.
+
+Scope: runtime/eidos-stage.js gesture reducer and wheel adapter only.
+Remove module-load gesturePageHeight. Reducer input gains optional viewportH,
+defaulting to live innerHeight at each call. Explicit viewportH allows fully
+deterministic caller traces. The DOM adapter passes unscaled deltas, original
+deltaMode, and current innerHeight; normalization now has one implementation.
+No Camera, scene, controls, QA harness, fixture or documentation edits.
+
+Scratch regression probe, executed directly in the Bun eval kernel:
+
+const v = new Bun.WebView({width:1280,height:800});
+await v.navigate("file:///Users/a451174/apps/eidos-wt/eidos-dynamic-default/scripts/fixtures/gestures.html?clock=manual&autoplay=0&motion=full&stop=1");
+await v.evaluate("__eidos.ready.then(()=>true)");
+const loadedHeight = await v.evaluate("innerHeight");
+await v.resize(390,400);
+const result = await v.evaluate(`(() => {
+  const out = [];
+  for (const [dy,t] of [[0.15,2000],[0.25,2400]]) {
+    __eidos.jump(1);
+    const r = Eidos.gesture(undefined,{dx:0,dy,mode:2,t,kind:"wheel"});
+    const explicit = Eidos.gesture(undefined,{
+      dx:0,dy,mode:2,t,kind:"wheel",viewportH:400
+    });
+    const e = new WheelEvent("wheel",{
+      bubbles:true,cancelable:true,deltaY:dy,deltaMode:2
+    });
+    Object.defineProperty(e,"timeStamp",{value:t});
+    __eidos.world.dispatchEvent(e);
+    out.push({
+      height:innerHeight,dy,pixels:r.state.total,action:r.action,
+      explicitAction:explicit.action,
+      DOMAction:__eidos.index===1?null:"next",index:__eidos.index
+    });
+  }
+  return {cases:out,errors:__eidosErrors};
+})()`);
+v.close();
+
+RED before edit, same initial 800 -> current 400 resize:
+{height:400,pixels:120,action:"next",index:1}
+
+GREEN after edit, fresh WebView:
+loadedHeight:800
+case 1: {height:400,dy:0.15,pixels:60,action:null,
+         explicitAction:null,DOMAction:null,index:1}
+case 2: {height:400,dy:0.25,pixels:100,action:"next",
+         explicitAction:"next",DOMAction:"next",index:2}
+errors:[]
+No fixed sleeps, timestamp races, mocked navigation, or test-file edits.
+
+Attempt 2 fixture regressions:
+Three consecutive bun scripts/qa.mjs scripts/fixtures/gestures.html runs:
+each individual PASS, TEMPLATES 1/1 PASS, DETERMINISM 1/1, REDUCED 1/1,
+FEATURES 1/1. Combined command exit 0.
+Controls, focus, autoplay and hub fixtures together: all individual PASS,
+TEMPLATES 4/4 PASS, DETERMINISM 4/4, REDUCED 4/4, FEATURES 4/4; exit 0.
+
+Concurrent-work finding:
+An unfiltered bun scripts/qa.mjs scan discovered two new templates under
+concurrent construction (orbit and shape-morph). Exit 1:
+FAIL skills/eidos-camera/techniques/orbit/template.html (stops 5)
+  structure: missing card.md
+TEMPLATES 21/22 FAIL; DETERMINISM 22/22; REDUCED 22/22.
+This executor did not create or modify either directory. The failure is outside
+the gesture patch. Original twenty templates are rerun explicitly with --expect
+20, excluding only concurrent additions, without editing or weakening checks.
+
+Staging:
+git add -p runtime/ individually accepted the three gesture-only hunks.
+git diff --cached inspected in full: runtime/eidos-stage.js only,
+4 insertions and 7 deletions. No Camera hunks and no .omo staged.
+git diff --cached --check exited 0.
+
+Attempt 2 commit:
+c82544fb29bfd5957fc497e379e934cb9d61e201
+fix(runtime): normalize page-mode wheel deltas to the live viewport
+Committed immediately when requested to free the shared index; exit 0.
+Verified staged scope immediately before commit: runtime/eidos-stage.js only,
+4 insertions and 7 deletions. No other worker's changes were committed.
+The earlier explicit-positional-path baseline invocation stalled without
+producing a completed first run and was terminated; no PASS is claimed for it.
+Replacement verification uses --only with the original twenty technique IDs
+and --expect 20, twice, excluding concurrent orbit/shape-morph additions.
+
+Attempt 2 final regression results (post-commit):
+Command run twice:
+bun scripts/qa.mjs --only 'skills/*/techniques/{establishing-shot,freeze-frame,pan,rack-focus,tracking,zoom-in,cross-dissolve,match-cut,split-screen,chart-annotate,chart-grow,code-diff,graph-build,sequence-message,state-transition,count-up,highlight-sweep,mask-reveal,path-drawing,stagger-reveal}/template.html' --expect 20
+ATTEMPT2_RUN_1:
+  All twenty individual template lines PASS.
+  TEMPLATES 20/20 PASS
+  DETERMINISM 20/20
+  REDUCED 20/20
+ATTEMPT2_RUN_2:
+  All twenty individual template lines PASS.
+  TEMPLATES 20/20 PASS
+  DETERMINISM 20/20
+  REDUCED 20/20
+Combined two-run command exit: 0.
+This completes the requested two original-template runs; no pending results.
+Resize regression, three gesture fixtures and four related fixtures also passed
+as recorded above. The unfiltered concurrent orbit missing-card finding remains
+outside this executor's scope. No concurrent technique folders were staged.

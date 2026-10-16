@@ -1,0 +1,115 @@
+Task 5: deterministic in-scene controls with URL state
+Worktree: /Users/a451174/apps/eidos-wt/eidos-dynamic-default
+Baseline HEAD: 45634da
+Scope: runtime/eidos-stage.js and runtime/eidos-stage.css only.
+Pre-existing concurrent changes: scripts/qa.mjs, scripts/fixtures/controls.html.
+
+RED: /Users/a451174/.bun/bin/bun scripts/qa.mjs scripts/fixtures/controls.html
+Exit code: 1
+FAIL scripts/fixtures/controls.html (stops 3)
+  controls: build: s.control is not a function
+  controls: build: s.onParams is not a function
+  controls: build: undefined is not an object (evaluating 'w.drive')
+  controls: missing runtime API: __eidos.control(), __eidos.setControls(), __eidos.onParams()
+TEMPLATES 1/1 PASS
+DETERMINISM 1/1
+REDUCED 1/1
+The three summary lines do not imply feature success; the command correctly exited 1.
+
+Implementation
+- Timeline.seek resolves parameters before scene tracks and seek hooks.
+- Frozen params resolve defaults -> deterministic drives at t -> user overrides.
+- Atomic range/toggle/select validation; range clamp and half-step-up quantization.
+- setControls/handle.set and dock edits pause playback; DOM rerender is rAF-coalesced.
+- Non-sticky overrides clear on stop change; sticky overrides persist.
+- layout:true renders parameter changes before layout callbacks and camera remeasurement.
+- Visibility uses only when: inclusive stop ranges by index/id or scene id.
+- Dock is fixed outside world, uses existing theme tokens, explicit labels, focus rings,
+  and a mobile bottom sheet above the HUD. It registers no wheel handler.
+- URL reads query controls then hash controls; writes only on stop arrival and dock change.
+  URL writes tolerate replaceState restrictions. Scene-free timelines retain ?stop.
+- snapshot's existing params prefix is preserved; controls do not rebuild scene DOM.
+
+GREEN (final source; Bun /Users/a451174/.bun/bin/bun)
+Command:
+  bun scripts/qa.mjs scripts/fixtures/controls.html scripts/fixtures/focus.html scripts/fixtures/autoplay.html --shots /Users/a451174/apps/eidos/.omo/evidence/task-5-shots
+PASS scripts/fixtures/autoplay.html (stops 3)
+PASS scripts/fixtures/controls.html (stops 3)
+PASS scripts/fixtures/focus.html (stops 3)
+TEMPLATES 3/3 PASS
+DETERMINISM 3/3
+REDUCED 3/3
+SHOTS 12 -> /Users/a451174/apps/eidos/.omo/evidence/task-5-shots
+Exit code: 0
+
+Command: bun scripts/qa.mjs && bun scripts/qa.mjs
+Run 1:
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+Run 2:
+TEMPLATES 20/20 PASS
+DETERMINISM 20/20
+REDUCED 20/20
+Combined exit code: 0
+No retries, skipped tests, or weakened checks. The committed hardened QA is 24e6c41;
+git diff for scripts/qa.mjs and scripts/fixtures/controls.html is empty.
+
+Adversarial browser probes (Bun.WebView, JSON-serialized bridge results)
+- ?c.n=99 -> n=8, no errors.
+- ?c.n=x -> n=4, "Invalid URL control: c.n=x".
+- ?c.zzz=1 -> n=4, "Invalid URL control: c.zzz=1".
+- Empty numeric value, Infinity, invalid toggle, invalid select all report errors.
+- ?c.n=2.5 -> n=3; query n=2 plus hash n=7 -> n=7.
+- 200 consecutive slider input events: zero synchronous onParams renders, one render
+  after the animation frame, zero URL writes, no __eidosErrors, final n=8.
+- One control change: one replaceState. goto target selection: zero writes;
+  mid-travel: zero writes; arrival: one write. Stop times unchanged.
+- URL produced by a change at stop 3 restores the identical snapshot on real reload:
+  t=1.7000000000000002 before and after, n=6, driven w=0.9.
+- layout:true range set(.65), step .1: handle.value=.7 immediately; one layout;
+  measurement sees the updated box width=70, not stale width=20.
+- when ['a','b'] hidden at stop 0, visible at stops 1/2; when 'alpha' hidden at
+  stop 0, visible at alpha stop 1, hidden at beta stop 2.
+- Typed select {value:1,label:'one'} / {value:2,label:'two'} preserves numeric values.
+- Invalid mixed patch changes nothing and adds one error; params is frozen.
+- Controls/focus checks prove sticky persistence, default-clear back to drive/default,
+  actual slider value and visual change, editable key ownership, and wheel isolation.
+
+Manual visual QA
+Viewed the four final controls captures:
+  scripts__fixtures__controls__desktop-light-s3.png
+  scripts__fixtures__controls__desktop-dark-s3.png
+  scripts__fixtures__controls__mobile-light-s3.png
+  scripts__fixtures__controls__mobile-dark-s3.png
+Viewport sizes: 1280x800 and 390x844 (native WebView backing density).
+PASS: readable labels/values, both theme token sets, no clipping or horizontal overflow,
+all controls visible, mobile sheet clear of HUD, explicit labels, visible input affordances.
+WebKit initially ignored the native select min-height; appearance:none fixes its measured
+target height to 44px, with a token-colored chevron. Range targets are 44px; checkbox labels
+provide a full row hit area.
+
+Review and findings
+- The first implementation exposed two labelable elements (output and input) inside a
+  label; explicit for/id association fixed this before acceptance.
+- A persisted scene-free URL initially lost its stop; retaining ?stop fixed the observed
+  reload mismatch. Round-trip snapshot now matches.
+- No remaining known QA-check bug was encountered; hardened committed checks passed.
+- LSP diagnostics could not run: typescript-language-server and biome are not installed.
+  No dependencies were installed outside the authorized two-file implementation scope.
+- Runtime executes successfully in actual WebKit; git diff --check passed.
+- Initial unrelated scripts edits were left untouched and committed by their owner as
+  24e6c41. Transport/ramp follow-up hunks belong to the todo 4 worker and are excluded
+  from the controls commit. No .omo paths are staged.
+
+Commit
+d770ce877491c42bfe5ddb97e30c91a8985d9141
+feat(runtime): add deterministic in-scene controls with URL state
+Staged interactively with git add -p and checked git diff --cached:
+  runtime/eidos-stage.css: 72 additions, 0 deletions
+  runtime/eidos-stage.js: 204 additions, 4 deletions
+Only these two runtime paths are committed. No scripts or .omo paths were staged.
+After commit, runtime/eidos-stage.js retains the other worker's unstaged transport
+changes (10 additions, 7 deletions). Those follow-up changes are not part of this claim.
+Acceptance was rerun after confirming committed QA HEAD 24e6c41, with controls,
+focus, and autoplay PASS and all three 3/3 summaries; exit code 0.

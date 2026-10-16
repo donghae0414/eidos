@@ -1,0 +1,12 @@
+# orbit card turntable recipe: scratch /tmp/t12/ring.html (4 faces, r = 0.7, card code verbatim) + probe-ring.mjs
+# at stop k the frontmost visible face must be face k-1 with projected x = 0
+# exit 0
+PASS full stop 1: front=0 (want 0) x=0 visible=[0]
+PASS full stop 2: front=1 (want 1) x=0 visible=[1]
+PASS full stop 3: front=2 (want 2) x=0 visible=[2]
+PASS full stop 4: front=3 (want 3) x=0 visible=[3]
+PASS reduce stop 1: front=0 (want 0) x=0 visible=[0]
+PASS reduce stop 2: front=1 (want 1) x=0 visible=[1]
+PASS reduce stop 3: front=2 (want 2) x=0 visible=[2]
+PASS reduce stop 4: front=3 (want 3) x=0 visible=[3]
+RING PASS
