@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>REST vs GraphQL · EIDOS</title>
+<title>REST vs GraphQL · 왕복과 모양</title>
 <style>
 :root {
   color-scheme: light;
@@ -93,6 +93,7 @@ body {
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  touch-action: pan-y pinch-zoom;
 }
 .eidos-world {
   position: absolute;
@@ -121,11 +122,104 @@ body {
   font-size: 0.9rem;
   background: linear-gradient(to top, var(--eidos-bg) 55%, transparent);
 }
-.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
+.eidos-hud-breadcrumb { grid-column: 1 / -1; color: var(--eidos-muted-fg); font-size: 0.8rem; overflow-wrap: anywhere; }
+.eidos-hud-breadcrumb:empty { display: none; }
+.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-width: 0; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
 .eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-transport { display: flex; align-items: center; gap: 0.75rem; pointer-events: auto; }
+.eidos-hud-play {
+  min-width: 4.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-hud-play:hover, .eidos-hud-play:active { background: var(--eidos-border); }
+.eidos-hud-play:focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-hud-speed { min-width: 3ch; color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-hud-count { grid-column: 1 / -1; }
+@media (max-width: 480px) {
+  .eidos-hud-count { font-size: 0.8rem; }
+}
 .eidos-hud-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--eidos-border); overflow: hidden; }
 .eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
 .eidos-hud[hidden] { display: none; }
+
+.eidos-dock {
+  position: fixed;
+  z-index: 2;
+  inset-block-start: 1.25rem;
+  inset-inline-end: 1.25rem;
+  width: min(18rem, calc(100% - 2.5rem));
+  max-height: calc(100dvh - 10rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  box-shadow: var(--eidos-shadow);
+  font-size: 0.9rem;
+}
+.eidos-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+.eidos-control + .eidos-control { border-top: 1px solid var(--eidos-border); }
+.eidos-control > span { overflow-wrap: anywhere; font-weight: 500; }
+.eidos-control output { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-control input { accent-color: var(--eidos-accent); cursor: pointer; }
+.eidos-control input[type="range"] { grid-column: 1 / -1; width: 100%; min-width: 0; min-height: 44px; margin: 0; }
+.eidos-control input[type="checkbox"] { width: 1.25rem; height: 1.25rem; margin: 0.75rem 0; }
+.eidos-control-select { position: relative; }
+.eidos-control-select::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  inset-block-end: 1.75rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 1.5px solid var(--eidos-muted-fg);
+  border-block-end: 1.5px solid var(--eidos-muted-fg);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.eidos-control select {
+  appearance: none;
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 2rem 0.5rem 0.5rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-bg);
+  color: var(--eidos-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-control :is(input, select):focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-dock[hidden], .eidos-control[hidden] { display: none; }
+@media (max-width: 600px) {
+  .eidos-dock {
+    inset-block-start: auto;
+    inset-block-end: calc(14vh + env(safe-area-inset-bottom));
+    inset-inline: 0.75rem;
+    width: auto;
+    max-height: 42dvh;
+    border-radius: var(--eidos-radius) var(--eidos-radius) var(--eidos-radius-sm) var(--eidos-radius-sm);
+  }
+}
 
 .eidos-card {
   background: var(--eidos-surface);
@@ -143,120 +237,344 @@ body {
 
 </style>
 <style>
-  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 3vh; }
-  .layout header { display: flex; flex-direction: column; gap: 6px; }
-  .split { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr auto 1fr; gap: 0 3vw; }
-  .pane { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-  .pane-head { display: flex; align-items: baseline; gap: 10px; }
-  .pane-head b { font-size: 1.2rem; }
-  .pane-head .sub { font-size: 0.85rem; color: var(--eidos-muted-fg); }
-  .swatch { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.6vh; word-break: keep-all; overflow-wrap: break-word; background: var(--eidos-bg); }
+  .layout header { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.4vh; }
+  .eidos-title { line-height: 1.2; font-size: clamp(1.2rem, 2.7vw, 2rem); }
+
+  /* 필드 칩: 화면이 필요로 하는 필드. 색이 찬 칩(.fill)이 "필요한 필드" */
+  .fields { list-style: none; margin: 0.6vh 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+  .fchip { position: relative; isolation: isolate; padding: 0.1rem 0.6rem; border-radius: 999px; border: 1.5px dashed var(--eidos-border); font-size: clamp(0.62rem, 1.05vw, 0.8rem); color: var(--eidos-fg); white-space: nowrap; }
+  .fchip .fill { position: absolute; inset: -1.5px; border-radius: 999px; background: color-mix(in oklab, var(--eidos-fg) 9%, transparent); border: 1.5px solid var(--eidos-fg); z-index: -1; opacity: 0; }
+
+  /* trips: 스플릿 스크린 */
+  .split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0 3vw; }
+  .pane { min-width: 0; display: flex; flex-direction: column; gap: 1.4vh; }
+  .pane-head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .pane-head b { font-size: clamp(1rem, 1.8vw, 1.35rem); }
+  .pane-head .sub { font-size: clamp(0.66rem, 1.15vw, 0.95rem); color: var(--eidos-muted-fg); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; align-self: center; flex: none; }
   #rest .swatch { background: var(--eidos-cat-1); }
   #gql .swatch { background: var(--eidos-cat-2); }
-  .count { margin-left: auto; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--eidos-border); font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
-  .trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-  .trip { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "n req ms" "n res ms"; gap: 2px 10px; align-items: center; }
-  .trip .n { grid-area: n; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--eidos-cat-1); color: var(--eidos-accent-fg); font-size: 0.75rem; font-weight: 700; }
-  .trip code { grid-area: req; font-family: var(--eidos-font-mono); font-size: 0.9rem; color: var(--eidos-surface-fg); }
-  .trip .res { grid-area: res; font-family: var(--eidos-font-mono); font-size: 0.76rem; color: var(--eidos-muted-fg); }
-  .trip .ms { grid-area: ms; display: flex; align-items: center; gap: 4px; font-family: var(--eidos-font-mono); font-size: 0.75rem; color: var(--eidos-muted-fg); white-space: nowrap; }
-  .trip .ms svg { width: 14px; height: 14px; }
-  .divider-wrap { position: relative; width: 2px; }
+  .lane { display: block; width: 100%; height: clamp(38px, 7vh, 72px); overflow: visible; }
+  .lane text { font-family: var(--eidos-font-mono); font-size: 8.5px; fill: var(--eidos-fg); }
+  .lane .node { fill: var(--eidos-surface); stroke: var(--eidos-border); stroke-width: 1.2; }
+  .lane .wire { stroke: var(--eidos-border); stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .pill-req rect { fill: var(--eidos-cat-1); }
+  .pill-req text { fill: var(--eidos-accent-fg); font-weight: 700; }
+  #gql .pill-req rect { fill: var(--eidos-cat-2); }
+  .pill-res rect { fill: var(--eidos-surface); stroke: var(--eidos-cat-1); stroke-width: 1.5; }
+  #gql .pill-res rect { stroke: var(--eidos-cat-2); }
+  .pill-res text { font-weight: 600; }
+  .trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.2vh; }
+  .trip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "n ep sz" "n fc fc"; gap: 2px 8px; align-items: center; }
+  #gql .trip { grid-template-columns: auto auto minmax(0, 1fr); }
+  .trip .n { grid-area: n; width: clamp(20px, 1.9vw, 25px); height: clamp(20px, 1.9vw, 25px); border-radius: 50%; display: grid; place-items: center; background: var(--eidos-cat-1); color: var(--eidos-accent-fg); font-size: clamp(0.62rem, 0.95vw, 0.76rem); font-weight: 700; }
+  #gql .trip .n { background: var(--eidos-cat-2); }
+  .trip code { grid-area: ep; font-family: var(--eidos-font-mono); font-size: clamp(0.7rem, 1.25vw, 1rem); color: var(--eidos-surface-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trip .sz { grid-area: sz; font-family: var(--eidos-font-mono); font-size: clamp(0.6rem, 1.05vw, 0.85rem); color: var(--eidos-muted-fg); white-space: nowrap; }
+  #gql .trip .sz { justify-self: start; overflow: hidden; text-overflow: ellipsis; }
+  .resp { grid-area: fc; display: flex; flex-wrap: wrap; gap: 3px 4px; align-items: center; }
+  .fc { position: relative; display: inline-block; padding: 0 0.4rem; border-radius: 4px; font-family: var(--eidos-font-mono); font-size: clamp(0.56rem, 1vw, 0.8rem); line-height: 1.5; color: var(--eidos-muted-fg); background: color-mix(in oklab, var(--eidos-fg) 6%, transparent); white-space: nowrap; }
+  .fc.use { color: var(--eidos-cat-1); background: color-mix(in oklab, var(--eidos-cat-1) 14%, transparent); font-weight: 600; }
+  .fc .strike { position: absolute; left: 0.2rem; right: 0.2rem; top: 50%; height: 2px; margin-top: -1px; border-radius: 1px; background: var(--eidos-fg); transform-origin: left center; transform: scaleX(0); }
+  .x3 { font-family: var(--eidos-font-mono); font-size: clamp(0.56rem, 1vw, 0.8rem); color: var(--eidos-muted-fg); }
+  .meter { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: clamp(0.7rem, 1.25vw, 1rem); color: var(--eidos-muted-fg); }
+  .meter b { display: inline-block; color: var(--eidos-fg); font-variant-numeric: tabular-nums; }
+  .note { margin: 0; font-size: clamp(0.7rem, 1.2vw, 1rem); color: var(--eidos-fg); line-height: 1.45; }
+  .resolvers { position: relative; padding-left: 12px; }
+  .joinbar { position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; border-radius: 2px; background: var(--eidos-cat-2); transform-origin: top center; transform: scaleY(0); }
+  .joinnote { font-size: clamp(0.62rem, 1.1vw, 0.86rem); color: var(--eidos-cat-2); padding-left: 12px; }
+  .rescard { position: relative; font-family: var(--eidos-font-mono); font-size: clamp(0.58rem, 1vw, 0.84rem); line-height: 1.5; padding: 0.45rem 0.7rem; align-self: flex-start; max-width: 100%; }
+  .rescard .hd { display: flex; gap: 10px; justify-content: space-between; font-family: var(--eidos-font-sans); font-size: clamp(0.6rem, 1vw, 0.8rem); color: var(--eidos-muted-fg); margin-bottom: 2px; }
+  .rescard .ln { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .rescard .k { color: var(--eidos-cat-2); }
+  .rescard .waiting { position: absolute; left: 0; right: 0; top: 2.2em; bottom: 0; display: grid; place-items: center; font-family: var(--eidos-font-sans); font-size: clamp(0.62rem, 1.05vw, 0.84rem); color: var(--eidos-muted-fg); pointer-events: none; }
+  .divider-wrap { position: relative; width: 2px; align-self: stretch; }
   .divider { width: 100%; height: 100%; background: var(--eidos-border); }
-  .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 999px; background: var(--eidos-surface); border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; }
-  .query { font-family: var(--eidos-font-mono); font-size: 0.86rem; line-height: 1.55; }
-  .query .line { white-space: pre; }
-  .query .k { color: var(--eidos-cat-2); }
-  .summary { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 1rem; }
-  .summary b { color: var(--eidos-accent); }
-  @media (max-width: 640px) {
-    .layout { padding: 5vh 5vw 14vh; gap: 2vh; }
-    .split { grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 14px 0; }
-    .divider-wrap { width: auto; height: 2px; }
-    .pane { gap: 8px; }
-    .pane-head b { font-size: 1.05rem; }
-    .trips { gap: 6px; }
-    .trip code { font-size: 0.8rem; }
-    .trip .res { font-size: 0.7rem; }
-    .trip .ms { font-size: 0.7rem; }
-    .query { font-size: 0.74rem; line-height: 1.5; padding: 0.7rem 0.8rem; }
-    .summary { flex-direction: column; gap: 2px; font-size: 0.88rem; }
-  }
+  .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 8px; border-radius: 999px; background: var(--eidos-surface); border: 1px solid var(--eidos-border); color: var(--eidos-muted-fg); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; white-space: nowrap; }
 
-  .scene { position: absolute; inset: 0; }
-  #scene-b { justify-content: center; gap: 4vh; }
-  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-  .metric { display: flex; flex-direction: column; gap: 10px; }
-  .metric .name { font-size: 0.95rem; color: var(--eidos-muted-fg); }
-  .metric .row { display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 10px; font-size: 0.95rem; }
-  .metric .row b { font-weight: 600; }
-  .metric .num { font-family: var(--eidos-font-mono); font-size: clamp(1.05rem, 2vw, 1.5rem); font-weight: 700; text-align: right; }
-  .track { height: 8px; border-radius: 4px; background: var(--eidos-border); overflow: hidden; }
-  .fill { height: 100%; width: 100%; transform-origin: left; }
-  .fill.rest { background: var(--eidos-cat-1); }
-  .fill.gql { background: var(--eidos-cat-2); }
-  .conclusion { font-size: clamp(1.05rem, 2.4vw, 1.75rem); line-height: 1.95; margin: 0; word-break: keep-all; }
-  .conclusion .kw { white-space: nowrap; }
+  /* shape: 쿼리와 응답 카드, 그 사이 연결선, REST 응답 카드 3장 */
+  .pair { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+  .codecard { font-family: var(--eidos-font-mono); font-size: clamp(0.56rem, 1.15vw, 0.95rem); line-height: 1.55; padding: 0.55rem 0.8rem; }
+  .codecard .hd { display: flex; justify-content: space-between; gap: 8px; font-family: var(--eidos-font-sans); font-size: clamp(0.6rem, 1.05vw, 0.85rem); color: var(--eidos-muted-fg); margin-bottom: 4px; }
+  .codecard .ln { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .codecard .k { color: var(--eidos-cat-2); }
+  #shape-q { border-color: var(--eidos-cat-2); }
+  #shape-links { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .restcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 1vh; }
+  .restcard { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 0.7rem 0.8rem; }
+  .restcard code { font-family: var(--eidos-font-mono); font-size: clamp(0.62rem, 1.15vw, 0.92rem); color: var(--eidos-surface-fg); }
+  .restcard .badge { position: absolute; right: 8px; top: -11px; padding: 1px 9px; border-radius: 999px; background: var(--eidos-fg); color: var(--eidos-bg); font-size: clamp(0.58rem, 1.05vw, 0.82rem); font-weight: 700; white-space: nowrap; }
+
+  /* whatif: 막대와 숫자, 리소스 사다리 */
+  .lab { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 3vh 4vw; align-content: start; }
+  .bars { display: flex; flex-direction: column; gap: 2.4vh; }
+  .bargroup h3 { margin: 0 0 8px; font-size: clamp(0.76rem, 1.35vw, 1.1rem); font-weight: 600; color: var(--eidos-muted-fg); }
+  .barrow { display: grid; grid-template-columns: 5.4em minmax(0, 1fr) 5em; gap: 10px; align-items: center; font-size: clamp(0.74rem, 1.35vw, 1.1rem); }
+  .barrow + .barrow { margin-top: 6px; }
+  .barrow .who { font-weight: 600; }
+  .barrow.rest .who { color: var(--eidos-cat-1); }
+  .barrow.gql .who { color: var(--eidos-cat-2); }
+  .track { height: clamp(14px, 2.2vh, 20px); border-radius: 10px; background: color-mix(in oklab, var(--eidos-fg) 7%, transparent); overflow: hidden; }
+  .bar { height: 100%; border-radius: 10px; transform-origin: left center; transform: scaleX(0); }
+  .barrow.rest .bar { background: var(--eidos-cat-1); }
+  .barrow.gql .bar { background: var(--eidos-cat-2); }
+  .barrow .val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .waste-line { margin: 0; font-size: clamp(0.72rem, 1.25vw, 1.05rem); color: var(--eidos-muted-fg); line-height: 1.6; }
+  .waste-line b { color: var(--eidos-fg); font-variant-numeric: tabular-nums; }
+  .ladder { display: flex; flex-direction: column; gap: 10px; }
+  .ladder h3 { margin: 0; font-size: clamp(0.76rem, 1.35vw, 1.1rem); font-weight: 600; color: var(--eidos-muted-fg); }
+  .rung { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 0.6rem 0.8rem; }
+  .rung code { font-family: var(--eidos-font-mono); font-size: clamp(0.64rem, 1.15vw, 0.92rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rung .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--eidos-cat-1); }
+  .rung .need { font-size: clamp(0.6rem, 1.05vw, 0.85rem); color: var(--eidos-muted-fg); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .modelnote { margin: 0; font-size: clamp(0.66rem, 1.1vw, 0.88rem); color: var(--eidos-muted-fg); }
+
+  /* cost: 브라우저 → CDN → 원본 레인 */
+  .lanes { display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; overflow: visible; }
+  .lanes text { font-size: 11px; fill: var(--eidos-fg); }
+  .lanes .node { fill: var(--eidos-surface); stroke: var(--eidos-border); stroke-width: 1.2; }
+  .lanes .wire { stroke: var(--eidos-border); stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .lanes .lbl-rest { fill: var(--eidos-cat-1); font-weight: 600; }
+  .lanes .lbl-gql { fill: var(--eidos-cat-2); font-weight: 600; }
+  .lanes .dot-rest { fill: var(--eidos-cat-1); }
+  .lanes .dot-rest-res { fill: var(--eidos-surface); stroke: var(--eidos-cat-1); stroke-width: 2; }
+  .lanes .dot-gql { fill: var(--eidos-cat-2); }
+  .lanes .dot-gql-res { fill: var(--eidos-surface); stroke: var(--eidos-cat-2); stroke-width: 2; }
+  .lanes .badge rect { fill: var(--eidos-fg); }
+  .lanes .badge text { fill: var(--eidos-bg); font-weight: 700; font-size: 10px; }
+  .thesis { margin: 0; font-size: clamp(1rem, 2vw, 1.4rem); line-height: 1.6; }
+  .costs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .costs li { padding: 0.7rem 0.9rem; font-size: clamp(0.72rem, 1.25vw, 1.05rem); }
+  .costs li b { display: block; margin-bottom: 2px; }
+  .costs li span { color: var(--eidos-muted-fg); font-size: 0.9em; }
+
+  /* verdict */
+  #verdict { justify-content: center; gap: 2.5vh; }
+  .verdict-line { margin: 0; font-size: clamp(1.15rem, 2.6vw, 1.9rem); line-height: 1.7; font-weight: 600; }
+  .hit { font-weight: 800; white-space: nowrap; }
+  .hit.gql { color: var(--eidos-cat-2); }
+  .hit.rest { color: var(--eidos-cat-1); }
+  .verdict-sub { margin: 0; font-size: clamp(0.9rem, 1.7vw, 1.2rem); color: var(--eidos-muted-fg); line-height: 1.6; }
+
   @media (max-width: 640px) {
-    .metrics { grid-template-columns: 1fr; gap: 10px; }
-    .metric { gap: 6px; padding: 0.7rem 0.8rem; }
+    .layout { padding: 4vh 4vw 15vh; gap: 1.4vh; }
+    .layout header { gap: 0.2vh; }
+    .fields { gap: 4px 6px; }
+    .fchip { padding: 0.05rem 0.45rem; }
+    .split { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 8px 0; }
+    .divider-wrap { width: auto; height: 2px; }
+    .pane { gap: 0.7vh; }
+    .lane { height: 40px; }
+    .trips { gap: 0.5vh; }
+    .trip .n { width: 18px; height: 18px; font-size: 0.6rem; }
+    .pair { gap: 26px; }
+    .codecard { padding: 0.45rem 0.5rem; }
+    .restcards { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .restcard { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+    .lab { grid-template-columns: minmax(0, 1fr); gap: 1.4vh; }
+    .costs { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .costs li { padding: 0.45rem 0.7rem; }
   }
 </style>
 </head>
 <body>
 <div class="eidos-stage">
   <div class="eidos-world">
-    <main class="layout scene" id="scene-a">
+
+    <!-- ================= 장면 1: trips (왕복) ================= -->
+    <main class="layout" id="trips">
       <header>
-        <div class="eidos-label">REST vs GraphQL</div>
+        <div class="eidos-label">REST vs GraphQL · 비교</div>
         <h1 class="eidos-title">글 상세 화면 하나를 그리는 데 필요한 요청</h1>
+        <ul class="fields" id="need" aria-label="화면이 필요로 하는 필드">
+          <li class="fchip on"><i class="fill"></i>제목</li>
+          <li class="fchip on"><i class="fill"></i>본문</li>
+          <li class="fchip on"><i class="fill"></i>작성자 이름</li>
+          <li class="fchip on"><i class="fill"></i>댓글 본문</li>
+          <li class="fchip"><i class="fill"></i>아바타</li>
+          <li class="fchip"><i class="fill"></i>댓글 작성자</li>
+          <li class="fchip"><i class="fill"></i>좋아요</li>
+          <li class="fchip"><i class="fill"></i>댓글 시각</li>
+        </ul>
       </header>
       <section class="split">
         <div class="pane" id="rest">
-          <div class="pane-head"><span class="swatch"></span><b>REST</b><span class="sub">엔드포인트 3개</span><span class="count">왕복 0회</span></div>
+          <div class="pane-head"><span class="swatch"></span><b>REST</b><span class="sub">엔드포인트(리소스) 단위로 받는다</span></div>
+          <svg class="lane" viewBox="0 0 320 44" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <rect class="node" x="2" y="8" width="32" height="28" rx="6"/><text x="18" y="25.5" text-anchor="middle">화면</text>
+            <rect class="node" x="286" y="8" width="32" height="28" rx="6"/><text x="302" y="25.5" text-anchor="middle">서버</text>
+            <line class="wire" x1="38" y1="22" x2="282" y2="22"/>
+            <g class="pill pill-req" id="rest-req"><rect x="0" y="13" width="118" height="18" rx="9"/><text id="rest-req-t" x="59" y="25.5" text-anchor="middle">GET /posts/9</text></g>
+            <g class="pill pill-res" id="rest-res"><rect x="0" y="13" width="52" height="18" rx="9"/><text id="rest-res-t" x="26" y="25.5" text-anchor="middle">352 B</text></g>
+          </svg>
           <ol class="trips">
-            <li class="trip r1"><span class="n">1</span><code>GET /users/1</code><span class="res">→ { id, name, avatar }</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
-            <li class="trip r2"><span class="n">2</span><code>GET /users/1/posts?limit=1</code><span class="res">→ [{ id: 9, title }]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
-            <li class="trip r3"><span class="n">3</span><code>GET /posts/9/comments</code><span class="res">→ [{ author, text }, …]</span><span class="ms"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10l-2.5-2.5M14 10.5H4l2.5 2.5"/></svg>80ms</span></li>
+            <li class="trip r1"><span class="n">1</span><code>GET /posts/9</code><span class="sz">352 B</span>
+              <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">title</span><span class="fc use">body</span><span class="fc">authorId<i class="strike"></i></span><span class="fc">likes<i class="strike"></i></span><span class="fc">createdAt<i class="strike"></i></span></div></li>
+            <li class="trip r2"><span class="n">2</span><code>GET /users/1</code><span class="sz">180 B</span>
+              <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">name</span><span class="fc">avatar<i class="strike"></i></span><span class="fc">bio<i class="strike"></i></span><span class="fc">email<i class="strike"></i></span></div></li>
+            <li class="trip r3"><span class="n">3</span><code>GET /posts/9/comments</code><span class="sz">420 B</span>
+              <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">text</span><span class="fc">author<i class="strike"></i></span><span class="fc">createdAt<i class="strike"></i></span><span class="fc">likes<i class="strike"></i></span><span class="x3">×3</span></div></li>
           </ol>
+          <div class="meter"><span>왕복 <b id="rest-trips">0</b>회</span><span>받음 <b id="rest-bytes">0</b> B</span><span>버림 <b id="rest-waste">0</b> B</span></div>
+          <p class="note" id="rest-note"><span id="kw-over">엔드포인트가 정한 모양</span>대로 오니 안 쓰는 필드도 받는다</p>
         </div>
         <div class="divider-wrap"><div class="divider"></div><span class="vs">VS</span></div>
         <div class="pane" id="gql">
-          <div class="pane-head"><span class="swatch"></span><b>GraphQL</b><span class="sub">쿼리 1개</span><span class="count">왕복 0회</span></div>
-          <div class="query eidos-card">
-            <div class="line eidos-muted">POST /graphql</div>
-            <div class="line"><span class="k">query</span> {</div>
-            <div class="line q1">  user(id: 1) {</div>
-            <div class="line q1">    name</div>
-            <div class="line q1">    avatar</div>
-            <div class="line q2">    posts(first: 1) {</div>
-            <div class="line q2">      title</div>
-            <div class="line q3">      comments { author text }</div>
-            <div class="line q2">    }</div>
-            <div class="line q1">  }</div>
-            <div class="line">}</div>
+          <div class="pane-head"><span class="swatch"></span><b>GraphQL</b><span class="sub">필드 단위로 요청한다</span></div>
+          <svg class="lane" viewBox="0 0 320 44" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <rect class="node" x="2" y="8" width="32" height="28" rx="6"/><text x="18" y="25.5" text-anchor="middle">화면</text>
+            <rect class="node" x="286" y="8" width="32" height="28" rx="6"/><text x="302" y="25.5" text-anchor="middle">서버</text>
+            <line class="wire" x1="38" y1="22" x2="282" y2="22"/>
+            <g class="pill pill-req" id="gql-req"><rect x="0" y="13" width="84" height="18" rx="9"/><text id="gql-req-t" x="42" y="25.5" text-anchor="middle">POST /graphql</text></g>
+            <g class="pill pill-res" id="gql-resp"><rect x="0" y="13" width="52" height="18" rx="9"/><text id="gql-resp-t" x="26" y="25.5" text-anchor="middle">526 B</text></g>
+          </svg>
+          <ol class="trips resolvers"><i class="joinbar" id="joinbar"></i>
+            <li class="trip q1"><span class="n">1</span><code>post(id: 9)</code><span class="sz">→ title · body</span></li>
+            <li class="trip q2"><span class="n">2</span><code>author</code><span class="sz">→ name</span></li>
+            <li class="trip q3"><span class="n">3</span><code>comments</code><span class="sz">→ text</span></li>
+          </ol>
+          <div class="joinnote" id="gql-join">리졸버가 서버 안에서 이어 붙인다</div>
+          <div class="rescard eidos-card" id="gql-res">
+            <div class="hd"><span>응답</span><span>요청한 필드만</span></div>
+            <div class="waiting" id="gql-wait">서버가 조립을 마치면 한 번에 온다 …</div>
+            <div class="ln">{ <span class="k">post</span>: {</div>
+            <div class="ln">    <span class="k">title</span>: "…",</div>
+            <div class="ln">    <span class="k">body</span>: "…",</div>
+            <div class="ln">    <span class="k">author</span>: { <span class="k">name</span>: "…" },</div>
+            <div class="ln">    <span class="k">comments</span>: [{ <span class="k">text</span>: "…" }]</div>
+            <div class="ln">} }</div>
           </div>
+          <div class="meter"><span>왕복 <b id="gql-trips">0</b>회</span><span>받음 <b id="gql-bytes">0</b> B</span><span>버림 <b id="gql-waste">0</b> B</span></div>
+          <p class="note" id="gql-note"><span id="kw-exact">요청한 모양 그대로</span>, 버리는 필드 0</p>
         </div>
       </section>
     </main>
-    <main class="layout scene" id="scene-b">
+
+    <!-- ================= 장면 2: shape (모양) ================= -->
+    <main class="layout" id="shape">
       <header>
-        <div class="eidos-label">REST vs GraphQL · 결과</div>
-        <h1 class="eidos-title">같은 화면, 다른 비용</h1>
+        <div class="eidos-label">모양 · shape</div>
+        <h1 class="eidos-title">응답의 모양은 누가 정하나</h1>
       </header>
-      <section class="metrics">
-        <div class="metric eidos-card"><div class="name">왕복 횟수</div>
-          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-rt-r"></div></div><span class="num" id="rt-r" data-from="0" data-to="3" data-bar="#b-rt-r" data-bar-from="0" data-bar-to="1">0</span></div>
-          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-rt-g"></div></div><span class="num" id="rt-g" data-from="0" data-to="1" data-bar="#b-rt-g" data-bar-from="0" data-bar-to="0.333">0</span></div></div>
-        <div class="metric eidos-card"><div class="name">화면이 뜨기까지 (모바일 4G 기준)</div>
-          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-ms-r"></div></div><span class="num" id="ms-r" data-from="0" data-to="240" data-unit="ms" data-bar="#b-ms-r" data-bar-from="0" data-bar-to="1">0ms</span></div>
-          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-ms-g"></div></div><span class="num" id="ms-g" data-from="0" data-to="95" data-unit="ms" data-bar="#b-ms-g" data-bar-from="0" data-bar-to="0.396">0ms</span></div></div>
-        <div class="metric eidos-card"><div class="name">내려받은 응답 크기</div>
-          <div class="row"><b>REST</b><div class="track"><div class="fill rest" id="b-kb-r"></div></div><span class="num" id="kb-r" data-from="0" data-to="18.4" data-decimals="1" data-unit="KB" data-bar="#b-kb-r" data-bar-from="0" data-bar-to="1">0.0KB</span></div>
-          <div class="row"><b>GraphQL</b><div class="track"><div class="fill gql" id="b-kb-g"></div></div><span class="num" id="kb-g" data-from="0" data-to="2.1" data-decimals="1" data-unit="KB" data-bar="#b-kb-g" data-bar-from="0" data-bar-to="0.114">0.0KB</span></div></div>
-      </section>
-      <p class="conclusion">GraphQL은 <span class="kw" id="kw1">필요한 필드만 한 번에</span> 가져와 화면이 많은 앱에서 유리합니다. 대신 <span class="kw" id="kw2">HTTP 캐시를 쓰기 어렵다</span>는 대가가 있어, 공개 API는 여전히 REST가 흔합니다.</p>
+      <div class="pair">
+        <div class="codecard eidos-card" id="shape-q">
+          <div class="hd"><span>쿼리</span><span>클라이언트가 쓴다</span></div>
+          <div class="ln"><span class="k">query</span> {</div>
+          <div class="ln">  post(id: 9) {</div>
+          <div class="ln" id="q1">    title</div>
+          <div class="ln" id="q2">    body</div>
+          <div class="ln" id="q3">    author { name }</div>
+          <div class="ln" id="q4">    comments { text }</div>
+          <div class="ln">  }</div>
+          <div class="ln">}</div>
+        </div>
+        <div class="codecard eidos-card" id="shape-res">
+          <div class="hd"><span>응답</span><span>같은 모양</span></div>
+          <div class="ln">{</div>
+          <div class="ln">  <span class="k">post</span>: {</div>
+          <div class="ln" id="r1">    <span class="k">title</span>: "GraphQL이란",</div>
+          <div class="ln" id="r2">    <span class="k">body</span>: "REST와 달리…",</div>
+          <div class="ln" id="r3">    <span class="k">author</span>: { <span class="k">name</span>: "민지" },</div>
+          <div class="ln" id="r4">    <span class="k">comments</span>: [{ <span class="k">text</span>: "…" }]</div>
+          <div class="ln">  }</div>
+          <div class="ln">}</div>
+        </div>
+      </div>
+      <svg id="shape-links" aria-hidden="true"></svg>
+      <p class="note" id="shape-note">모양을 정하는 쪽은 쿼리를 쓴 <b>클라이언트</b>: 필드를 적은 순서와 중첩이 응답에 그대로 나타난다</p>
+      <div class="restcards">
+        <div class="restcard eidos-card"><code>GET /posts/9</code>
+          <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">title</span><span class="fc use">body</span><span class="fc">authorId<i class="strike"></i></span><span class="fc">likes<i class="strike"></i></span><span class="fc">createdAt<i class="strike"></i></span></div>
+          <span class="badge" id="bd1">버림 84 B</span></div>
+        <div class="restcard eidos-card"><code>GET /users/1</code>
+          <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">name</span><span class="fc">avatar<i class="strike"></i></span><span class="fc">bio<i class="strike"></i></span><span class="fc">email<i class="strike"></i></span></div>
+          <span class="badge" id="bd2">버림 156 B</span></div>
+        <div class="restcard eidos-card"><code>GET /posts/9/comments</code>
+          <div class="resp"><span class="fc">id<i class="strike"></i></span><span class="fc use">text</span><span class="fc">author<i class="strike"></i></span><span class="fc">createdAt<i class="strike"></i></span><span class="fc">likes<i class="strike"></i></span><span class="x3">×3</span></div>
+          <span class="badge" id="bd3">버림 210 B</span></div>
+      </div>
+      <p class="note" id="shape-note2">REST의 모양을 정하는 쪽은 <b>서버의 엔드포인트</b>: 화면이 안 쓰는 줄도 함께 오고, 받은 뒤에 버린다</p>
     </main>
+
+    <!-- ================= 장면 3: whatif (수치 모델) ================= -->
+    <main class="layout" id="whatif">
+      <header>
+        <div class="eidos-label">what-if · 단순 모델</div>
+        <h1 class="eidos-title">화면에 필요한 필드 수를 바꾸면</h1>
+        <ul class="fields" id="lab-fields" aria-label="필요한 필드">
+          <li class="fchip"><i class="fill"></i>제목</li>
+          <li class="fchip"><i class="fill"></i>본문</li>
+          <li class="fchip"><i class="fill"></i>작성자 이름</li>
+          <li class="fchip"><i class="fill"></i>댓글 본문</li>
+          <li class="fchip"><i class="fill"></i>아바타</li>
+          <li class="fchip"><i class="fill"></i>댓글 작성자</li>
+          <li class="fchip"><i class="fill"></i>좋아요</li>
+          <li class="fchip"><i class="fill"></i>댓글 시각</li>
+        </ul>
+      </header>
+      <div class="lab">
+        <div class="bars">
+          <div class="bargroup">
+            <h3>왕복 (요청 횟수)</h3>
+            <div class="barrow rest"><span class="who">REST</span><div class="track"><div class="bar" id="b-trips-rest"></div></div><span class="val" id="v-trips-rest">0회</span></div>
+            <div class="barrow gql"><span class="who">GraphQL</span><div class="track"><div class="bar" id="b-trips-gql"></div></div><span class="val" id="v-trips-gql">0회</span></div>
+          </div>
+          <div class="bargroup">
+            <h3>받은 바이트 (어림, 단순 모델)</h3>
+            <div class="barrow rest"><span class="who">REST</span><div class="track"><div class="bar" id="b-bytes-rest"></div></div><span class="val" id="v-bytes-rest">0 B</span></div>
+            <div class="barrow gql"><span class="who">GraphQL</span><div class="track"><div class="bar" id="b-bytes-gql"></div></div><span class="val" id="v-bytes-gql">0 B</span></div>
+          </div>
+          <p class="waste-line">화면이 실제로 쓰는 바이트 <b id="v-need">0</b> B · REST가 받아서 버리는 바이트 <b id="v-waste">0</b> B · GraphQL 봉투 24 B</p>
+        </div>
+        <div class="ladder">
+          <h3>REST가 두드려야 하는 리소스</h3>
+          <div class="rung eidos-card" id="rung-post"><span class="dot"></span><code>GET /posts/9</code><span class="need" id="need-post">352 B</span></div>
+          <div class="rung eidos-card" id="rung-user"><span class="dot"></span><code>GET /users/1</code><span class="need" id="need-user">180 B</span></div>
+          <div class="rung eidos-card" id="rung-comments"><span class="dot"></span><code>GET /posts/9/comments</code><span class="need" id="need-comments">420 B</span></div>
+          <p class="modelnote">필드가 하나라도 걸치면 리소스 전체를 받는다 · 슬라이더로 필드 수를 직접 바꿔 보세요</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= 장면 4: cost (대가) ================= -->
+    <main class="layout" id="cost">
+      <header>
+        <div class="eidos-label">대가 · trade-off</div>
+        <h1 class="eidos-title">모양의 자유에는 값이 붙는다</h1>
+      </header>
+      <svg class="lanes" viewBox="0 0 480 170" aria-hidden="true">
+        <rect class="node" x="10" y="40" width="60" height="110" rx="8"/><text x="40" y="99" text-anchor="middle">브라우저</text>
+        <rect class="node" x="215" y="40" width="60" height="110" rx="8"/><text x="245" y="99" text-anchor="middle">CDN</text>
+        <rect class="node" x="410" y="40" width="60" height="110" rx="8"/><text x="440" y="95" text-anchor="middle">원본</text><text x="440" y="108" text-anchor="middle">서버</text>
+        <line class="wire" x1="72" y1="75" x2="213" y2="75"/>
+        <line class="wire" x1="72" y1="125" x2="408" y2="125"/>
+        <text class="lbl-rest" x="76" y="64">REST · GET /posts/9</text>
+        <text class="lbl-gql" x="76" y="114">GraphQL · POST /graphql</text>
+        <circle class="dot-rest" id="c-rest-req" cx="0" cy="75" r="6"/>
+        <circle class="dot-rest-res" id="c-rest-res" cx="0" cy="75" r="6"/>
+        <circle class="dot-gql" id="c-gql-req" cx="0" cy="125" r="6"/>
+        <circle class="dot-gql-res" id="c-gql-res" cx="0" cy="125" r="6"/>
+        <g class="badge" id="c-hit"><rect x="196" y="14" width="98" height="20" rx="10"/><text x="245" y="28" text-anchor="middle">HIT · CDN이 응답</text></g>
+        <g class="badge" id="c-pass"><rect x="190" y="152" width="110" height="18" rx="9"/><text x="245" y="165" text-anchor="middle">통과 · 캐시 안 됨</text></g>
+      </svg>
+      <p class="note" id="cost-note1">HTTP 캐시는 <b>GET URL 단위</b>로 동작한다. 모든 쿼리를 POST /graphql 하나로 보내면 CDN과 브라우저 캐시를 그냥 지나친다 (GET persisted query 같은 우회가 따로 필요)</p>
+      <p class="thesis">모양의 자유는 <span id="kw-complex">서버의 복잡도</span>로 치른다</p>
+      <ul class="costs">
+        <li class="eidos-card"><b>스키마·리졸버 설계</b><span>필드마다 어디서 어떻게 가져올지 서버가 정의한다</span></li>
+        <li class="eidos-card"><b>N+1 문제</b><span>댓글 3개의 작성자 → 조회 3번. DataLoader로 묶어야 한다</span></li>
+        <li class="eidos-card"><b>쿼리 비용 제한</b><span>깊이·복잡도 제한과 rate limit이 서버 몫이 된다</span></li>
+      </ul>
+    </main>
+
+    <!-- ================= 장면 5: verdict (결론) ================= -->
+    <main class="layout" id="verdict">
+      <header><div class="eidos-label">결론</div></header>
+      <p class="verdict-line">화면이 다양하고 왕복이 비싸면 <span class="hit gql" id="kw-gql">GraphQL</span></p>
+      <p class="verdict-line">캐시와 단순함이 중요하면 <span class="hit rest" id="kw-rest">REST</span></p>
+      <p class="verdict-sub">둘 다 HTTP 위의 선택지라 섞어 써도 된다 — 공개 목록·상세처럼 캐시가 잘 먹는 곳은 REST(GET), 화면마다 모양이 다른 앱 데이터는 GraphQL</p>
+    </main>
+
   </div>
 </div>
 <script >
@@ -264,6 +582,24 @@ body {
   const E = (window.Eidos = window.Eidos || {});
   E.version = "0.1.0";
   E.fx = E.fx || {};
+
+  E.gesture = (state, { dx, dy, mode, t, kind, viewportH = innerHeight }) => {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(t)) return { state, action: null };
+    if (kind === "swipe") {
+      let action = null;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) >= 1.5 * Math.abs(dy)) action = dx < 0 ? "next" : "prev";
+      else if (Math.abs(dy) >= 48 && Math.abs(dy) >= 1.5 * Math.abs(dx)) action = dy < 0 ? "next" : "prev";
+      return { state, action };
+    }
+    if (kind !== "wheel" || ![0, 1, 2].includes(mode)) return { state, action: null };
+    const factor = mode === 1 ? 16 : mode === 2 ? viewportH : 1;
+    const delta = (Math.abs(dy) >= Math.abs(dx) ? dy : dx) * factor;
+    const fresh = !state || t - state.t >= 160 || t < state.t;
+    const next = { t, total: (fresh ? 0 : state.total) + delta, fired: fresh ? false : state.fired };
+    const action = !next.fired && Math.abs(next.total) > 80 ? next.total > 0 ? "next" : "prev" : null;
+    if (action) next.fired = true;
+    return { state: next, action };
+  };
 
   const errors = (window.__eidosErrors = []);
   addEventListener("error", (e) => {
@@ -282,6 +618,14 @@ body {
   E.reduced = motion === "reduce" || (motion !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  // Track progress snapped at both ends: (t - at) / dur can land a hair under 1 at t = at + dur in floating
+  // point (e.g. (1.001 - 1) / 0.001 = 0.99999999999989), which would leave a transition one ulp short of done.
+  const progressOf = (t, at, dur) => {
+    if (!(dur > 0)) return 1;
+    if (t >= at + dur - 1e-9 * Math.max(1, dur)) return 1;
+    const p = (t - at) / dur;
+    return p < 1e-9 ? 0 : p > 1 - 1e-9 ? 1 : p;
+  };
   const lerp = (a, b, p) => a + (b - a) * p;
   const r3 = (v) => Math.round(v * 1000) / 1000;
   E.util = { clamp01, lerp, r3 };
@@ -374,7 +718,8 @@ body {
     constructor() {
       this.tracks = [];
       this.hooks = [];
-      this.stops = [{ t: 0, label: "" }];
+      this.ramps = [];
+      this.stops = [{ t: 0, label: "", hold: 1.5, scene: null }];
       this.end = 0;
       this.t = 0;
       this.prevStart = 0;
@@ -415,15 +760,59 @@ body {
       this.end += d;
       return this;
     }
-    stop(label = "") {
+    stop(label = "", o = {}) {
       const last = this.stops[this.stops.length - 1];
-      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) last.label = label || last.label;
-      else this.stops.push({ t: this.end, label });
+      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1 && last.scene === (this.scene ?? null)) {
+        last.label = label || last.label;
+        if (o.id != null) last.id = o.id;
+        last.hold = o.hold ?? Math.min(Math.max(0.9 + 0.055 * last.label.length, 1.5), 6);
+      } else this.stops.push({ t: this.end, label, id: o.id, hold: o.hold ?? Math.min(Math.max(0.9 + 0.055 * label.length, 1.5), 6), scene: this.scene ?? null });
       return this;
     }
     onSeek(fn) {
       this.hooks.push(fn);
       return this;
+    }
+    ramp({ at, dur, rate }) {
+      if (![at, dur, rate].every(Number.isFinite) || at < 0 || dur < 0 || rate < 0) {
+        errors.push("tl.ramp requires finite nonnegative at, dur and rate");
+        return this;
+      }
+      this.ramps.push({ at, dur, rate });
+      this.ramps.sort((a, b) => a.at - b.at);
+      return this;
+    }
+    rateAt(t) {
+      return this.ramps.reduce((rate, r) => t >= r.at && t < r.at + r.dur ? rate * r.rate : rate, 1);
+    }
+    segments(a, b) {
+      const points = [a, b];
+      for (const r of this.ramps) for (const t of [r.at, r.at + r.dur]) if (t > a && t < b) points.push(t);
+      return [...new Set(points)].sort((x, y) => x - y);
+    }
+    sourceTime(t) {
+      const points = this.segments(0, t);
+      let u = 0;
+      for (let i = 1; i < points.length; i++) u += (points[i] - points[i - 1]) * this.rateAt((points[i] + points[i - 1]) / 2);
+      return u;
+    }
+    // Positive rates integrate reciprocally; freezes consume presentation time.
+    travel(from, to, budget) {
+      const forward = to >= from;
+      const points = this.segments(Math.min(from, to), Math.max(from, to));
+      if (!forward) points.reverse();
+      let cost = 0, t = from;
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], rate = this.rateAt((a + b) / 2) || 1;
+        const duration = Math.abs(b - a) / rate;
+        if (budget - cost < duration) {
+          t = a + (forward ? 1 : -1) * Math.max(0, budget - cost) * rate;
+          return { t, cost: budget };
+        }
+        cost += duration;
+        t = b;
+      }
+      return { t, cost };
     }
     // Tracks that have not started are applied first, latest-start first, at p=0;
     // started tracks are then applied in start order. The result depends only on t,
@@ -431,12 +820,14 @@ body {
     seek(t) {
       t = Math.min(Math.max(t, 0), this.end);
       this.t = t;
+      if (this.paramsAt) this.paramsAt(t);
+      const u = this.sourceTime(t);
       const future = [], started = [];
-      for (const tr of this.tracks) (tr.at > t + 1e-9 ? future : started).push(tr);
+      for (const tr of this.tracks) (tr.at > u + 1e-9 ? future : started).push(tr);
       future.sort((a, b) => b.at - a.at || b.i - a.i);
       for (const tr of future) tr.fn(tr.ease(0));
       started.sort((a, b) => a.at - b.at || a.i - b.i);
-      for (const tr of started) tr.fn(tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1));
+      for (const tr of started) tr.fn(tr.ease(progressOf(u, tr.at, tr.dur)));
       for (const h of this.hooks) h(t);
       return this;
     }
@@ -479,7 +870,9 @@ body {
     to(target, o = {}) {
       const at = this.tl.resolveAt(o.at);
       const dur = o.dur ?? 1.2;
-      this.kfs.push({ target, o, at, dur, ease: easeOf(o.ease || "camera"), resolved: null });
+      const arc = o.arc ?? 0;
+      if (typeof arc !== "number" || !(arc >= 0 && arc <= 1)) errors.push(`camera.to arc must be a number from 0 to 1, got ${String(o.arc)}`);
+      this.kfs.push({ target, o, at, dur, arc: typeof arc === "number" && arc > 0 ? Math.min(arc, 1) : 0, ease: easeOf(o.ease || "camera"), resolved: null });
       this.kfs.sort((a, b) => a.at - b.at);
       this.tl.prevStart = at;
       this.tl.extend(at + dur);
@@ -503,23 +896,37 @@ body {
       this.H = this.stage.clientHeight;
       for (const kf of this.kfs) kf.resolved = this.resolve(kf);
     }
-    static mix(a, b, e) {
+    // arc (0-1) turns the move into a zoom-out, travel, zoom-in flight. View extent v = 1/s widens by
+    // h * sin(pi e) at most, where arc = 1 sizes the mid-flight view to the span of both endpoint views in a
+    // W x H viewport. Position follows the accumulated extent (as the plain mix does), so screen-space travel
+    // speed stays even. arc 0 takes the plain path unchanged.
+    static mix(a, b, e, arc = 0, W = 0, H = 0) {
       const s = a.s * Math.pow(b.s / a.s, e);
-      const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
-      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      const va = 1 / a.s, vb = 1 / b.s, vm = Math.sqrt(va * vb);
+      const fit = arc > 0 && W > 0 && H > 0 ? Math.max(Math.abs(b.x - a.x) / W, Math.abs(b.y - a.y) / H) + (va + vb) / 2 : 0;
+      const h = arc * Math.max(0, fit - vm);
+      if (!(h > 1e-9 * vm)) {
+        const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
+        return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      }
+      const k = Math.log(vb / va);
+      const extent = (q) => (Math.abs(k) > 1e-9 ? (va * Math.pow(vb / va, q) - va) / k : va * q) + (h * (1 - Math.cos(Math.PI * q))) / Math.PI;
+      const w = extent(e) / extent(1);
+      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s: 1 / (1 / s + h * Math.sin(Math.PI * e)), r: lerp(a.r, b.r, e) };
     }
     stateAt(t) {
       let st = this.home();
       for (const kf of this.kfs) {
         if (t < kf.at) break;
-        const p = kf.dur > 0 ? clamp01((t - kf.at) / kf.dur) : 1;
-        st = Camera.mix(st, kf.resolved, kf.ease(p));
+        if (kf.after && t === kf.at) continue;
+        const p = progressOf(t, kf.at, kf.dur);
+        st = Camera.mix(st, kf.resolved, kf.ease(p), kf.arc, this.W, this.H);
         if (p < 1) break;
       }
       return st;
     }
     apply(t) {
-      const st = (this.state = this.stateAt(t));
+      const st = (this.state = this.stateAt(this.tl.sourceTime(t)));
       this.world.style.transform =
         `translate(${r3(this.W / 2)}px, ${r3(this.H / 2)}px) rotate(${r3(st.r)}deg) scale(${r3(st.s)}) translate(${r3(-st.x)}px, ${r3(-st.y)}px)`;
     }
@@ -534,13 +941,170 @@ body {
     tl.onSeek((t) => camera.apply(t));
     const layoutFns = [];
     let hud = null, raf = 0, anim = null;
+    const manual = params.get("clock") === "manual";
+    let playing = false, speed = 1, holding = null, lastFrame = 0;
+    let ended = false, generation = 0;
+    const controls = new Map(), overrides = new Map(), paramFns = [];
+    let values = Object.freeze({}), renderedValues = values, paramStop = 0, paramsRaf = 0, needsLayout = false, dock = null;
+    const scenes = [], namedScenes = new Map(), spokes = new Map(), returns = [];
+    let currentScene = null, activeSpoke = null, shownScene = null, captions = [];
+    tl.paramsAt = resolveParams;
+    tl.onSeek(updateScene);
 
     const api = {
-      el, world, tl, camera, index: 0, started: false,
+      el, world, tl, camera, scenes, index: 0, started: false,
+      scene(id, o = {}) {
+        checkScene(id, o);
+        if (activeSpoke) api.back();
+        openScene(id, o);
+        return api;
+      },
+      spoke(id, o = {}) {
+        checkScene(id, { ...o, el: o.from });
+        const hub = namedScenes.get(o.hub);
+        if (!hub) sceneError(`Unknown hub: ${o.hub}`);
+        if (activeSpoke) api.back();
+        const hubStop = tl.stops.findLast((s) => s.scene === hub.id && !String(s.id || "").startsWith("ret-"));
+        if (!hubStop) sceneError(`Hub ${hub.id} needs a stop before spoke ${id}`);
+        const record = openScene(id, { ...o, el: o.from }, hub.id);
+        activeSpoke = { id, hub, hubStop, record, via: o.via, with: o.with };
+        spokes.set(id, activeSpoke);
+        for (const origin of $all(o.from, world)) origin.dataset.eidosSpoke = id;
+        return api;
+      },
+      back(o = {}) {
+        if (!activeSpoke) return api;
+        const spoke = activeSpoke;
+        const via = o.via ?? spoke.via;
+        checkVia(via);
+        activeSpoke = null;
+        openScene(spoke.hub.id, {
+          el: spoke.hub.el, title: spoke.hub.title, via, with: o.with ?? spoke.with,
+        }, null, via === "camera" ? (c) => c.stateAt(tl.sourceTime(spoke.hubStop.t)) : undefined, true);
+        tl.stop(o.label ?? spoke.hubStop.label, { id: `ret-${spoke.id}` });
+        spoke.returnStop = tl.stops[tl.stops.length - 1];
+        return api;
+      },
+      enter(id) {
+        const spoke = spokes.get(id);
+        const first = tl.stops.findIndex((s) => s.scene === id);
+        if (!spoke || first < 0 || !spoke.returnStop) sceneError(`Unknown or unclosed spoke: ${id}`);
+        returns.push({ from: stopIndexAt(tl.t), stop: spoke.returnStop });
+        api.pause();
+        // Every spoke starts at the same hub state; skip unrelated branches.
+        tl.seek(spoke.record.t0);
+        return api.goto(first);
+      },
+      exit() {
+        const target = returns.pop();
+        return target ? api.goto(tl.stops.indexOf(target.stop)) : api;
+      },
+      where() {
+        const stop = tl.stops[stopIndexAt(tl.t)];
+        // The bootstrap stop is not the first authored scene stop.
+        const exact = Math.abs(stop.t - tl.t) < 1e-9;
+        const scene = exact ? stop.scene : scenes.findLast((s) => s.t0 <= tl.t)?.id ?? null;
+        const localStops = tl.stops.filter((s) => s.scene === scene);
+        const local = Math.max(0, localStops.findLastIndex((s) => s.t <= tl.t + 1e-9));
+        const hub = spokes.get(scene)?.hub.id;
+        return { scene, path: scene == null ? [] : hub ? [hub, scene] : [scene], local, of: localStops.length };
+      },
+      get params() { return values; },
+      onParams(fn) { paramFns.push(fn); return api; },
+      control(name, o) {
+        if (!name || controls.has(name) || !["range", "toggle", "select"].includes(o.type)) {
+          errors.push(`Invalid control: ${name}`);
+          return;
+        }
+        const c = { ...o, tracks: [], input: null, row: null };
+        if (c.type === "range") {
+          c.min ??= 0; c.max ??= 1; c.step ??= 1;
+          if (![c.min, c.max, c.step].every(Number.isFinite) || c.max < c.min || c.step <= 0) {
+            errors.push(`Invalid range: ${name}`);
+            return;
+          }
+        }
+        if (c.type === "select") {
+          if (!Array.isArray(c.options) || !c.options.length) { errors.push(`Invalid options: ${name}`); return; }
+          c.options = c.options.map((v) => typeof v === "object" ? v : { value: v, label: String(v) });
+        }
+        const initial = normalize(c, c.value ?? (c.type === "range" ? c.min : c.type === "toggle" ? false : c.options[0].value));
+        if (!initial.ok) { errors.push(`Invalid default for control: ${name}`); return; }
+        c.value = initial.value;
+        controls.set(name, c);
+        values = Object.freeze({ ...values, [name]: c.value });
+        const handle = {
+          get value() { return values[name]; },
+          set(v) { api.setControls({ [name]: v }); return handle; },
+          drive(a, b, o = {}) {
+            const from = normalize(c, a), to = normalize(c, b);
+            const at = tl.resolveAt(o.at), dur = o.dur ?? 0.6;
+            if (!from.ok || !to.ok || !Number.isFinite(at) || !Number.isFinite(dur) || dur < 0) {
+              errors.push(`Invalid drive for control: ${name}`);
+              return handle;
+            }
+            c.tracks.push({ a: from.value, b: to.value, at, dur, ease: easeOf(o.ease), i: c.tracks.length });
+            c.tracks.sort((a, b) => a.at - b.at || a.i - b.i);
+            tl.prevStart = at;
+            tl.extend(at + dur);
+            return handle;
+          },
+        };
+        return handle;
+      },
+      setControls(patch) {
+        const next = [];
+        for (const [name, v] of Object.entries(patch)) {
+          const c = controls.get(name), result = c && normalize(c, v);
+          if (!result?.ok) { errors.push(`Invalid control value: ${name}=${String(v)}`); return api; }
+          next.push([name, result.value]);
+        }
+        // Stops playback only; an in-flight goto() still arrives at its stop.
+        if (playing) api.pause();
+        for (const [name, v] of next) {
+          overrides.set(name, v);
+          if (controls.get(name).layout) needsLayout = true;
+        }
+        resolveParams(tl.t, false, false);
+        queueParams();
+        return api;
+      },
       get reduced() { return E.reduced; },
       get stops() { return tl.stops; },
       get end() { return tl.end; },
       get t() { return tl.t; },
+      get playing() { return playing; },
+      speed(x) {
+        if (x == null && arguments.length === 0) return speed;
+        if (typeof x !== "number" || !Number.isFinite(x) || x <= 0) {
+          errors.push(`Invalid playback speed: ${String(x)}`);
+          speed = 1;
+        } else speed = x;
+        updateHud();
+        return api;
+      },
+      play(o = {}) {
+        if (o.speed !== undefined) api.speed(o.speed);
+        if (playing) return api;
+        playing = true;
+        ended = false;
+        const current = tl.stops[stopIndexAt(tl.t)];
+        if (!anim && holding == null && Math.abs(tl.t - current.t) < 1e-9) holding = current.hold;
+        if (!anim && tl.t >= tl.end) finish();
+        schedule();
+        updateHud();
+        return api;
+      },
+      pause() {
+        playing = false;
+        cancel();
+        updateHud();
+        return api;
+      },
+      advance(ms) {
+        if (manual && Number.isFinite(ms) && ms >= 0) tick(ms / 1000);
+        return api;
+      },
       measure: (target) => unionRect($all(target, world).map((n) => rectIn(n, world))),
       onLayout(fn) { layoutFns.push(fn); return api; },
       fx(name, o = {}) {
@@ -548,6 +1112,8 @@ body {
         return E.fx[name](api, o);
       },
       layout() {
+        resolveParams(tl.t);
+        needsLayout = false;
         const tf = world.style.transform;
         world.style.transform = "none";
         for (const fn of layoutFns) fn();
@@ -555,15 +1121,20 @@ body {
         world.style.transform = tf;
         tl.seek(tl.t);
       },
-      seek(t) { cancel(); tl.seek(t); api.index = stopIndexAt(tl.t); updateHud(); return api; },
+      seek(t) { api.pause(); holding = null; tl.seek(t); setIndex(stopIndexAt(tl.t)); reachedStop(); updateHud(); return api; },
       jump(i) {
-        cancel();
-        api.index = Math.min(Math.max(i, 0), tl.stops.length - 1);
-        tl.seek(tl.stops[api.index].t);
+        api.pause();
+        holding = null;
+        i = Math.min(Math.max(i, 0), tl.stops.length - 1);
+        tl.seek(tl.stops[i].t);
+        setIndex(i);
+        reachedStop();
         updateHud();
         return api;
       },
       goto(i) {
+        api.pause();
+        holding = null;
         i = Math.min(Math.max(i, 0), tl.stops.length - 1);
         if (E.reduced) {
           api.jump(i);
@@ -572,94 +1143,479 @@ body {
           world.classList.add("eidos-fade");
           return api;
         }
-        cancel();
         const from = tl.t, to = tl.stops[i].t;
-        api.index = i;
-        const ms = (Math.abs(to - from) * 1000) / (to < from ? 3 : 1);
-        if (ms < 1) { tl.seek(to); updateHud(); return api; }
-        const t0 = performance.now();
+        setIndex(i);
         anim = { to };
-        const step = (now) => {
-          const k = Math.min((now - t0) / ms, 1);
-          tl.seek(lerp(from, to, k));
-          updateHud();
-          if (k < 1) raf = requestAnimationFrame(step);
-          else anim = null;
-        };
-        raf = requestAnimationFrame(step);
+        if (Math.abs(to - from) < 1e-9) { anim = null; tl.seek(to); reachedStop(); updateHud(); return api; }
+        schedule();
         return api;
       },
       next() {
-        if (anim) { const to = anim.to; cancel(); tl.seek(to); updateHud(); return api; }
+        if (anim) { const to = anim.to; api.pause(); tl.seek(to); setIndex(stopIndexAt(to)); reachedStop(); updateHud(); return api; }
         return api.goto(api.index + 1);
       },
       prev() { return api.goto(api.index - 1); },
       snapshot() {
-        const out = [];
+        const out = [JSON.stringify(api.params)];
+        const geometry = ["cx", "cy", "r", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points", "transform", "d"];
         for (const n of [world, ...world.querySelectorAll("*")]) {
           let txt = "";
           for (const c of n.childNodes) if (c.nodeType === 3) txt += c.nodeValue;
-          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}`);
+          const cls = [...n.classList].filter((c) => c !== "eidos-fade").join(" ");
+          const attrs = [...n.attributes]
+            .filter((a) => geometry.includes(a.name) || a.name.startsWith("data-eidos-"))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((a) => [a.name, a.value]);
+          const input = n instanceof HTMLInputElement ? { value: n.value, checked: n.checked } : null;
+          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}|${JSON.stringify([cls, attrs, input])}`);
         }
         return out.join("\n");
       },
       start() {
+        if (activeSpoke) api.back();
         if (tl.stops[tl.stops.length - 1].t < tl.end - 1e-9) tl.stop("");
+        if (currentScene) currentScene.t1 = tl.end;
+        captions = [];
+        for (const stop of tl.stops) {
+          const range = scenes.find((s) => s.id === stop.scene && stop.t >= s.t0 && stop.t <= s.t1);
+          const first = range && !captions.some((c) => c.range === range);
+          const shifted = first && (range.lead != null || range.trail != null);
+          const at = shifted ? range.t0 - (range.lead ?? 0) + (range.trail ?? 0) : stop.t;
+          // A J cut replaces even later captions from the outgoing scene.
+          if (first) captions = captions.filter((c) => c.t < at);
+          captions.push({ t: Math.max(at, captions[captions.length - 1]?.t ?? 0), label: stop.label, range });
+        }
         api.layout();
         tl.seek(0);
         if (opts.hud !== false && params.get("hud") !== "0") buildHud();
         bindControls();
         addEventListener("resize", () => api.layout());
+        addEventListener("visibilitychange", () => { if (document.hidden) api.pause(); });
+        if (params.has("speed")) api.speed(Number(params.get("speed")));
         const qt = params.get("t"), qs = params.get("stop");
+        const [scene, local] = location.hash.slice(1).split("&")[0].split(".");
+        const sceneStops = tl.stops.map((s, i) => ({ ...s, i })).filter((s) => s.scene === scene);
+        const hashStop = sceneStops.find((s, i) => s.id === local || (s.id == null && String(i) === local));
         if (qt != null) api.seek(parseFloat(qt));
-        else if (qs != null) api.jump(parseInt(qs, 10));
-        else if (opts.autoplay !== false) api.goto(1);
+        else if (qs != null) api.jump(parseInt(qs, 10) || 0);
+        else if (hashStop) api.jump(hashStop.i);
+        else if (opts.intro !== false) api.goto(1);
+        readControls();
+        resolveParams(tl.t, true);
+        if (controls.size) buildDock();
+        if (needsLayout) { needsLayout = false; api.layout(); }
+        if (params.get("autoplay") === "1") api.play();
         api.started = true;
         window.__eidos = api;
+        api.ready = document.fonts.ready.then(() => { api.layout(); });
         return api;
       },
     };
 
+    function sceneError(message) {
+      // file:// masks errors thrown across script boundaries as "Script error.".
+      errors.push(message);
+      throw new Error(message);
+    }
+    function checkVia(via) {
+      if (!via) sceneError("Scene via is required after the first scene");
+      if (via !== "camera" && via !== "cut" && E.fx[via]?.kind !== "transition") {
+        sceneError(`Scene via "${via}" must name an fx with kind "transition"`);
+      }
+    }
+    function checkScene(id, o) {
+      if (!id || namedScenes.has(id)) sceneError(`Invalid or duplicate scene: ${id}`);
+      if (!$all(o.el, world).length) sceneError(`Scene ${id} needs an el`);
+      if (currentScene || o.via != null) checkVia(o.via);
+    }
+    function openScene(id, o, parent = null, target = o.el, returning = false) {
+      const at = tl.end;
+      const previous = currentScene;
+      if (previous) previous.t1 = at;
+      const record = { ...o, id, t0: at, t1: at, parent };
+      scenes.push(record);
+      if (!namedScenes.has(id)) namedScenes.set(id, record);
+      currentScene = record;
+      tl.scene = id;
+      let from = previous?.el, to = o.el;
+      const fromEl = $all(from, world)[0], toEl = $all(to, world)[0];
+      const nestedIn = fromEl !== toEl && fromEl?.contains(toEl);
+      const nestedOut = fromEl !== toEl && toEl?.contains(fromEl);
+      if (nestedIn || nestedOut) {
+        const outer = nestedIn ? fromEl : toEl, inner = nestedIn ? toEl : fromEl;
+        const siblings = [];
+        for (let node = inner; node !== outer; node = node.parentElement) {
+          siblings.push(...[...node.parentElement.children].filter((sibling) => sibling !== node));
+        }
+        // Shared ancestors and the selected branch stay visible in both directions.
+        from = nestedIn ? siblings : null;
+        to = nestedOut ? siblings : null;
+      }
+      const trackStart = tl.tracks.length;
+      if (o.via === "camera") {
+        camera.to(target, { ...o.with, at });
+        // Preserve the previous stop at a zero-duration boundary, including spoke entries.
+        const entry = camera.kfs[camera.kfs.length - 1];
+        if (!returning && (parent != null || (previous && entry.dur === 0))) entry.after = true;
+      }
+      else if (o.via === "cut") {
+        if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
+        if (to) tl.tween(to, { opacity: [0, 1] }, { at, dur: 0 });
+      } else if (previous) {
+        const transition = E.fx[o.via](api, { ...o.with, from, to, at });
+        tl.extend(transition.end);
+      }
+      // Entries preserve the previous stop; returns restore the hub at their own stop.
+      if (!returning && (nestedIn || (previous && o.via === "cut"))) for (const track of tl.tracks.slice(trackStart)) {
+        const fn = track.fn;
+        track.fn = (p) => fn(tl.t <= at ? 0 : p);
+      }
+      return record;
+    }
+    function updateScene() {
+      if (!scenes.length) return;
+      const { scene, path } = api.where();
+      if (scene !== shownScene) {
+        shownScene = scene;
+        dispatchEvent(new CustomEvent("eidos:scene", { detail: { id: scene, path, title: namedScenes.get(scene)?.title ?? scene } }));
+      }
+      if (hud) {
+        hud.querySelector(".eidos-hud-breadcrumb").textContent = path.map((id) => namedScenes.get(id)?.title ?? id).join(" › ");
+        hud.querySelector(".eidos-hud-caption").textContent = captionAt();
+      }
+    }
+    function captionAt() {
+      return captions.findLast((c) => c.t <= tl.t + 1e-9)?.label ?? "";
+    }
+    function normalize(c, v, url = false) {
+      if (url) {
+        if (c.type === "range") v = v.trim() === "" ? NaN : Number(v);
+        else if (c.type === "toggle") v = v === "true" || v === "1" ? true : v === "false" || v === "0" ? false : null;
+        else {
+          const option = c.options.find((o) => String(o.value) === v);
+          return option ? { ok: true, value: option.value } : { ok: false };
+        }
+      }
+      if (c.type === "range") {
+        if (typeof v !== "number" || !Number.isFinite(v)) return { ok: false };
+        v = Math.min(Math.max(v, c.min), c.max);
+        const units = (v - c.min) / c.step;
+        v = c.min + Math.floor(units + 0.5 + Number.EPSILON * Math.max(1, Math.abs(units)) * 4) * c.step;
+        return { ok: true, value: Number(Math.min(Math.max(v, c.min), c.max).toPrecision(15)) };
+      }
+      if (c.type === "toggle") return { ok: typeof v === "boolean", value: v };
+      return { ok: c.options.some((o) => o.value === v), value: v };
+    }
+    function resolveParams(t, force = false, render = true) {
+      const stop = stopIndexAt(t), next = {};
+      if (stop !== paramStop) {
+        for (const [name, c] of controls) if (!c.sticky) overrides.delete(name);
+        paramStop = stop;
+      }
+      let changed = force;
+      for (const [name, c] of controls) {
+        let v = c.value;
+        for (const tr of c.tracks) {
+          if (t < tr.at) break;
+          const p = tr.ease(progressOf(t, tr.at, tr.dur));
+          v = c.type === "range" ? normalize(c, lerp(tr.a, tr.b, p)).value : p < 1 ? tr.a : tr.b;
+        }
+        next[name] = overrides.has(name) ? overrides.get(name) : v;
+        if (next[name] !== values[name]) {
+          changed = true;
+          if (c.layout) needsLayout = true;
+        }
+      }
+      if (changed) values = Object.freeze(next);
+      if (render && (force || [...controls.keys()].some((name) => values[name] !== renderedValues[name]))) {
+        renderedValues = values;
+        for (const fn of paramFns) fn(values);
+        dispatchEvent(new CustomEvent("eidos:params", { detail: { params: values } }));
+      }
+      updateDock(stop);
+      if (needsLayout && api.started) queueParams();
+    }
+    function queueParams() {
+      if (paramsRaf) return;
+      paramsRaf = requestAnimationFrame(() => {
+        paramsRaf = 0;
+        if (needsLayout) { needsLayout = false; api.layout(); }
+        else tl.seek(tl.t);
+      });
+    }
+    function readControls() {
+      const hash = new URLSearchParams(location.hash.slice(1).split("&").slice(1).join("&"));
+      for (const source of [params, hash]) for (const [key, v] of source) {
+        if (!key.startsWith("c.")) continue;
+        const name = key.slice(2), c = controls.get(name), result = c && normalize(c, v, true);
+        if (!result?.ok) errors.push(`Invalid URL control: ${key}=${v}`);
+        else overrides.set(name, result.value);
+      }
+    }
+    function writeControls() {
+      if (!api.started || (!controls.size && !scenes.length)) return;
+      const url = new URL(location.href), i = stopIndexAt(tl.t), stop = tl.stops[i];
+      for (const key of [...url.searchParams.keys()]) if (key.startsWith("c.") || key === "t" || key === "stop") url.searchParams.delete(key);
+      if (!stop.scene) url.searchParams.set("stop", String(i));
+      const local = tl.stops.slice(0, i).filter((s) => s.scene === stop.scene).length;
+      const state = new URLSearchParams();
+      for (const [name, v] of overrides) state.set(`c.${name}`, String(v));
+      url.hash = (stop.scene ? `${stop.scene}.${stop.id ?? local}` : String(i)) + (state.size ? `&${state}` : "");
+      try { history.replaceState(null, "", url); } catch {}
+    }
+    function reachedStop() {
+      if (Math.abs(tl.t - tl.stops[stopIndexAt(tl.t)].t) < 1e-9) writeControls();
+    }
+    function updateDock(stop) {
+      if (!dock) return;
+      let visible = false;
+      for (const [name, c] of controls) {
+        const index = (v) => typeof v === "number" ? v : tl.stops.findIndex((s) => s.id === v);
+        c.row.hidden = c.when == null ? false : Array.isArray(c.when)
+          ? !(stop >= index(c.when[0]) && stop <= index(c.when[1]))
+          : tl.stops[stop].scene !== c.when;
+        visible ||= !c.row.hidden;
+        if (c.type === "toggle") c.input.checked = values[name];
+        else c.input.value = c.type === "select" ? String(c.options.findIndex((o) => o.value === values[name])) : String(values[name]);
+        if (c.output) c.output.value = String(values[name]);
+      }
+      dock.hidden = !visible;
+    }
+    function buildDock() {
+      dock = document.createElement("div");
+      dock.className = "eidos-dock";
+      dock.setAttribute("role", "group");
+      dock.setAttribute("aria-label", "Controls");
+      dock.dataset.eidosNokeys = "";
+      for (const [name, c] of controls) {
+        const row = c.row = document.createElement("label");
+        row.className = `eidos-control eidos-control-${c.type}`;
+        const label = document.createElement("span");
+        label.textContent = c.label ?? name;
+        row.appendChild(label);
+        const input = c.input = document.createElement(c.type === "select" ? "select" : "input");
+        input.id = `eidos-control-${document.querySelectorAll(".eidos-dock").length}-${dock.children.length}`;
+        row.htmlFor = input.id;
+        input.name = name;
+        if (c.type === "select") c.options.forEach((o, i) => {
+          const option = document.createElement("option");
+          option.value = String(i); option.textContent = o.label ?? String(o.value);
+          input.appendChild(option);
+        });
+        else input.type = c.type === "toggle" ? "checkbox" : "range";
+        if (c.type === "range") {
+          input.min = c.min; input.max = c.max; input.step = c.step;
+          c.output = document.createElement("output");
+          row.appendChild(c.output);
+        }
+        row.appendChild(input);
+        const edit = () => api.setControls({ [name]: c.type === "toggle" ? input.checked : c.type === "select" ? c.options[Number(input.value)].value : Number(input.value) });
+        input.addEventListener("input", edit);
+        input.addEventListener("change", () => { edit(); writeControls(); });
+        dock.appendChild(row);
+      }
+      document.body.appendChild(dock);
+      updateDock(stopIndexAt(tl.t));
+    }
     function cancel() {
+      generation++;
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       anim = null;
+      lastFrame = 0;
+    }
+    function schedule() {
+      if (manual || raf || (!playing && !anim)) return;
+      lastFrame = performance.now();
+      const token = generation;
+      raf = requestAnimationFrame((now) => frame(now, token));
+    }
+    function frame(now, token) {
+      if (token !== generation) return;
+      raf = 0;
+      const elapsed = (now - lastFrame) / 1000;
+      lastFrame = now;
+      tick(elapsed);
+      if (token === generation) schedule();
+    }
+    function finish() {
+      playing = false;
+      anim = null;
+      holding = 0;
+      if (!ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      }
+    }
+    function tick(seconds) {
+      let budget = seconds * speed;
+      while (budget > 0 && (playing || anim)) {
+        if (holding > 0 && playing) {
+          const spent = Math.min(holding, budget);
+          holding -= spent;
+          if (holding < 1e-9) holding = 0;
+          budget -= spent;
+          if (holding > 0 || (budget <= 0 && !E.reduced)) break;
+        }
+        if (!anim) {
+          const current = stopIndexAt(tl.t);
+          if (current === tl.stops.length - 1) { finish(); break; }
+          anim = { to: tl.stops[current + 1].t };
+        }
+        const to = anim.to;
+        if (E.reduced && playing) {
+          tl.seek(to);
+        } else {
+          const reverse = to < tl.t ? 3 : 1;
+          const step = tl.travel(tl.t, to, budget * reverse);
+          tl.seek(step.t);
+          budget = Math.max(0, budget - step.cost / reverse);
+          if (Math.abs(tl.t - to) > 1e-9) break;
+        }
+        anim = null;
+        setIndex(stopIndexAt(to));
+        reachedStop();
+        if (playing) {
+          if (api.index === tl.stops.length - 1) { finish(); break; }
+          holding = tl.stops[api.index].hold;
+        }
+      }
+      updateHud();
     }
     function stopIndexAt(t) {
       let idx = 0;
       tl.stops.forEach((s, i) => { if (s.t <= t + 1e-9) idx = i; });
       return idx;
     }
+    function setIndex(i) {
+      if (api.index === i) return;
+      api.index = i;
+      const { id, label, scene } = tl.stops[i];
+      dispatchEvent(new CustomEvent("eidos:stop", { detail: { index: i, id, label, scene } }));
+    }
     function buildHud() {
       hud = document.createElement("div");
       hud.className = "eidos-hud";
       hud.innerHTML =
-        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+        '<div class="eidos-hud-breadcrumb"></div><div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-transport" data-eidos-noclick><button type="button" class="eidos-hud-play" data-eidos-noclick></button><span class="eidos-hud-speed"></span></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+      hud.querySelector("button").addEventListener("click", () => playing ? api.pause() : api.play());
       document.body.appendChild(hud);
+      updateScene();
       updateHud();
     }
     function updateHud() {
+      const atEnd = api.index === tl.stops.length - 1 && tl.t >= tl.stops[api.index].t;
+      if (atEnd && !ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      } else if (!atEnd) ended = false;
       if (!hud) return;
-      hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
-      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  → 다음`;
+      const button = hud.querySelector(".eidos-hud-play");
+      button.textContent = playing ? "Pause" : "Play";
+      button.setAttribute("aria-pressed", String(playing));
+      hud.querySelector(".eidos-hud-speed").textContent = `${speed}x`;
+      hud.querySelector(".eidos-hud-caption").textContent = captionAt();
+      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  →/Space 다음 · ← 이전 · P 재생 · 스크롤`;
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
     }
     function bindControls() {
+      const gestureControls = "a, button, input, select, textarea, label, [contenteditable], .eidos-dock, .eidos-hud, [data-eidos-nokeys], [data-eidos-noclick]";
+      const ownsGesture = (target, dx, dy) => {
+        if (target.closest(gestureControls)) return false;
+        for (let node = target; node && node !== el; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          const canScroll = (overflow, delta, pos, max) =>
+            /^(auto|scroll|overlay)$/.test(overflow) && (delta > 0 ? pos < max : delta < 0 && pos > 0);
+          if (canScroll(style.overflowY, dy, node.scrollTop, node.scrollHeight - node.clientHeight) ||
+              canScroll(style.overflowX, dx, node.scrollLeft, node.scrollWidth - node.clientWidth)) return false;
+        }
+        return true;
+      };
+      let wheelState, wheelOwner = false;
+      el.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || !Number.isFinite(e.deltaX) || !Number.isFinite(e.deltaY) || ![0, 1, 2].includes(e.deltaMode)) return;
+        if (!wheelState || e.timeStamp - wheelState.t >= 160 || e.timeStamp < wheelState.t) {
+          wheelOwner = ownsGesture(e.target, e.deltaX, e.deltaY);
+        }
+        const result = E.gesture(wheelState, {
+          dx: e.deltaX, dy: e.deltaY, mode: e.deltaMode,
+          t: e.timeStamp, kind: "wheel", viewportH: innerHeight,
+        });
+        wheelState = result.state;
+        if (!wheelOwner) return;
+        e.preventDefault();
+        if (api.playing) api.pause();
+        if (result.action) api[result.action]();
+      }, { passive: false });
+      let pointer = null, swipeClick = false;
+      el.addEventListener("pointerdown", (e) => {
+        swipeClick = false;
+        if (e.pointerType === "mouse" || !e.isPrimary) return;
+        pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target, owner: null };
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        if (pointer.owner === null && (dx || dy)) pointer.owner = ownsGesture(pointer.target, -dx, -dy);
+        if (pointer.owner && api.playing) api.pause();
+      });
+      el.addEventListener("pointerup", (e) => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
+        const owner = pointer.owner ?? ownsGesture(pointer.target, -dx, -dy);
+        pointer = null;
+        if (!owner) return;
+        const { action } = E.gesture(undefined, { dx, dy, mode: 0, t: e.timeStamp, kind: "swipe" });
+        if (!action) return;
+        swipeClick = true;
+        api[action]();
+      });
+      el.addEventListener("pointercancel", (e) => {
+        if (pointer?.id === e.pointerId) pointer = null;
+      });
+      el.addEventListener("click", (e) => {
+        if (!swipeClick) return;
+        swipeClick = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }, true);
       addEventListener("keydown", (e) => {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target.closest("input, select, textarea, [contenteditable], [data-eidos-nokeys]")) return;
         const k = e.key;
-        if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
+        if (e.target.closest("button") && (k === " " || k === "Enter")) return;
+        if (/^[1-9]$/.test(k)) {
+          const id = [...spokes.keys()][Number(k) - 1];
+          if (!id) return;
+          api.enter(id);
+        }
+        else if (k === "Escape") api.exit();
+        else if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
         else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) api.prev();
         else if (k === "Home") api.jump(0);
         else if (k === "End") api.jump(tl.stops.length - 1);
         else if (k === "r" || k === "R") { api.jump(0); api.goto(1); }
+        else if (k === "p" || k === "P") { playing ? api.pause() : api.play(); }
+        else if (k === "[" || k === "]") {
+          const steps = [0.5, 1, 1.5, 2];
+          api.speed(k === "]" ? steps.find((s) => s > speed) ?? 2 : steps.findLast((s) => s < speed) ?? 0.5);
+        }
         else return;
         e.preventDefault();
       });
       el.addEventListener("click", (e) => {
-        if (e.target.closest("a, button, input, select, textarea, [data-eidos-noclick]")) return;
+        // Keep an in-flight goto() so next() below completes it, as ArrowRight does.
+        if (playing) api.pause();
+        const origin = e.target.closest("[data-eidos-spoke]");
+        if (origin && !e.target.closest("input, select, textarea, label, [data-eidos-noclick]")) {
+          api.enter(origin.dataset.eidosSpoke);
+          return;
+        }
+        if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });
+      addEventListener("input", () => { if (playing) api.pause(); });
+      addEventListener("change", () => { if (playing) api.pause(); });
     }
     return api;
   };
@@ -738,77 +1694,335 @@ body {
 <script >
 (() => {
   const E = window.Eidos;
-  E.fx["cross-dissolve"] = (stage, o = {}) => {
+  const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi;
+  const parsePath = (d) => {
+    const nums = [];
+    const shape = d.replace(NUM, (m) => (nums.push(parseFloat(m)), "#"));
+    return { shape, nums };
+  };
+  const one = (target, root) => {
+    const el = E.$all(target, root)[0];
+    if (!el) throw new Error(`match-cut: no element for ${target}`);
+    return el;
+  };
+
+  E.fx["match-cut"] = (stage, o = {}) => {
     const { tl } = stage;
-    const dur = o.dur ?? 0.8;
+    const { lerp, r3 } = E.util;
+    const dur = o.dur ?? 1.1;
     const start = tl.resolveAt(o.at);
-    const ease = o.ease ?? "inOut";
-    const blur = o.blur === true ? 8 : Number(o.blur) || 0;
-    const out = { opacity: [1, 0] };
-    const inn = { opacity: [0, 1] };
-    if (blur > 0) {
-      out.blur = [0, blur];
-      inn.blur = [blur, 0];
+    const fade = o.fade ?? dur * 0.5;
+    const hold = dur * (o.hold ?? 0.2);
+    const move = { at: start + hold, dur: dur - hold, ease: o.ease ?? "camera" };
+    if (!o.match && !o.morph) throw new Error("match-cut: match or morph is required");
+
+    if (o.from) tl.tween(o.from, { opacity: [1, 0] }, { at: start, dur: fade, ease: "inOut" });
+    if (o.to) tl.tween(o.to, { opacity: [0, 1] }, { at: start, dur: fade, ease: "inOut" });
+
+    if (o.match) {
+      const fromEl = one(o.match[0], stage.world);
+      const toEl = one(o.match[1], stage.world);
+      let dx = 0, dy = 0, sx = 1, sy = 1;
+      stage.onLayout(() => {
+        const a = stage.measure(fromEl), b = stage.measure(toEl);
+        dx = a.x + a.w / 2 - (b.x + b.w / 2);
+        dy = a.y + a.h / 2 - (b.y + b.h / 2);
+        sx = a.w / Math.max(b.w, 1);
+        sy = a.h / Math.max(b.h, 1);
+      });
+      if (o.hide !== false) tl.tween(fromEl, { opacity: [1, 0] }, { at: start, dur: fade * 0.5, ease: "in" });
+      tl.tween(
+        toEl,
+        {
+          x: (p) => dx * (1 - p),
+          y: (p) => dy * (1 - p),
+          scaleX: (p) => lerp(sx, 1, p),
+          scaleY: (p) => lerp(sy, 1, p),
+        },
+        move,
+      );
     }
-    if (o.from) tl.tween(o.from, out, { at: start, dur, ease });
-    if (o.to) tl.tween(o.to, inn, { at: start, dur, ease });
+
+    if (o.morph) {
+      const fromPath = one(o.morph[0], stage.world);
+      const toPath = one(o.morph[1], stage.world);
+      const a = parsePath(fromPath.getAttribute("d") || "");
+      const b = parsePath(toPath.getAttribute("d") || "");
+      if (a.shape !== b.shape) throw new Error("match-cut: morph paths must share the same command structure");
+      const parts = b.shape.split("#");
+      const dAt = (p) => {
+        let d = parts[0];
+        for (let i = 0; i < a.nums.length; i++) d += r3(lerp(a.nums[i], b.nums[i], p)) + parts[i + 1];
+        return d;
+      };
+      if (o.hide !== false) tl.tween(fromPath, { opacity: [1, 0] }, { at: start, dur: fade * 0.5, ease: "in" });
+      tl.tween(toPath, { attr: (p) => ({ d: dAt(p) }) }, move);
+    }
+
     tl.prevStart = start;
     tl.extend(start + dur);
     return { start, end: start + dur };
   };
+  E.fx["match-cut"].kind = "transition";
 })();
 
 </script>
 <script >
 (() => {
   const E = window.Eidos;
-  E.fx["count-up"] = (stage, o = {}) => {
-    const { tl } = stage;
-    const els = E.$all(o.targets ?? o.target, stage.world);
-    const dur = o.dur ?? 1.2;
-    const each = o.each ?? 0.15;
-    const ease = o.ease ?? "out";
-    const locale = o.locale ?? "ko-KR";
-    const start = tl.resolveAt(o.at);
-    const val = (ds, key, i, fallback) => {
-      if (ds[key] != null && ds[key] !== "") return ds[key];
-      const v = o[key];
-      return (Array.isArray(v) ? v[i] : v) ?? fallback;
-    };
-    const items = els.map((el, i) => {
-      const ds = el.dataset;
-      const from = Number(val(ds, "from", i, 0));
-      const to = Number(val(ds, "to", i, 0));
-      const decimals = Number(val(ds, "decimals", i, 0));
-      const prefix = String(val(ds, "prefix", i, ""));
-      const unit = String(val(ds, "unit", i, ""));
-      const fmt = (v) => prefix + v.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + unit;
-      el.style.fontVariantNumeric = "tabular-nums";
-      if (o.reserve) {
-        el.style.display = "inline-block";
-        stage.onLayout(() => {
-          const keep = el.textContent;
-          el.style.minWidth = "";
-          let w = 0;
-          for (const v of [from, to]) {
-            el.textContent = fmt(v);
-            w = Math.max(w, el.getBoundingClientRect().width);
-          }
-          el.textContent = keep;
-          el.style.minWidth = `${E.util.r3(w)}px`;
-        });
-      }
-      const at = start + i * each;
-      tl.tween(el, { text: (p) => fmt(from + (to - from) * p) }, { at, dur, ease });
-      const bars = E.$all(val(ds, "bar", i, null), stage.world);
-      if (bars.length) {
-        for (const b of bars) b.style.transformOrigin = "left center";
-        tl.tween(bars, { scaleX: [Number(val(ds, "barFrom", i, 0)), Number(val(ds, "barTo", i, 1))] }, { at, dur, ease });
-      }
-      return { el, start: at, end: at + dur, from, to };
-    });
-    return { start, end: items.length ? Math.max(...items.map((x) => x.end)) : start, items };
+  const DIRS = ["left", "right", "up", "down"];
+  const SIDES = ["top", "right", "bottom", "left"];
+  // Inset side of the incoming scene that shrinks to 0. dir is the way the boundary travels,
+  // so "left" reveals the next scene from the right edge.
+  const SIDE = { left: 3, right: 1, up: 0, down: 2 };
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
   };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`wipe: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`wipe: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
+
+  E.fx["wipe"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const { r3, lerp } = E.util;
+    const dir = o.dir ?? "left";
+    if (typeof dir !== "string" || !DIRS.includes(dir)) fail(`wipe: dir must be one of ${DIRS.join(", ")} (got ${JSON.stringify(o.dir)})`);
+    const dur = durOf(o.dur ?? 0.7);
+    const soft = o.soft === true ? 48 : o.soft == null || o.soft === false ? 0 : typeof o.soft === "number" ? o.soft : NaN;
+    if (!Number.isFinite(soft) || soft < 0) fail(`wipe: soft must be true, false or px >= 0 (got ${JSON.stringify(o.soft)})`);
+    const ease = easeOf(o.ease ?? "inOut");
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+
+    if (E.reduced) {
+      // Reduced motion: a plain fade, no moving edge.
+      if (o.from) tl.tween(o.from, { opacity: (p) => 1 - ease(p) }, at);
+      if (o.to) tl.tween(o.to, { opacity: (p) => ease(p) }, at);
+    } else {
+      const side = SIDE[dir];
+      const toward = SIDES[(side + 2) % 4];
+      const inset = (i, v) => {
+        const a = [0, 0, 0, 0];
+        a[i] = r3(v * 100);
+        return `inset(${a.map((x) => x + "%").join(" ")})`;
+      };
+      // Soft edge: complementary gradient masks whose band centre crosses from -soft/2 to 100%+soft/2.
+      const band = (e) => {
+        const pct = r3((1 - e) * 100), px = r3(lerp(soft / 2, -soft / 2, e) + 0);
+        const c = `calc(${pct}% + ${px}px)`;
+        return [`calc(${c} - ${soft / 2}px)`, `calc(${c} + ${soft / 2}px)`];
+      };
+      // Always write explicit values: removing a property and re-adding it later reorders the
+      // style attribute, which would make snapshot() depend on the seek path.
+      const mask = (v) => ({ maskImage: v, webkitMaskImage: v });
+      // Endpoints are decided on the runtime-snapped progress p (exactly 0 or 1 at the ends), the same value
+      // that drives opacity, so visibility and clipping always agree; ease only shapes the moving edge.
+      const toStyle = (p) => {
+        const e = ease(p);
+        if (p >= 1) return { clipPath: "none", ...mask("none") };
+        // Fully hidden: a closed clip, not a transparent mask (WebKit can skip painting the first frame).
+        if (p <= 0 || !soft) return { clipPath: inset(side, 1 - e), ...mask("none") };
+        const [a, b] = band(e);
+        return { clipPath: "none", ...mask(`linear-gradient(to ${toward}, transparent ${a}, #000 ${b})`) };
+      };
+      const fromStyle = (p) => {
+        const e = ease(p);
+        if (p <= 0 || p >= 1) return { clipPath: "none", ...mask("none") };
+        if (!soft) return { clipPath: inset((side + 2) % 4, e), ...mask("none") };
+        const [a, b] = band(e);
+        return { clipPath: "none", ...mask(`linear-gradient(to ${toward}, #000 ${a}, transparent ${b})`) };
+      };
+      if (o.from) tl.tween(o.from, { opacity: (p) => (p < 1 ? 1 : 0), style: fromStyle }, at);
+      if (o.to) tl.tween(o.to, { opacity: (p) => (p > 0 ? 1 : 0), style: toStyle }, at);
+    }
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["wipe"].kind = "transition";
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const FLASHES = ["invert", "contrast", false];
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`smash-cut: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+  const layer = (cls, css) => {
+    const el = document.createElement("div");
+    el.className = cls;
+    el.setAttribute("aria-hidden", "true");
+    Object.assign(el.style, { position: "absolute", inset: "0", pointerEvents: "none", visibility: "hidden", ...css });
+    return el;
+  };
+
+  E.fx["smash-cut"] = (stage, o = {}) => {
+    const { tl, world } = stage;
+    const { r3, clamp01, lerp } = E.util;
+    const flash = o.flash ?? "invert";
+    if (!FLASHES.some((f) => f === flash)) fail(`smash-cut: flash must be "invert", "contrast" or false (got ${JSON.stringify(o.flash)})`);
+    if (o.slam != null && (typeof o.slam !== "string" || !o.slam.trim())) fail(`smash-cut: slam must be a non-empty string (got ${JSON.stringify(o.slam)})`);
+    const slam = E.reduced ? null : o.slam ?? null;
+    const lit = !E.reduced && flash !== false;
+    // The swap happens right after start; dur is how long the flash or slam card lasts, 0 for a pure cut.
+    // An explicit dur is always honoured (end = start + dur); a pure cut defaults to 0.
+    const dur = durOf(o.dur ?? (slam ? 1.1 : lit ? 0.45 : 0));
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    const cut = (p) => p > 0;
+    if (o.from) tl.tween(o.from, { opacity: (p) => (cut(p) ? 0 : 1) }, at);
+    if (o.to) tl.tween(o.to, { opacity: (p) => (cut(p) ? 1 : 0) }, at);
+    const on = (p) => p > 0 && p < 1;
+
+    if (slam) {
+      // Slam card: full-bleed inverted panel with one huge line, then it drops away to the new scene.
+      const card = layer("eidos-fx-smash-cut-slam", {
+        display: "grid", placeItems: "center", padding: "6vw", background: "var(--eidos-fg)",
+      });
+      const word = document.createElement("div");
+      word.textContent = slam;
+      Object.assign(word.style, {
+        color: "var(--eidos-bg)", fontWeight: "800", fontSize: "clamp(48px, 13vw, 190px)", lineHeight: "1",
+        letterSpacing: "-0.03em", textAlign: "center", wordBreak: "keep-all", fontVariantNumeric: "tabular-nums",
+      });
+      card.append(word);
+      world.after(card);
+      const HOLD = 0.62;
+      tl.tween(card, {
+        style: (p) => {
+          if (!on(p)) return { visibility: "hidden", opacity: "0" };
+          return { visibility: "visible", opacity: String(r3(p < HOLD ? 1 : 1 - E.ease.in(clamp01((p - HOLD) / (1 - HOLD))))) };
+        },
+      }, at);
+      tl.tween(word, { scale: (p) => (on(p) ? lerp(1.18, 1, E.ease.out(clamp01(p / 0.25))) : 1) }, at);
+    } else if (lit && flash === "invert") {
+      // Invert flash: white with difference blending flips every colour, then decays.
+      const inv = layer("eidos-fx-smash-cut-flash", { background: "#fff", mixBlendMode: "difference" });
+      world.after(inv);
+      tl.tween(inv, {
+        style: (p) => (on(p) ? { visibility: "visible", opacity: String(r3(p < 0.35 ? 1 : 1 - E.ease.out((p - 0.35) / 0.65))) } : { visibility: "hidden", opacity: "0" }),
+      }, at);
+    } else if (lit && flash === "contrast") {
+      if (o.to) tl.tween(o.to, { style: (p) => ({ filter: on(p) ? `contrast(${r3(lerp(2.2, 1, E.ease.out(p)))}) saturate(${r3(lerp(1.6, 1, E.ease.out(p)))})` : "none" }) }, at);
+    }
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["smash-cut"].kind = "transition";
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  // Text colour that reads on each dip colour; anything else falls back to the accent foreground.
+  const ON = { fg: "bg", "surface-fg": "bg", bg: "fg", surface: "fg", "fill-warm": "fg", "fill-cool": "fg", border: "fg" };
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`dip-to-color: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return v;
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`dip-to-color: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
+
+  E.fx["dip-to-color"] = (stage, o = {}) => {
+    const { tl, world } = stage;
+    const { r3, clamp01 } = E.util;
+    const color = o.color ?? "fg";
+    if (typeof color !== "string" || !/^[a-z0-9-]+$/.test(color) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${color}`).trim()) {
+      fail(`dip-to-color: color must name an --eidos-* token such as "fg", "accent" or "cat-4" (got ${JSON.stringify(o.color)})`);
+    }
+    if (o.title != null && (typeof o.title !== "string" || !o.title.trim())) fail(`dip-to-color: title must be a non-empty string (got ${JSON.stringify(o.title)})`);
+    const dur = durOf(o.dur ?? (o.title ? 2 : 1.2));
+    const hold = o.hold ?? (o.title ? 0.4 : 0.15);
+    if (!Number.isFinite(hold) || hold < 0 || hold >= 1) fail(`dip-to-color: hold must be a fraction in [0, 1) (got ${JSON.stringify(o.hold)})`);
+    const ease = easeOf(o.ease ?? "inOut");
+    const start = tl.resolveAt(o.at);
+    const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
+    const a = (1 - hold) / 2, b = a + hold; // fade in [0, a], hold [a, b], fade out [b, 1]
+    const mid = (a + b) / 2;
+
+    const veil = document.createElement("div");
+    veil.className = "eidos-fx-dip-to-color";
+    veil.setAttribute("aria-hidden", "true");
+    Object.assign(veil.style, {
+      position: "absolute", inset: "0", pointerEvents: "none", visibility: "hidden", background: `var(--eidos-${color})`,
+      display: "grid", placeItems: "center", padding: "8vw",
+    });
+    let title = null;
+    if (o.title) {
+      title = document.createElement("div");
+      title.textContent = o.title;
+      Object.assign(title.style, {
+        color: `var(--eidos-${Object.hasOwn(ON, color) ? ON[color] : "accent-fg"})`, fontWeight: "700", fontSize: "clamp(28px, 5.2vw, 64px)",
+        lineHeight: "1.2", textAlign: "center", wordBreak: "keep-all", letterSpacing: "-0.01em",
+      });
+      veil.append(title);
+    }
+    world.after(veil);
+
+    const cover = (p) => (p <= 0 || p >= 1 ? 0 : p < a ? ease(p / a) : p <= b ? 1 : 1 - ease((p - b) / (1 - b)));
+    tl.tween(veil, { style: (p) => { const c = cover(p); return { visibility: c > 0 ? "visible" : "hidden", opacity: String(r3(c)) }; } }, at);
+    if (title) {
+      // Title reads only while the colour fully covers the frame.
+      const span = Math.max(hold, 1e-6);
+      tl.tween(title, {
+        opacity: (p) => (p <= a || p >= b ? 0 : Math.min(1, ((p - a) / span) * 4, ((b - p) / span) * 4)),
+        y: (p) => (E.reduced ? 0 : r3(10 * (1 - E.ease.out(clamp01((p - a) / span))))),
+      }, at);
+    }
+    if (o.from) tl.tween(o.from, { opacity: (p) => (p < mid ? 1 : 0) }, at);
+    if (o.to) tl.tween(o.to, { opacity: (p) => (p >= mid ? 1 : 0) }, at);
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
+    tl.prevStart = start;
+    tl.extend(start + dur);
+    return { start, end: start + dur };
+  };
+  E.fx["dip-to-color"].kind = "transition";
 })();
 
 </script>
@@ -881,38 +2095,493 @@ body {
 })();
 
 </script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["count-up"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const els = E.$all(o.targets ?? o.target, stage.world);
+    const dur = o.dur ?? 1.2;
+    const each = o.each ?? 0.15;
+    const ease = o.ease ?? "out";
+    const locale = o.locale ?? "ko-KR";
+    const start = tl.resolveAt(o.at);
+    const val = (ds, key, i, fallback) => {
+      if (ds[key] != null && ds[key] !== "") return ds[key];
+      const v = o[key];
+      return (Array.isArray(v) ? v[i] : v) ?? fallback;
+    };
+    const items = els.map((el, i) => {
+      const ds = el.dataset;
+      const from = Number(val(ds, "from", i, 0));
+      const to = Number(val(ds, "to", i, 0));
+      const decimals = Number(val(ds, "decimals", i, 0));
+      const prefix = String(val(ds, "prefix", i, ""));
+      const unit = String(val(ds, "unit", i, ""));
+      const fmt = (v) => prefix + v.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + unit;
+      el.style.fontVariantNumeric = "tabular-nums";
+      if (o.reserve) {
+        el.style.display = "inline-block";
+        stage.onLayout(() => {
+          const keep = el.textContent;
+          el.style.minWidth = "";
+          let w = 0;
+          for (const v of [from, to]) {
+            el.textContent = fmt(v);
+            w = Math.max(w, el.getBoundingClientRect().width);
+          }
+          el.textContent = keep;
+          el.style.minWidth = `${E.util.r3(w)}px`;
+        });
+      }
+      const at = start + i * each;
+      tl.tween(el, { text: (p) => fmt(from + (to - from) * p) }, { at, dur, ease });
+      const bars = E.$all(val(ds, "bar", i, null), stage.world);
+      if (bars.length) {
+        for (const b of bars) b.style.transformOrigin = "left center";
+        tl.tween(bars, { scaleX: [Number(val(ds, "barFrom", i, 0)), Number(val(ds, "barTo", i, 1))] }, { at, dur, ease });
+      }
+      return { el, start: at, end: at + dur, from, to };
+    });
+    return { start, end: items.length ? Math.max(...items.map((x) => x.end)) : start, items };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  E.fx["stagger-reveal"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const items = E.$all(o.targets ?? o.target, stage.world);
+    const extra = E.$all(o.dim, stage.world);
+    const each = o.each ?? 0.1;
+    const dur = o.dur ?? 0.5;
+    const dist = o.dist ?? 14;
+    const dimTo = o.dimTo ?? 0.45;
+    const dimDur = o.dimDur ?? dur * 0.6;
+    const ease = o.ease ?? "out";
+    const per = Math.max(1, o.per ?? 1);
+    const offset = { up: { y: dist }, down: { y: -dist }, left: { x: dist }, right: { x: -dist }, none: {} }[o.dir ?? "up"] || {};
+    const labels = Array.isArray(o.stops) ? o.stops : [];
+    const groups = o.stops ? Array.from({ length: Math.ceil(items.length / per) }, (_, g) => items.slice(g * per, g * per + per)) : [items];
+    const level = (el) => el.__eidosLevel ?? 1;
+    const dim = (el, at) => {
+      if (level(el) <= dimTo + 1e-9) return;
+      tl.tween(el, { opacity: [level(el), dimTo] }, { at, dur: dimDur });
+      el.__eidosLevel = dimTo;
+    };
+    const start = tl.resolveAt(o.at);
+    const times = [];
+    let prev = null;
+    groups.forEach((group, g) => {
+      const base = g === 0 ? start : tl.end;
+      group.forEach((el, i) => {
+        const at = base + i * each;
+        const props = { opacity: [0, 1] };
+        if (offset.x != null) props.x = [offset.x, 0];
+        if (offset.y != null) props.y = [offset.y, 0];
+        tl.tween(el, props, { at, dur, ease });
+        el.__eidosLevel = 1;
+        if (!times.length) for (const d of extra) dim(d, at);
+        if (o.disclose && prev) dim(prev.el, Math.max(at, prev.at + dur));
+        times.push({ el, start: at, end: at + dur });
+        prev = { el, at };
+      });
+      if (o.stops) tl.stop(labels[g] ?? "");
+    });
+    const end = times.length ? Math.max(...times.map((t) => t.end)) : start;
+    return {
+      start,
+      end,
+      items: times,
+      restore(r = {}) {
+        const at = tl.resolveAt(r.at);
+        const d = r.dur ?? dimDur;
+        for (const el of [...items, ...extra]) {
+          if (level(el) >= 1) continue;
+          tl.tween(el, { opacity: [level(el), 1] }, { at, dur: d });
+          el.__eidosLevel = 1;
+        }
+        tl.extend(at + d);
+        return { start: at, end: at + d };
+      },
+    };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const r3 = E.util.r3;
+  const expo = E.bezier(0.16, 1, 0.3, 1);
+  const clip = (dir, v) =>
+    dir === "left" ? `inset(0 0 0 ${v}%)` : dir === "down" ? `inset(0 0 ${v}% 0)` : dir === "up" ? `inset(${v}% 0 0 0)` : `inset(0 ${v}% 0 0)`;
+  E.fx["mask-reveal"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const lines = E.$all(o.targets ?? o.target, stage.world);
+    const mode = o.mode ?? "slide";
+    const dir = o.dir ?? (mode === "wipe" ? "right" : "up");
+    const dur = o.dur ?? (mode === "wipe" ? 0.6 : 0.8);
+    const each = o.each ?? 0.14;
+    const ease = o.ease ?? expo;
+    const start = tl.resolveAt(o.at);
+    const items = lines.map((line, i) => {
+      const at = start + i * each;
+      const inline = getComputedStyle(line).display === "inline";
+      if (inline) line.style.display = "inline-block";
+      if (mode === "wipe") {
+        tl.tween(line, { style: (p) => ({ clipPath: clip(dir, r3((1 - p) * 100)) }) }, { at, dur, ease });
+      } else {
+        const wrap = document.createElement(inline ? "span" : "div");
+        wrap.className = "eidos-mask";
+        wrap.style.cssText = `display:${inline ? "inline-block" : "block"};overflow:hidden;vertical-align:bottom;padding:0.1em 0.12em 0.16em;margin:-0.1em -0.12em -0.16em`;
+        line.parentNode.insertBefore(wrap, line);
+        wrap.appendChild(line);
+        const sign = dir === "down" ? -1 : 1;
+        tl.tween(line, { style: (p) => ({ transform: `translateY(${r3(sign * (1 - p) * 120)}%)` }) }, { at, dur, ease });
+      }
+      return { el: line, start: at, end: at + dur };
+    });
+    return { start, end: items.length ? items[items.length - 1].end : start, items };
+  };
+})();
+
+</script>
+<script >
+(() => {
+  const E = window.Eidos;
+  const NS = "http://www.w3.org/2000/svg";
+  const r3 = E.util.r3;
+  const svgEl = (tag, attrs = {}) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  };
+  const anchors = (a, b, gap) => {
+    const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+    const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      const s = dx >= 0 ? 1 : -1;
+      return {
+        p0: { x: s > 0 ? a.x + a.w + gap : a.x - gap, y: a.y + a.h / 2 },
+        p1: { x: s > 0 ? b.x - gap : b.x + b.w + gap, y: b.y + b.h / 2 },
+        dir: { x: s, y: 0 },
+      };
+    }
+    const s = dy >= 0 ? 1 : -1;
+    return {
+      p0: { x: a.x + a.w / 2, y: s > 0 ? a.y + a.h + gap : a.y - gap },
+      p1: { x: b.x + b.w / 2, y: s > 0 ? b.y - gap : b.y + b.h + gap },
+      dir: { x: 0, y: s },
+    };
+  };
+  const wave = (w, h) =>
+    `M ${r3(w * 0.02)} ${r3(h * 0.72)} Q ${r3(w * 0.28)} ${r3(h * 0.05)} ${r3(w * 0.52)} ${r3(h * 0.6)} T ${r3(w * 0.98)} ${r3(h * 0.45)}`;
+
+  E.fx["path-drawing"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const dur = o.dur ?? 0.7;
+    const each = o.each ?? dur * 0.9;
+    const lead = o.lead ?? 0.3;
+    const ease = o.ease ?? "inOut";
+    const gap = o.gap ?? 6;
+    const curve = o.curve ?? 0.5;
+    const head = o.head ?? "arrow";
+    const size = o.headSize ?? 8;
+    const reveal = o.reveal ?? "to";
+    const links = (o.links ?? []).map((l) => (Array.isArray(l) ? { from: l[0], to: l[1] } : l));
+    let svg = o.svg ? E.$all(o.svg, stage.world)[0] : null;
+    if (links.length && !svg) {
+      svg = svgEl("svg", { class: "eidos-links", "aria-hidden": "true" });
+      svg.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none";
+      stage.world.insertBefore(svg, stage.world.firstChild);
+    }
+    const show = (el, at) => {
+      tl.tween(el, { opacity: [0, 1], y: [8, 0] }, { at, dur: 0.35, ease: "out" });
+      el.__eidosShown = true;
+    };
+    const start = tl.resolveAt(o.at);
+    let t = start;
+    const items = [];
+    const draw = (path, mark) => {
+      tl.tween(path, { draw: [0, 1], opacity: (p) => (p > 0 ? 1 : 0) }, { at: t, dur, ease });
+      if (mark) tl.tween(mark, { opacity: [0, 1], scale: [0.4, 1] }, { at: t + dur * 0.85, dur: 0.25, ease: "pop" });
+      items.push({ path, head: mark, start: t, end: t + dur });
+    };
+    for (const L of links) {
+      const fromEl = E.$all(L.from, stage.world), toEl = E.$all(L.to, stage.world);
+      const color = L.stroke ?? o.stroke ?? "var(--eidos-fg)";
+      const h = L.head ?? head;
+      const path = svgEl("path", { class: "eidos-link" });
+      path.style.cssText = `fill:none;stroke:${color};stroke-width:${L.width ?? o.width ?? 2};stroke-linecap:round;stroke-linejoin:round`;
+      svg.appendChild(path);
+      let mark = null;
+      if (h === "arrow" || h === "dot") {
+        mark = svgEl(h === "arrow" ? "path" : "circle", { class: "eidos-link-head" });
+        if (h === "dot") mark.setAttribute("r", r3(size / 2));
+        mark.style.cssText = `fill:${color};stroke:none`;
+        svg.appendChild(mark);
+      }
+      stage.onLayout(() => {
+        const { p0, p1, dir } = anchors(stage.measure(fromEl), stage.measure(toEl), gap);
+        const trim = h === "arrow" ? size * 0.8 : h === "dot" ? size * 0.3 : 0;
+        const e = { x: p1.x - dir.x * trim, y: p1.y - dir.y * trim };
+        const k = Math.max(Math.abs(dir.x ? e.x - p0.x : e.y - p0.y) * curve, 16);
+        path.setAttribute("d", `M ${r3(p0.x)} ${r3(p0.y)} C ${r3(p0.x + dir.x * k)} ${r3(p0.y + dir.y * k)} ${r3(e.x - dir.x * k)} ${r3(e.y - dir.y * k)} ${r3(e.x)} ${r3(e.y)}`);
+        if (h === "arrow") {
+          const bx = p1.x - dir.x * size, by = p1.y - dir.y * size, nx = -dir.y * size * 0.5, ny = dir.x * size * 0.5;
+          mark.setAttribute("d", `M ${r3(p1.x)} ${r3(p1.y)} L ${r3(bx + nx)} ${r3(by + ny)} L ${r3(bx - nx)} ${r3(by - ny)} Z`);
+        } else if (h === "dot") {
+          mark.setAttribute("cx", r3(p1.x));
+          mark.setAttribute("cy", r3(p1.y));
+        }
+      });
+      if (reveal === "all") {
+        const fresh = fromEl.filter((el) => !el.__eidosShown);
+        if (fresh.length) {
+          for (const el of fresh) show(el, t);
+          t += lead;
+        }
+      }
+      draw(path, mark);
+      if (reveal) for (const el of toEl) if (!el.__eidosShown) show(el, t + dur * 0.65);
+      t += each;
+    }
+    for (const el of E.$all(o.underline, stage.world)) {
+      if (getComputedStyle(el).position === "static") el.style.position = "relative";
+      const box = svgEl("svg", { class: "eidos-underline", "aria-hidden": "true" });
+      box.style.cssText = "position:absolute;left:-2%;bottom:-0.32em;width:104%;height:0.5em;overflow:visible;pointer-events:none";
+      const path = svgEl("path");
+      path.style.cssText = `fill:none;stroke:${o.stroke ?? "var(--eidos-accent)"};stroke-width:${o.width ?? 3};stroke-linecap:round;stroke-linejoin:round`;
+      box.appendChild(path);
+      el.appendChild(box);
+      stage.onLayout(() => {
+        const r = box.getBoundingClientRect();
+        path.setAttribute("d", wave(r.width, r.height));
+      });
+      draw(path, null);
+      t += each;
+    }
+    for (const path of E.$all(o.paths, stage.world)) {
+      draw(path, null);
+      t += each;
+    }
+    const end = items.length ? Math.max(...items.map((x) => x.end)) : start;
+    tl.extend(end);
+    return { start, end, items };
+  };
+})();
+
+</script>
 <script>
+  // rest-vs-graphql.storyboard.md 의 행을 그대로 옮긴 장면 구성.
+  // structure: single-flow (trips → shape → whatif → cost → verdict)
   const s = Eidos.stage();
   const { tl } = s;
-  tl.tween("#scene-a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" });
+  const { r3, clamp01 } = Eidos.util;
+  const $ = (q) => document.querySelector(q);
+  const $$ = (q) => [...document.querySelectorAll(q)];
+  const sw = (a, b) => (p) => (p < 0.5 ? a : b);
+  // 알약(패킷)은 양 끝에서 투명, 이동 중에만 보인다: 스톱에서는 레인이 비어 있다.
+  const fade = (p) => r3(Math.min(1, 6 * p, 6 * (1 - p)));
+  const travel = (sel, x0, x1, at, dur = 0.5) => tl.tween(sel, { x: [x0, x1], opacity: fade }, { at, dur, ease: "inOut" });
+  const label = (sel, text, at) => tl.tween(sel, { text: () => text }, { at, dur: 0.01 });
+  const rise = (sel, at, dur = 0.4) => tl.tween(sel, { opacity: [0, 1], y: [8, 0] }, { at, dur, ease: "out" });
+  const pop = (sel, at, dur = 0.35) => tl.tween(sel, { opacity: [0, 1], scale: [0.4, 1] }, { at, dur, ease: "pop" });
+  const count = (sel, from, to, at, dur = 0.5) => s.fx("count-up", { targets: sel, from, to, dur, at });
+
+  // ================= 장면 1: 왕복 =================
+  s.scene("trips", { el: "#trips", title: "왕복" });
+  // concept "같은 요구": 두 판이 좌우에서 들어오고 구분선이 닦이며, 칩이 차례로 올라오되 필요한 4개만 색이 찬다
   const ss = s.fx("split-screen", {
     left: "#rest", right: "#gql", divider: ".divider",
     steps: [["#rest .r1", "#gql .q1"], ["#rest .r2", "#gql .q2"], ["#rest .r3", "#gql .q3"]],
-    at: "<+=0.2",
+    ghost: 0.25, dur: 0.8, at: 0.15,
   });
   tl.tween(".vs", { opacity: [0, 1] }, { at: ss.end - 0.2, dur: 0.3 });
-  tl.stop("글 상세 화면에는 사용자, 글, 댓글이 모두 필요합니다");
+  tl.stagger("#need .fchip", { opacity: [0, 1], y: [8, 0] }, { at: 0.4, each: 0.07, dur: 0.35, ease: "out" });
+  tl.stagger("#need .fchip.on .fill", { opacity: [0, 1] }, { at: 1.05, each: 0.09, dur: 0.3 });
+  tl.stagger("#need .fchip:not(.on)", { opacity: [1, 0.5] }, { at: 1.1, each: 0.05, dur: 0.3 });
+  tl.stop("같은 화면, 같은 필드 4개를 두 방식에 요구한다", { id: "need" });
 
-  const count = (sel, from, to, st) =>
-    tl.tween(sel, { text: (p) => `왕복 ${Math.round(from + (to - from) * p)}회` }, { at: st.start, dur: st.end - st.start });
-  const s1 = ss.step(); count("#rest .count", 0, 1, s1); count("#gql .count", 0, 1, s1);
-  tl.stop("사용자 정보: REST는 첫 번째 왕복, GraphQL은 쿼리의 user 블록");
-  const s2 = ss.step(); count("#rest .count", 1, 2, s2);
-  tl.stop("글 목록: REST는 두 번째 왕복, GraphQL은 같은 쿼리 안의 posts");
-  const s3 = ss.step(); count("#rest .count", 2, 3, s3);
-  ss.focus("right", { at: s3.end + 0.1 });
-  tl.stop("댓글까지: REST는 왕복 3번, GraphQL은 여전히 1번");
+  const TRIPS = [
+    ["GET /posts/9", "352 B", 0, 352, "REST 1번째 왕복 /posts/9: 6개 필드가 오고 2개만 쓴다"],
+    ["GET /users/1", "180 B", 352, 532, "REST 2번째 왕복 /users/1, GraphQL은 서버 안에서 이어 붙인다"],
+    ["GET /posts/9/comments", "420 B", 532, 952, "REST는 3번째 왕복 뒤에야 완성, GraphQL은 한 번에 받는다"],
+  ];
+  TRIPS.forEach(([ep, size, b0, b1, caption], i) => {
+    const T = tl.end, k = i + 1;
+    // concept "왕복": 요청 알약이 서버로 건너가 엔드포인트 줄을 켜고, 응답 알약이 돌아오면 왕복·받음 카운터가 오른다
+    label("#rest-req-t", ep, T);
+    travel("#rest-req", 38, 164, T + 0.05);
+    ss.step({ at: T + 0.5, dur: 0.3 });
+    label("#rest-res-t", size, T + 0.6);
+    travel("#rest-res", 230, 38, T + 0.6);
+    tl.tween("#rest-trips", { text: sw(String(k - 1), String(k)) }, { at: T + 1.0, dur: 0.2 });
+    count("#rest-bytes", b0, b1, T + 1.05);
+    // concept "over-fetching": 응답이 도착하면 필드 칩이 차례로 펼쳐진다 (쓰는 칩만 CSS .use 색)
+    tl.stagger(`#rest .r${k} .resp > *`, { opacity: [0, 1], y: [6, 0] }, { at: T + 1.1, each: 0.05, dur: 0.3, ease: "out" });
+    // concept "서버 쪽 조합": 리졸버 줄이 왕복마다 하나씩 켜지고(ss.step) 왼쪽 세로 막대가 1/3씩 찬다
+    tl.tween("#joinbar", { scaleY: [(k - 1) / 3, k / 3] }, { at: T + 0.5, dur: 0.3, ease: "out" });
+    if (k === 1) {
+      label("#gql-req-t", "POST /graphql", T);
+      travel("#gql-req", 38, 198, T + 0.05);
+    }
+    if (k === 2) rise("#gql-join", T + 0.6);
+    if (k === 3) {
+      // concept "정확한 모양": 마지막 리졸버 뒤 응답 알약이 한 번 돌아오고, 요청한 필드만 담긴 카드가 줄 단위로 조립된다
+      travel("#gql-resp", 230, 38, T + 0.9);
+      tl.tween("#gql-wait", { opacity: [1, 0] }, { at: T + 1.2, dur: 0.2 });
+      tl.tween("#gql-trips", { text: sw("0", "1") }, { at: T + 1.3, dur: 0.2 });
+      count("#gql-bytes", 0, 526, T + 1.35);
+      tl.stagger("#gql-res .ln", { opacity: [0, 1], y: [6, 0] }, { at: T + 1.4, each: 0.08, dur: 0.3, ease: "out" });
+    }
+    tl.stop(caption, { id: `trip${k}` });
+  });
 
-  s.fx("cross-dissolve", { from: "#scene-a", to: "#scene-b", dur: 0.8 });
-  tl.tween("#scene-b .metric", { opacity: [0, 1], y: [10, 0] }, { at: "-=0.2", dur: 0.4, ease: "out" });
-  s.fx("count-up", { targets: "#rt-r, #rt-g, #ms-r, #ms-g, #kb-r, #kb-g", dur: 1.2, each: 0.12 });
-  tl.stop("결과: 왕복은 3배, 응답 크기는 9배 가까이 차이 납니다");
+  {
+    // concept "over-fetching": REST 판에 초점, 안 쓰는 칩 위로 취소선이 그어지며 옅어지고, 버림 바이트가 0→450
+    const T = tl.end;
+    ss.focus("left", { at: T + 0.05, dur: 0.5 });
+    rise("#rest-note", T + 0.25);
+    tl.stagger("#rest .fc:not(.use) .strike", { scaleX: [0, 1] }, { at: T + 0.4, each: 0.05, dur: 0.25, ease: "out" });
+    tl.stagger("#rest .fc:not(.use)", { opacity: [1, 0.45] }, { at: T + 0.4, each: 0.05, dur: 0.25 });
+    count("#rest-waste", 0, 450, T + 0.5, 1.0);
+    s.fx("highlight-sweep", { targets: "#kw-over", at: T + 1.0 });
+    tl.stop("over-fetching: 엔드포인트가 정한 모양대로 오니 450 B를 버린다", { id: "overfetch" });
+  }
+  {
+    // concept "정확한 모양": GraphQL 판에 초점, 구절 위로 형광펜, 버림 0 B 카운터가 한 번 커졌다 돌아온다
+    const T = tl.end;
+    ss.focus("right", { at: T + 0.05, dur: 0.5 });
+    rise("#gql-note", T + 0.25);
+    s.fx("highlight-sweep", { targets: "#kw-exact", at: T + 0.6 });
+    tl.tween("#gql-waste", { scale: (p) => r3(1 + 0.4 * Math.sin(Math.PI * p)) }, { at: T + 0.7, dur: 0.6 });
+    tl.stop("GraphQL은 요청한 필드가 요청한 모양 그대로, 버림 0 B", { id: "exact" });
+  }
 
-  tl.tween(".conclusion", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
-  s.fx("highlight-sweep", { targets: "#kw1" });
-  tl.stop("핵심: 필요한 필드만 한 번에 가져온다");
-  s.fx("highlight-sweep", { targets: "#kw2", circle: true });
-  tl.stop("대가: HTTP 캐시를 쓰기 어렵다");
+  // ================= 장면 2: 모양 =================
+  s.scene("shape", {
+    el: "#shape", via: "match-cut", with: { match: ["#gql-res", "#shape-res"], dur: 1.2 }, title: "모양",
+    reason: "모양이 서로 대응함: GraphQL 응답 카드의 모양이 큰 응답 카드로 그대로 이어진다",
+  });
+  {
+    // concept "쿼리 = 응답": 쿼리 카드가 올라오고 연결선이 쿼리 줄에서 응답 줄로 차례로 뻗으며 짝이 되는 응답 줄이 밝아진다
+    const T = tl.end;
+    tl.tween("#shape-q", { opacity: [0, 1], x: [-16, 0] }, { at: T, dur: 0.5, ease: "out" });
+    const links = s.fx("path-drawing", {
+      svg: "#shape-links", links: [["#q1", "#r1"], ["#q2", "#r2"], ["#q3", "#r3"], ["#q4", "#r4"]],
+      reveal: false, head: "arrow", headSize: 6, gap: 5, curve: 0.35, stroke: "var(--eidos-cat-2)", width: 1.6,
+      dur: 0.45, each: 0.32, at: T + 0.5,
+    });
+    links.items.forEach((it, i) => tl.tween(`#r${i + 1}`, { opacity: [0.35, 1] }, { at: it.start + 0.25, dur: 0.3 }));
+    rise("#shape-note", links.end - 0.1);
+    tl.stop("쿼리의 모양이 곧 응답의 모양: 모양은 클라이언트가 정한다", { id: "mirror" });
+  }
+  {
+    // concept "엔드포인트 = 모양": REST 응답 카드 3장이 올라오고 안 쓰는 칩 위로 취소선, 카드마다 버림 배지가 튀어 오른다
+    const T = tl.end;
+    tl.tween("#shape .pair, #shape-links, #shape-note", { opacity: [1, 0.45] }, { at: T + 0.05, dur: 0.5 });
+    s.fx("stagger-reveal", { targets: "#shape .restcard", each: 0.18, dur: 0.45, at: T + 0.15 });
+    tl.stagger("#shape .restcard .fc:not(.use) .strike", { scaleX: [0, 1] }, { at: T + 0.7, each: 0.04, dur: 0.22, ease: "out" });
+    tl.stagger("#shape .restcard .fc:not(.use)", { opacity: [1, 0.45] }, { at: T + 0.7, each: 0.04, dur: 0.22 });
+    pop("#bd1", T + 1.05);
+    pop("#bd2", T + 1.2);
+    pop("#bd3", T + 1.35);
+    rise("#shape-note2", T + 1.4);
+    tl.stop("REST의 모양은 엔드포인트가 정한다, 그래서 버리는 줄이 생긴다", { id: "endpoint" });
+  }
+
+  // ================= 장면 3: what-if (컨트롤) =================
+  s.scene("whatif", { el: "#whatif", via: "wipe", with: { dir: "left", dur: 0.8 }, title: "what-if", reason: "나란한 다른 개념으로 교체: 모양 이야기에서 수치 이야기로" });
+  const fields = s.control("fields", { type: "range", min: 1, max: 8, step: 1, value: 4, label: "화면에 필요한 필드 수 (개)", when: "whatif" });
+  // 단순 모델 (storyboard "단순 모델" 표). 화면은 (t, params)의 순수 함수: 아래 renderLab 이 params 만 보고 다시 계산한다.
+  const FIELDS = [["post", 48], ["post", 220], ["user", 24], ["comments", 210], ["user", 52], ["comments", 66], ["post", 14], ["comments", 90]];
+  const RESOURCES = { post: 352, user: 180, comments: 420 };
+  const model = (n) => {
+    const used = FIELDS.slice(0, n);
+    const need = used.reduce((a, f) => a + f[1], 0);
+    const res = Object.keys(RESOURCES).filter((r) => used.some((f) => f[0] === r));
+    const rest = res.reduce((a, r) => a + RESOURCES[r], 0);
+    return { n, need, res, trips: res.length, rest, gql: 24 + need, waste: rest - need };
+  };
+  const labChips = $$("#lab-fields .fchip");
+  const bar = (id, f) => { $(id).style.transform = `scale(${r3(clamp01(f))}, 1)`; };
+  const num = (id, v, unit) => { $(id).textContent = `${Math.round(v)}${unit}`; };
+  const renderLab = (P, g) => {
+    const m = model(P.fields);
+    labChips.forEach((c, k) => {
+      c.style.opacity = k < m.n ? "1" : "0.5";
+      c.firstElementChild.style.opacity = k < m.n ? "1" : "0";
+    });
+    bar("#b-trips-rest", (g * m.trips) / 3); num("#v-trips-rest", g * m.trips, "회");
+    bar("#b-trips-gql", g / 3); num("#v-trips-gql", g, "회");
+    bar("#b-bytes-rest", (g * m.rest) / 952); num("#v-bytes-rest", g * m.rest, " B");
+    bar("#b-bytes-gql", (g * m.gql) / 952); num("#v-bytes-gql", g * m.gql, " B");
+    num("#v-need", g * m.need, ""); num("#v-waste", g * m.waste, "");
+    for (const r of Object.keys(RESOURCES)) {
+      const on = m.res.includes(r);
+      $(`#rung-${r}`).style.opacity = on ? "1" : "0.38";
+      $(`#need-${r}`).textContent = on ? `${RESOURCES[r]} B 전체를 받음` : "요청 안 함";
+    }
+  };
+  {
+    // concept "수치 모델": 막대가 0에서 현재 n의 값까지 자라고 숫자가 같이 굴러가며 필요한 리소스 칸이 켜진다
+    const T = tl.end;
+    tl.add((p) => renderLab(s.params, clamp01(p)), { at: T + 0.1, dur: 1.2, ease: "out" });
+    tl.stop("필드 수를 바꾸면 왕복과 바이트가 달라진다 (단순 모델)", { id: "model" });
+    // qa fixture: declared control (min/default/max) and a time inside the whatif scene where it is live.
+    window.__eidosFixture = { controls: { fields: [1, 4, 8] }, controlsAt: tl.end };
+  }
+  {
+    // concept "줄일 때": n이 4→1로 내려가며 GraphQL 막대는 필드마다, REST 막대는 리소스 단위 계단으로 준다
+    const T = tl.end;
+    fields.drive(4, 1, { at: T + 0.1, dur: 1.6, ease: "inOut" });
+    tl.stop("줄이면 GraphQL은 필드마다, REST는 리소스 단위 계단으로 준다", { id: "fewer" });
+  }
+  {
+    // concept "늘릴 때": n이 1→8로 올라가며 REST 왕복은 3에 닿아 멈추고 GraphQL 바이트만 계속 는다
+    const T = tl.end;
+    fields.drive(1, 8, { at: T + 0.1, dur: 2.0, ease: "inOut" });
+    tl.stop("늘리면 REST는 왕복 3번에 묶이고 GraphQL은 바이트만 는다", { id: "more" });
+  }
+
+  // ================= 장면 4: 대가 =================
+  s.scene("cost", { el: "#cost", via: "smash-cut", with: { slam: "그런데, 대가는?", dur: 1.1 }, title: "대가", reason: "대비·반전: GraphQL이 이기는 숫자 뒤에 대가를 붙인다" });
+  {
+    // concept "캐시": REST GET 점은 CDN에서 멈춰 HIT 배지를 띄우고 되돌아오고, GraphQL POST 점은 CDN을 지나 원본까지 갔다 온다
+    const T = tl.end;
+    travel("#c-rest-req", 76, 209, T + 0.1, 0.5);
+    pop("#c-hit", T + 0.6);
+    travel("#c-rest-res", 209, 76, T + 0.75, 0.5);
+    travel("#c-gql-req", 76, 404, T + 0.1, 1.0);
+    pop("#c-pass", T + 0.55);
+    travel("#c-gql-res", 404, 76, T + 1.25, 1.0);
+    rise("#cost-note1", T + 2.0);
+    tl.stop("대가 1 · GET URL은 CDN이 받지만 POST /graphql은 원본까지 간다", { id: "cache" });
+  }
+  {
+    // concept "복잡도": 비용 칩 3개가 차례로 올라오고 "서버의 복잡도" 위로 형광펜이 지나간다
+    const T = tl.end;
+    s.fx("stagger-reveal", { targets: "#cost .costs li", each: 0.18, dur: 0.45, at: T + 0.1 });
+    rise("#cost .thesis", T + 0.8);
+    s.fx("highlight-sweep", { targets: "#kw-complex", at: T + 1.25 });
+    tl.stop("대가 2 · 스키마, N+1, 쿼리 비용 제한이 서버 몫이 된다", { id: "complexity" });
+  }
+
+  // ================= 장면 5: 결론 =================
+  s.scene("verdict", { el: "#verdict", via: "dip-to-color", with: { title: "결론", color: "fg", dur: 1.8 }, title: "결론", reason: "장이 바뀜: 비교를 끝내고 한 문장 결론으로" });
+  {
+    // concept "결론": 두 줄이 가림막 뒤에서 올라오고 GraphQL·REST 위로 형광펜, 보조 문장이 떠오른다
+    const T = tl.end;
+    s.fx("mask-reveal", { targets: "#verdict .verdict-line", each: 0.25, dur: 0.7, at: T + 0.1 });
+    s.fx("highlight-sweep", { targets: "#kw-gql, #kw-rest", each: 0.3, at: T + 1.0 });
+    rise("#verdict .verdict-sub", T + 1.7, 0.5);
+    tl.stop("화면이 다양하고 왕복이 비싸면 GraphQL, 캐시와 단순함이면 REST", { id: "verdict" });
+  }
+
   s.start();
 </script>
 </body>
