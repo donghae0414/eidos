@@ -1,32 +1,35 @@
-# 의도 → 기법 결정표
+# 의도 → 구조와 기법 결정표
 
 질문을 아래 의도 중 하나로 분류하고, 표의 조합에서 출발합니다. 조합은 출발점일 뿐이며, 내용에 맞게 빼거나 더해도 됩니다.
 
+각 행은 세 가지를 정합니다.
+
+- **구조**: structure.md의 `single-flow`, `layered-chapters`, `hub-and-spoke` 중 하나
+- **장면 안 기법**: 각 장면에서 개념을 움직여 보여 줄 `kind: technique` 기법
+- **경계 관계**: 장면 사이에 흔히 나오는 관계. 실제 `via` 값은 transitions.md 표 A에서 관계로 고릅니다.
+
 ## 의도별 기본 조합
 
-| 의도 | 질문 예 | 기본 조합 (장면 순서) |
-|---|---|---|
-| **흐름** (A가 B에게 무엇을 보내고…) | "OAuth 흐름이 어떻게 돼?", "요청이 서버까지 어떻게 가?" | establishing-shot → sequence-message 또는 tracking → freeze-frame(핵심 순간) |
-| **비교** (A vs B) | "REST랑 GraphQL 차이?", "동기 vs 비동기" | split-screen → rack-focus(차이 지점) → count-up 또는 highlight-sweep(결론) |
-| **구조** (무엇으로 이루어져 있나) | "MSA 구조 설명해줘", "이 레포 구성은?" | establishing-shot → zoom-in(구성 요소별) → graph-build(관계) |
-| **상태 변화** (어떤 상태들을 거치나) | "주문 상태가 어떻게 바뀌어?", "TCP 연결 과정" | state-transition → freeze-frame(예외 분기) |
-| **전후 변화** (무엇이 바뀌었나) | "이 리팩터링이 뭘 바꿨어?", "N+1 고친 거 설명해줘" | code-diff → match-cut(구조 전후) → count-up(효과 수치) |
-| **수치·추세** | "성능이 얼마나 좋아졌어?", "장애 추이" | chart-grow → chart-annotate → count-up |
-| **절차·목록** | "배포 절차", "브랜치 전략" | stagger-reveal(disclose) → path-drawing(단계 연결) |
-| **핵심 주장** | "결론만 말해줘", 장면의 마지막 요약 | mask-reveal → highlight-sweep |
-| **긴 공간 훑기** | "파이프라인 전체", "타임라인" | pan(가로) 또는 pan axis:y(세로) → zoom-in |
+| 의도 | 질문 예 | 구조 | 장면 안 기법 | 경계 관계 (→ via) |
+|---|---|---|---|---|
+| **흐름** (A가 B에게 무엇을 보내고…) | "OAuth 흐름이 어떻게 돼?", "요청이 서버까지 어떻게 가?" | single-flow | establishing-shot, sequence-message 또는 tracking, freeze-frame(핵심 순간) | 한 부분 안으로(camera), 같은 그림의 나중 상태(jump-cut) |
+| **비교** (A vs B) | "REST랑 GraphQL 차이?", "동기 vs 비동기" | single-flow | split-screen, rack-focus(차이 지점), count-up 또는 highlight-sweep(결론) | 대비(smash-cut), 나란한 개념(wipe) |
+| **구조** (무엇으로 이루어져 있나) | "MSA 구조 설명해줘", "이 레포 구성은?" | hub-and-spoke | establishing-shot, graph-build(관계), exploded-view | 부분 안으로, 맥락으로 복귀(camera) |
+| **여러 개념 묶음 / 시스템 동역학** | "vLLM은 왜 빨라?", "쿠버네티스 스케줄링이 어떻게 맞물려?" | hub-and-spoke | 허브: graph-build. 갈래: 개념마다 움직임 하나(state-transition, path-drawing, chart-morph 등) | 부분 안으로, 맥락으로 복귀(camera), 마무리는 장 전환(dip-to-color) |
+| **trade-off / what-if** | "배치를 키우면 지연은?", "캐시를 두 배로 하면?" | single-flow, 또는 layered-chapters | 컨트롤(controls.md) + chart-grow 또는 chart-morph, count-up | 같은 그림의 나중 상태(jump-cut), 데이터 재묶음(pixel-dissolve) |
+| **상태 변화** (어떤 상태들을 거치나) | "주문 상태가 어떻게 바뀌어?", "TCP 연결 과정" | single-flow | state-transition, freeze-frame(예외 분기), shape-morph(같은 대상의 모양 변화) | 같은 그림의 나중 상태(jump-cut) |
+| **전후 변화** (무엇이 바뀌었나) | "이 리팩터링이 뭘 바꿨어?", "N+1 고친 거 설명해줘" | single-flow | code-diff, count-up(효과 수치) | 모양 대응(match-cut), 반전(smash-cut) |
+| **수치·추세** | "성능이 얼마나 좋아졌어?", "장애 추이" | single-flow | chart-grow, chart-annotate, count-up, bar-race | 데이터 재묶음(pixel-dissolve), 시간 흐름(cross-dissolve) |
+| **절차·목록** | "배포 절차", "브랜치 전략" | single-flow 또는 layered-chapters | step-panel, stagger-reveal(disclose), path-drawing(단계 연결) | 장 전환(dip-to-color), 나란한 단계(wipe) |
+| **핵심 주장** | "결론만 말해줘", 장면의 마지막 요약 | 마지막 장면 | mask-reveal, kinetic-type, highlight-sweep | 장 전환(dip-to-color) |
+| **긴 공간 훑기** | "파이프라인 전체", "타임라인" | single-flow | pan(가로) 또는 pan axis:y(세로), zoom-in, crane-up | 부분 안으로(camera) |
 
-## 장면 사이 전환
-
-| 상황 | 기법 |
-|---|---|
-| 기본 장면 전환, 시간 경과 | cross-dissolve |
-| 같은 대상의 전/후, 비유 연결 | match-cut |
-| 같은 공간 안의 다른 위치 | camera (zoom-in `back()`, pan, tracking) |
+장면 사이 전환 표는 transitions.md로 옮겼습니다. `via` 값은 그 문서의 표 A에서만 고릅니다.
 
 ## 고르는 기준
 
-1. **공간 관계가 있으면 카메라, 없으면 컷.** 같은 지도 안의 다른 위치는 카메라로 이동하고, 다른 주제로 넘어갈 때는 cross-dissolve로 자릅니다.
-2. **설명의 중심은 explainer 기법.** 카메라와 컷은 그것을 보여주는 방법입니다. 화려한 전환보다 sequence-message, state-transition, graph-build가 이해에 더 기여합니다.
-3. **한 질문에 기법 2~4개.** 그보다 많으면 산만해집니다.
-4. **마지막 stop은 요약.** mask-reveal이나 highlight-sweep으로 한 문장 결론을 남깁니다.
+1. **구조 먼저, 기법은 그다음.** 의도에서 구조를 정하고, 스토리보드 concept 표를 채운 뒤 기법을 고릅니다.
+2. **설명의 중심은 장면 안 기법입니다.** 전환과 카메라는 그것을 보여 주는 방법입니다. 화려한 전환보다 sequence-message, state-transition, graph-build가 이해에 더 기여합니다.
+3. **장면 하나에 기법 2~5개를 권합니다.** 상한은 아니지만, 넘길 때는 각 기법이 스토리보드의 어떤 개념을 맡는지 말할 수 있어야 합니다.
+4. **값이 있는 관계면 컨트롤을 검토합니다.** trade-off와 what-if는 독자가 직접 값을 움직일 때 가장 잘 이해됩니다.
+5. **마지막 stop은 요약.** mask-reveal이나 highlight-sweep으로 한 문장 결론을 남깁니다.

@@ -8,6 +8,8 @@
 4. **읽을 시간을 줍니다.** 글자가 나오는 동작은 0.4~0.8초, 카메라 이동은 1~1.6초가 기본입니다. stop에서 멈추므로 별도 홀드는 필요 없습니다.
 5. **이징은 토큰을 씁니다.** 카메라는 `camera`, 등장은 `out`, 퇴장은 `in`, 팝은 `pop`입니다.
 6. **색은 권장 토큰에서 출발합니다.** 범주색 `--eidos-cat-1~5`, 의미색 `--eidos-success/danger/warning`을 씁니다. 더 필요하면 같은 톤 안에서 늘립니다(docs/design-tokens.md).
+7. **모든 stop에는 스토리보드로 추적할 수 있는 움직임이 있습니다.** 그 stop에 도착할 때 움직이는 것이 스토리보드 concept 표의 어느 행인지 말할 수 있어야 합니다. 캡션만 바뀌는 stop은 고칩니다.
+8. **stop에 멈추면 아무것도 움직이지 않습니다.** 반복 펄스, 깜빡임, 흔들리는 카메라 같은 ambient 모션은 쓰지 않습니다. 움직임은 stop 사이에서만 일어납니다.
 
 ## 레이아웃
 
@@ -23,6 +25,7 @@
 - DOM은 `s.start()` 전에 만듭니다.
 - 연결선 좌표처럼 레이아웃에 의존하는 값은 `s.onLayout(fn)`에서 계산합니다.
 - CSS `transition`과 `animation`은 움직이는 요소에 쓰지 않습니다.
+- 컨트롤이 있으면 화면은 `t`와 params의 순수 함수입니다. `s.onParams`에서는 params만 보고 다시 계산하고, 이전 값을 누적하거나 난수를 쓰지 않습니다(controls.md).
 
 ## reduced-motion
 
@@ -31,6 +34,10 @@
 
 ## 완성 전 체크리스트
 
+- [ ] `<최종파일>.storyboard.md`가 HTML보다 먼저 있고, structure 줄, concept 표, boundary 표, control 표(또는 `controls: none`)를 모두 갖췄다
+- [ ] boundary 표의 모든 `via`가 transitions.md 표 A에 있고, `reason`이 HTML의 `reason`과 같다
+- [ ] `bun scripts/qa.mjs <파일> --contact <dir>`로 만든 접촉 시트 이미지를 직접 봤다
+- [ ] 스토리보드 끝에 `## self-review` 표(`| stop | moves | explains | fix |`)가 있고, `moves`가 비거나 장식뿐인 stop이 없다
 - [ ] `node scripts/inline.mjs`로 묶은 파일에 외부 참조가 없다
 - [ ] `bun scripts/qa.mjs <파일>`이 PASS, DETERMINISM 1/1, REDUCED 1/1
 - [ ] 첫 stop만 보고도 무엇에 대한 설명인지 안다
