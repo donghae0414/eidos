@@ -6,18 +6,28 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  const easeOf = (e) => (typeof e === "function" ? e : E.ease[e] || fail(`dip-to-color: unknown ease ${JSON.stringify(e)}`));
+  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
+  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
+  const FRAME = 1 / 60;
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`dip-to-color: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return Math.max(v, FRAME);
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`dip-to-color: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
 
   E.fx["dip-to-color"] = (stage, o = {}) => {
     const { tl, world } = stage;
     const { r3, clamp01 } = E.util;
     const color = o.color ?? "fg";
-    if (!/^[a-z0-9-]+$/.test(String(color)) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${color}`).trim()) {
+    if (typeof color !== "string" || !/^[a-z0-9-]+$/.test(color) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${color}`).trim()) {
       fail(`dip-to-color: color must name an --eidos-* token such as "fg", "accent" or "cat-4" (got ${JSON.stringify(o.color)})`);
     }
     if (o.title != null && (typeof o.title !== "string" || !o.title.trim())) fail(`dip-to-color: title must be a non-empty string (got ${JSON.stringify(o.title)})`);
-    const dur = o.dur ?? (o.title ? 2 : 1.2);
-    if (!Number.isFinite(dur) || dur < 0) fail(`dip-to-color: dur must be a finite number >= 0 (got ${JSON.stringify(o.dur)})`);
+    const dur = durOf(o.dur ?? (o.title ? 2 : 1.2));
     const hold = o.hold ?? (o.title ? 0.4 : 0.15);
     if (!Number.isFinite(hold) || hold < 0 || hold >= 1) fail(`dip-to-color: hold must be a fraction in [0, 1) (got ${JSON.stringify(o.hold)})`);
     const ease = easeOf(o.ease ?? "inOut");
@@ -38,7 +48,7 @@
       title = document.createElement("div");
       title.textContent = o.title;
       Object.assign(title.style, {
-        color: `var(--eidos-${ON[color] ?? "accent-fg"})`, fontWeight: "700", fontSize: "clamp(28px, 5.2vw, 64px)",
+        color: `var(--eidos-${Object.hasOwn(ON, color) ? ON[color] : "accent-fg"})`, fontWeight: "700", fontSize: "clamp(28px, 5.2vw, 64px)",
         lineHeight: "1.2", textAlign: "center", wordBreak: "keep-all", letterSpacing: "-0.01em",
       });
       veil.append(title);

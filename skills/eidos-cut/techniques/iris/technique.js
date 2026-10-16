@@ -5,9 +5,20 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  const easeOf = (e) => (typeof e === "function" ? e : E.ease[e] || fail(`iris: unknown ease ${JSON.stringify(e)}`));
+  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
+  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
+  const FRAME = 1 / 60;
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`iris: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return Math.max(v, FRAME);
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`iris: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
   const token = (name) => {
-    if (!/^[a-z0-9-]+$/.test(String(name)) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${name}`).trim()) {
+    if (typeof name !== "string" || !/^[a-z0-9-]+$/.test(name) || !getComputedStyle(document.documentElement).getPropertyValue(`--eidos-${name}`).trim()) {
       fail(`iris: color must name an --eidos-* token such as "accent" or "fg" (got ${JSON.stringify(name)})`);
     }
     return `var(--eidos-${name})`;
@@ -18,9 +29,8 @@
     const { tl, world } = stage;
     const { r3, clamp01 } = E.util;
     const mode = o.mode ?? "reveal";
-    if (!MODES.includes(mode)) fail(`iris: mode must be one of ${MODES.join(", ")} (got ${JSON.stringify(o.mode)})`);
-    const dur = o.dur ?? (mode === "cover" ? 1.2 : 0.9);
-    if (!Number.isFinite(dur) || dur < 0) fail(`iris: dur must be a finite number >= 0 (got ${JSON.stringify(o.dur)})`);
+    if (typeof mode !== "string" || !MODES.includes(mode)) fail(`iris: mode must be one of ${MODES.join(", ")} (got ${JSON.stringify(o.mode)})`);
+    const dur = durOf(o.dur ?? (mode === "cover" ? 1.2 : 0.9));
     const ease = easeOf(o.ease ?? "pop");
     const originEl = o.origin == null ? null : E.$all(o.origin, world)[0] || fail(`iris: no element for origin ${JSON.stringify(o.origin)}`);
     const color = mode === "cover" ? token(o.color ?? "accent") : null;

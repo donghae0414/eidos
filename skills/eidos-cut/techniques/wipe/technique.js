@@ -9,16 +9,26 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  const easeOf = (e) => (typeof e === "function" ? e : E.ease[e] || fail(`wipe: unknown ease ${JSON.stringify(e)}`));
+  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
+  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
+  const FRAME = 1 / 60;
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`wipe: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return Math.max(v, FRAME);
+  };
+  // Own keys only: inherited names such as "constructor" must not pass as an ease.
+  const easeOf = (e) =>
+    typeof e === "function" ? e
+      : typeof e === "string" && Object.hasOwn(E.ease, e) ? E.ease[e]
+        : fail(`wipe: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
 
   E.fx["wipe"] = (stage, o = {}) => {
     const { tl } = stage;
     const { r3, lerp } = E.util;
     const dir = o.dir ?? "left";
-    if (!DIRS.includes(dir)) fail(`wipe: dir must be one of ${DIRS.join(", ")} (got ${JSON.stringify(o.dir)})`);
-    const dur = o.dur ?? 0.7;
-    if (!Number.isFinite(dur) || dur < 0) fail(`wipe: dur must be a finite number >= 0 (got ${JSON.stringify(o.dur)})`);
-    const soft = o.soft === true ? 48 : o.soft == null || o.soft === false ? 0 : Number(o.soft);
+    if (typeof dir !== "string" || !DIRS.includes(dir)) fail(`wipe: dir must be one of ${DIRS.join(", ")} (got ${JSON.stringify(o.dir)})`);
+    const dur = durOf(o.dur ?? 0.7);
+    const soft = o.soft === true ? 48 : o.soft == null || o.soft === false ? 0 : typeof o.soft === "number" ? o.soft : NaN;
     if (!Number.isFinite(soft) || soft < 0) fail(`wipe: soft must be true, false or px >= 0 (got ${JSON.stringify(o.soft)})`);
     const ease = easeOf(o.ease ?? "inOut");
     const start = tl.resolveAt(o.at);

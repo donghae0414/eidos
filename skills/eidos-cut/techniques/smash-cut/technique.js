@@ -5,7 +5,14 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  const layer = (stage, cls, css) => {
+  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
+  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
+  const FRAME = 1 / 60;
+  const durOf = (v) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`smash-cut: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
+    return Math.max(v, FRAME);
+  };
+  const layer = (cls, css) => {
     const el = document.createElement("div");
     el.className = cls;
     el.setAttribute("aria-hidden", "true");
@@ -17,23 +24,24 @@
     const { tl, world } = stage;
     const { r3, clamp01, lerp } = E.util;
     const flash = o.flash ?? "invert";
-    if (!FLASHES.includes(flash)) fail(`smash-cut: flash must be "invert", "contrast" or false (got ${JSON.stringify(o.flash)})`);
+    if (!FLASHES.some((f) => f === flash)) fail(`smash-cut: flash must be "invert", "contrast" or false (got ${JSON.stringify(o.flash)})`);
     if (o.slam != null && (typeof o.slam !== "string" || !o.slam.trim())) fail(`smash-cut: slam must be a non-empty string (got ${JSON.stringify(o.slam)})`);
     const slam = E.reduced ? null : o.slam ?? null;
     const lit = !E.reduced && flash !== false;
-    // The scene swap is a 0 s cut at start; dur is how long the flash or slam card lasts after it.
-    const dur = !lit && !slam ? 0 : o.dur ?? (slam ? 1.1 : 0.45);
-    if (!Number.isFinite(dur) || dur < 0) fail(`smash-cut: dur must be a finite number >= 0 (got ${JSON.stringify(o.dur)})`);
+    // The swap happens on the first frame after start; dur is how long the flash or slam card lasts,
+    // or a single frame for a pure cut.
+    const want = durOf(o.dur ?? (slam ? 1.1 : 0.45));
+    const dur = !lit && !slam ? FRAME : want;
     const start = tl.resolveAt(o.at);
     const at = { at: start, dur, ease: "linear" };
-    const cut = (p) => p > 0; // a 0 s track reads p=1 once started, p=0 before
+    const cut = (p) => p > 0;
     if (o.from) tl.tween(o.from, { opacity: (p) => (cut(p) ? 0 : 1) }, at);
     if (o.to) tl.tween(o.to, { opacity: (p) => (cut(p) ? 1 : 0) }, at);
     const on = (p) => p > 0 && p < 1;
 
     if (slam) {
       // Slam card: full-bleed inverted panel with one huge line, then it drops away to the new scene.
-      const card = layer(stage, "eidos-fx-smash-cut-slam", {
+      const card = layer("eidos-fx-smash-cut-slam", {
         display: "grid", placeItems: "center", padding: "6vw", background: "var(--eidos-fg)",
       });
       const word = document.createElement("div");
@@ -54,7 +62,7 @@
       tl.tween(word, { scale: (p) => (on(p) ? lerp(1.18, 1, E.ease.out(clamp01(p / 0.25))) : 1) }, at);
     } else if (lit && flash === "invert") {
       // Invert flash: white with difference blending flips every colour, then decays.
-      const inv = layer(stage, "eidos-fx-smash-cut-flash", { background: "#fff", mixBlendMode: "difference" });
+      const inv = layer("eidos-fx-smash-cut-flash", { background: "#fff", mixBlendMode: "difference" });
       world.after(inv);
       tl.tween(inv, {
         style: (p) => (on(p) ? { visibility: "visible", opacity: String(r3(p < 0.35 ? 1 : 1 - E.ease.out((p - 0.35) / 0.65))) } : { visibility: "hidden", opacity: "0" }),
