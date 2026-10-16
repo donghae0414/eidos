@@ -53,21 +53,25 @@
       // Always write explicit values: removing a property and re-adding it later reorders the
       // style attribute, which would make snapshot() depend on the seek path.
       const mask = (v) => ({ maskImage: v, webkitMaskImage: v });
-      const toStyle = (e) => {
-        if (e >= 1) return { clipPath: "none", ...mask("none") };
+      // Endpoints are decided on the runtime-snapped progress p (exactly 0 or 1 at the ends), the same value
+      // that drives opacity, so visibility and clipping always agree; ease only shapes the moving edge.
+      const toStyle = (p) => {
+        const e = ease(p);
+        if (p >= 1) return { clipPath: "none", ...mask("none") };
         // Fully hidden: a closed clip, not a transparent mask (WebKit can skip painting the first frame).
-        if (e <= 0 || !soft) return { clipPath: inset(side, 1 - e), ...mask("none") };
+        if (p <= 0 || !soft) return { clipPath: inset(side, 1 - e), ...mask("none") };
         const [a, b] = band(e);
         return { clipPath: "none", ...mask(`linear-gradient(to ${toward}, transparent ${a}, #000 ${b})`) };
       };
-      const fromStyle = (e) => {
-        if (e <= 0 || e >= 1) return { clipPath: "none", ...mask("none") };
+      const fromStyle = (p) => {
+        const e = ease(p);
+        if (p <= 0 || p >= 1) return { clipPath: "none", ...mask("none") };
         if (!soft) return { clipPath: inset((side + 2) % 4, e), ...mask("none") };
         const [a, b] = band(e);
         return { clipPath: "none", ...mask(`linear-gradient(to ${toward}, #000 ${a}, transparent ${b})`) };
       };
-      if (o.from) tl.tween(o.from, { opacity: (p) => (p < 1 ? 1 : 0), style: (p) => fromStyle(ease(p)) }, at);
-      if (o.to) tl.tween(o.to, { opacity: (p) => (p > 0 ? 1 : 0), style: (p) => toStyle(ease(p)) }, at);
+      if (o.from) tl.tween(o.from, { opacity: (p) => (p < 1 ? 1 : 0), style: fromStyle }, at);
+      if (o.to) tl.tween(o.to, { opacity: (p) => (p > 0 ? 1 : 0), style: toStyle }, at);
     }
     // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
     // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees

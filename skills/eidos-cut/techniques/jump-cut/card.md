@@ -40,7 +40,7 @@ s.scene("merged", { el: "#c", via: "jump-cut", with: { flash: false } });
 |---|---|---|
 | `from` / `to` | 런타임이 채움 | 나가는 상태 / 들어오는 상태 |
 | `flash` | `true` | 교체 순간 화면 전체를 `--eidos-fg` 색으로 아주 잠깐 어둡게. `true`/`false` 밖의 값은 오류 |
-| `dur` | `0.08` | 깜빡임 길이(초). `flash: false`면 0 (반환값 `end === start`) |
+| `dur` | `0.08` | 깜빡임 길이(초). `flash: false`이거나 reduced-motion이면 기본값 0 (반환값 `end === start`). 직접 준 값은 항상 그대로 씁니다(`end = start + dur`) |
 | `strength` | `0.22` | 깜빡임 최대 불투명도(0~1) |
 | `at` | 타임라인 끝 | 교체 시점 |
 

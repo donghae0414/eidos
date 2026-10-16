@@ -26,8 +26,8 @@
     const slam = E.reduced ? null : o.slam ?? null;
     const lit = !E.reduced && flash !== false;
     // The swap happens right after start; dur is how long the flash or slam card lasts, 0 for a pure cut.
-    const want = durOf(o.dur ?? (slam ? 1.1 : 0.45));
-    const dur = !lit && !slam ? 0 : want;
+    // An explicit dur is always honoured (end = start + dur); a pure cut defaults to 0.
+    const dur = durOf(o.dur ?? (slam ? 1.1 : lit ? 0.45 : 0));
     const start = tl.resolveAt(o.at);
     const at = { at: start, dur, ease: "linear" };
     const first = tl.tracks.length;

@@ -18,8 +18,8 @@
     if (typeof peak !== "number" || !(peak >= 0 && peak <= 1)) fail(`jump-cut: strength must be a number in [0, 1] (got ${JSON.stringify(o.strength)})`);
     // The swap happens right after start (exactly at start the previous state stays); dur is the flash length, 0 without it.
     const lit = flash && !E.reduced;
-    const flashDur = durOf(o.dur ?? 0.08);
-    const dur = lit ? flashDur : 0;
+    // An explicit dur is always honoured (end = start + dur); without a flash it defaults to 0.
+    const dur = durOf(o.dur ?? (lit ? 0.08 : 0));
     const start = tl.resolveAt(o.at);
     const at = { at: start, dur, ease: "linear" };
     const first = tl.tracks.length;
