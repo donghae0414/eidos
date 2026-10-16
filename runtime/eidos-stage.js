@@ -3,8 +3,7 @@
   E.version = "0.1.0";
   E.fx = E.fx || {};
 
-  const gesturePageHeight = innerHeight;
-  E.gesture = (state, { dx, dy, mode, t, kind }) => {
+  E.gesture = (state, { dx, dy, mode, t, kind, viewportH = innerHeight }) => {
     if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(t)) return { state, action: null };
     if (kind === "swipe") {
       let action = null;
@@ -13,7 +12,7 @@
       return { state, action };
     }
     if (kind !== "wheel" || ![0, 1, 2].includes(mode)) return { state, action: null };
-    const factor = mode === 1 ? 16 : mode === 2 ? gesturePageHeight : 1;
+    const factor = mode === 1 ? 16 : mode === 2 ? viewportH : 1;
     const delta = (Math.abs(dy) >= Math.abs(dx) ? dy : dx) * factor;
     const fresh = !state || t - state.t >= 160 || t < state.t;
     const next = { t, total: (fresh ? 0 : state.total) + delta, fired: fresh ? false : state.fired };
@@ -908,11 +907,9 @@
         if (!wheelState || e.timeStamp - wheelState.t >= 160 || e.timeStamp < wheelState.t) {
           wheelOwner = ownsGesture(e.target, e.deltaX, e.deltaY);
         }
-        // Page units use the current viewport, including after a resize.
-        const page = e.deltaMode === 2;
         const result = E.gesture(wheelState, {
-          dx: e.deltaX * (page ? innerHeight : 1), dy: e.deltaY * (page ? innerHeight : 1),
-          mode: page ? 0 : e.deltaMode, t: e.timeStamp, kind: "wheel",
+          dx: e.deltaX, dy: e.deltaY, mode: e.deltaMode,
+          t: e.timeStamp, kind: "wheel", viewportH: innerHeight,
         });
         wheelState = result.state;
         if (!wheelOwner) return;
