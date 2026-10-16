@@ -632,13 +632,33 @@
       if (!namedScenes.has(id)) namedScenes.set(id, record);
       currentScene = record;
       tl.scene = id;
+      let from = previous?.el, to = o.el;
+      const fromEl = $all(from, world)[0], toEl = $all(to, world)[0];
+      const nestedIn = fromEl !== toEl && fromEl?.contains(toEl);
+      const nestedOut = fromEl !== toEl && toEl?.contains(fromEl);
+      if (nestedIn || nestedOut) {
+        const outer = nestedIn ? fromEl : toEl, inner = nestedIn ? toEl : fromEl;
+        const siblings = [];
+        for (let node = inner; node !== outer; node = node.parentElement) {
+          siblings.push(...[...node.parentElement.children].filter((sibling) => sibling !== node));
+        }
+        // Shared ancestors and the selected branch stay visible in both directions.
+        from = nestedIn ? siblings : null;
+        to = nestedOut ? siblings : null;
+      }
+      const trackStart = tl.tracks.length;
       if (o.via === "camera") camera.to(target, { ...o.with, at });
       else if (o.via === "cut") {
-        if (previous) tl.tween(previous.el, { opacity: [1, 0] }, { at, dur: 0 });
-        tl.tween(o.el, { opacity: [0, 1] }, { at, dur: 0 });
+        if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
+        if (to) tl.tween(to, { opacity: [0, 1] }, { at, dur: 0 });
       } else if (previous) {
-        const transition = E.fx[o.via](api, { ...o.with, from: previous.el, to: o.el, at });
+        const transition = E.fx[o.via](api, { ...o.with, from, to, at });
         tl.extend(transition.end);
+      }
+      // Even zero-duration entry effects preserve the hub at the exact boundary.
+      if (nestedIn) for (const track of tl.tracks.slice(trackStart)) {
+        const fn = track.fn;
+        track.fn = (p) => fn(tl.t <= at ? 0 : p);
       }
       return record;
     }
