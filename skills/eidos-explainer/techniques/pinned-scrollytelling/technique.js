@@ -22,6 +22,8 @@
   };
 
   E.fx["pinned-scrollytelling"] = (stage, o = {}) => {
+    const allowed = { el: 1, column: 1, figure: 1, steps: 1, line: 1, dim: 1, color: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`pinned-scrollytelling: unknown option ${String(key)}`);
     const { tl } = stage;
     const root = E.$all(o.el, stage.world)[0];
     const column = root && E.$all(o.column ?? "[data-scrolly-column]", root)[0];

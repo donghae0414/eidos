@@ -27,6 +27,8 @@
   const SUB = 8;
 
   E.fx["bar-race"] = (stage, o = {}) => {
+    const allowed = { el: 1, items: 1, rows: 1, top: 1, domain: 1, unit: 1, format: 1, mono: 1, total: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`bar-race: unknown option ${String(key)}`);
     const { tl } = stage;
     const timing = (r) => {
       if (r.at != null && !(typeof r.at === "number" && Number.isFinite(r.at) && r.at >= 0) &&

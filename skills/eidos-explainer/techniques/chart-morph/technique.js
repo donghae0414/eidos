@@ -30,6 +30,8 @@
   const LAYOUTS = ["bars", "strip", "waffle"];
 
   E.fx["chart-morph"] = (stage, o = {}) => {
+    const allowed = { el: 1, items: 1, layout: 1, cells: 1, unit: 1, max: 1, ticks: 1, at: 1, dur: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`chart-morph: unknown option ${String(key)}`);
     const { tl } = stage;
     const timing = (r) => {
       if (r.at != null && !(typeof r.at === "number" && Number.isFinite(r.at) && r.at >= 0) &&

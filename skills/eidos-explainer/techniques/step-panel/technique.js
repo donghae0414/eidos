@@ -15,6 +15,8 @@
   const px = (v) => `${r3(v)}px`;
 
   E.fx["step-panel"] = (stage, o = {}) => {
+    const allowed = { el: 1, steps: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`step-panel: unknown option ${String(key)}`);
     const { tl } = stage;
     const timing = (r) => {
       if (r.at != null && !(typeof r.at === "number" && Number.isFinite(r.at) && r.at >= 0) &&
