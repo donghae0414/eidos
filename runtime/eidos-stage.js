@@ -400,7 +400,7 @@
         activeSpoke = null;
         openScene(spoke.hub.id, {
           el: spoke.hub.el, title: spoke.hub.title, via, with: o.with ?? spoke.with,
-        }, null, via === "camera" ? (c) => c.stateAt(tl.sourceTime(spoke.hubStop.t)) : undefined);
+        }, null, via === "camera" ? (c) => c.stateAt(tl.sourceTime(spoke.hubStop.t)) : undefined, true);
         tl.stop(o.label ?? spoke.hubStop.label, { id: `ret-${spoke.id}` });
         spoke.returnStop = tl.stops[tl.stops.length - 1];
         return api;
@@ -648,7 +648,7 @@
       if (!$all(o.el, world).length) sceneError(`Scene ${id} needs an el`);
       if (currentScene || o.via != null) checkVia(o.via);
     }
-    function openScene(id, o, parent = null, target = o.el) {
+    function openScene(id, o, parent = null, target = o.el, returning = false) {
       const at = tl.end;
       const previous = currentScene;
       if (previous) previous.t1 = at;
@@ -676,7 +676,7 @@
         camera.to(target, { ...o.with, at });
         // Preserve the previous stop at a zero-duration boundary, including spoke entries.
         const entry = camera.kfs[camera.kfs.length - 1];
-        if (parent != null || (previous && entry.dur === 0)) entry.after = true;
+        if (!returning && (parent != null || (previous && entry.dur === 0))) entry.after = true;
       }
       else if (o.via === "cut") {
         if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
@@ -685,8 +685,8 @@
         const transition = E.fx[o.via](api, { ...o.with, from, to, at });
         tl.extend(transition.end);
       }
-      // Entry effects preserve the previous scene at the exact zero-duration boundary.
-      if (nestedIn || (previous && o.via === "cut")) for (const track of tl.tracks.slice(trackStart)) {
+      // Entries preserve the previous stop; returns restore the hub at their own stop.
+      if (!returning && (nestedIn || (previous && o.via === "cut"))) for (const track of tl.tracks.slice(trackStart)) {
         const fn = track.fn;
         track.fn = (p) => fn(tl.t <= at ? 0 : p);
       }

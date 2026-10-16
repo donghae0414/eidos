@@ -158,6 +158,56 @@ async function needIdx(c) {
 }
 
 const FEATURES = {
+  hubReturn: {
+    api: `return ["scene", "spoke", "back", "enter", "exit"].filter((k) => typeof A[k] !== "function");`,
+    steps: [1280, 390].flatMap((width) => [1, 4].flatMap((depth) => [1, 2].flatMap((count) =>
+      ["cut", "cross-dissolve", "camera"].flatMap((via) => [0.4, 0].flatMap((dur) =>
+        ["full", "reduce"].map((motion) => [
+          `${width} depth=${depth} spokes=${count} ${via} dur=${dur} ${motion}`,
+          async (c) => {
+            await c.view.resize(width, width === 390 ? 844 : 800);
+            const query = `clock=manual&autoplay=0&motion=${motion}&via=${via}&dur=${dur}&depth=${depth}&count=${count}`;
+            await c.open(`${query}&stop=1`);
+            const baseline = await ev(c.view, `return A.snapshot();`);
+            const result = await ev(c.view, `
+              const hub = ${JSON.stringify(baseline)}, bad = [];
+              const visible = (el) => {
+                const r = el.getBoundingClientRect(), v = A.el.getBoundingClientRect();
+                let opacity = 1;
+                for (let n = el; n; n = n.parentElement) {
+                  const cs = getComputedStyle(n);
+                  if (cs.display === "none" || cs.visibility === "hidden") return false;
+                  opacity *= Number(cs.opacity);
+                }
+                return opacity > 0 && r.width > 0 && r.height > 0 && r.right > v.left && r.left < v.right && r.bottom > v.top && r.top < v.bottom;
+              };
+              if (!visible($("#branch-A")) || (${count} === 2 && !visible($("#branch-B")))) bad.push("initial hub is not visible");
+              for (const id of ${JSON.stringify(["A", "B"].slice(0, count))}) {
+                const record = A.scenes.find((s) => s.id === id);
+                A.seek(record.t0);
+                if (A.snapshot() !== hub) bad.push(id + " entry boundary != hub.0");
+                A.jump(1); A.enter(id); A.advance(10000);
+                if (A.where().scene !== id || !visible($("#branch-" + id))) bad.push(id + " entry destination");
+                A.exit(); A.advance(10000);
+                if (A.snapshot() !== hub) bad.push(id + " return != hub.0");
+                if (location.hash !== "#hub.ret-" + id) bad.push(id + " return hash " + location.hash);
+                A.seek(record.t0);
+                if (A.snapshot() !== hub) bad.push(id + " backward boundary != hub.0");
+                A.jump(1); A.enter(id); A.advance(10000); A.exit(); A.advance(10000);
+                if (A.snapshot() !== hub) bad.push(id + " repeated return != hub.0");
+              }
+              return bad;
+            `);
+            for (const id of ["A", "B"].slice(0, count)) {
+              await c.open(query, `hub.ret-${id}`);
+              const bad = await ev(c.view, `return A.snapshot() !== ${JSON.stringify(baseline)} || A.where().scene !== "hub" || A.stops[A.index].id !== ${JSON.stringify(`ret-${id}`)};`);
+              if (bad) result.push(`${id} fresh #hub.ret-${id} != hub.0`);
+            }
+            await c.view.resize(1280, 800);
+            return result.join("; ");
+          },
+        ])))))),
+  },
   stopIdentity: {
     api: `return [typeof A.scene === "function" ? "" : "s.scene"].filter(Boolean);`,
     steps: ["cut", "camera"].flatMap((via) => ["full", "reduce"].map((motion) => [

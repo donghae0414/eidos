@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture - hub return boundaries</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  #hub { position: absolute; inset: 0; padding: 8px; }
+  .level { padding: 8px; border: 1px solid; }
+  .context { min-height: 20px; }
+  .branch { display: inline-block; width: 80px; height: 80px; padding: 8px; border: 2px solid; }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <section id="hub"><h1>Hub map</h1><div class="context">Hub context</div><div id="branches">
+    <article class="branch" id="branch-A">Branch A</article>
+    <article class="branch" id="branch-B">Branch B</article>
+  </div></section>
+</div></div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script src="../../skills/eidos-cut/techniques/cross-dissolve/technique.js"></script>
+<script>
+  window.__eidosFixture = { hubReturn: true };
+  const q = new URLSearchParams(location.search);
+  const via = q.get("via") || "cut", dur = Number(q.get("dur") || 0);
+  const depth = Number(q.get("depth") || 1), count = Number(q.get("count") || 2);
+  const branches = document.querySelector("#branches");
+  for (let i = 1; i < depth; i++) {
+    const level = document.createElement("div"), context = document.createElement("div");
+    level.className = "level";
+    context.className = "context";
+    context.textContent = `Context ${i}`;
+    branches.before(level);
+    level.append(context, branches);
+  }
+  if (count === 1) document.querySelector("#branch-B").remove();
+  const s = Eidos.stage(".eidos-stage", { intro: false }), { tl } = s;
+  s.scene("hub", { el: "#hub" });
+  tl.wait(0.2).stop("Hub");
+  tl.wait(0.1);
+  for (const id of ["A", "B"].slice(0, count)) {
+    s.spoke(id, { hub: "hub", from: `#branch-${id}`, via, with: { dur } });
+    tl.wait(0.4).stop(`${id}1`);
+    tl.wait(0.1);
+    s.back({ via, with: { dur } });
+  }
+  s.start();
+</script>
+</body>
+</html>
