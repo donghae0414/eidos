@@ -112,7 +112,7 @@
     constructor() {
       this.tracks = [];
       this.hooks = [];
-      this.stops = [{ t: 0, label: "" }];
+      this.stops = [{ t: 0, label: "", hold: 1.5, scene: null }];
       this.end = 0;
       this.t = 0;
       this.prevStart = 0;
@@ -153,10 +153,13 @@
       this.end += d;
       return this;
     }
-    stop(label = "") {
+    stop(label = "", o = {}) {
       const last = this.stops[this.stops.length - 1];
-      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) last.label = label || last.label;
-      else this.stops.push({ t: this.end, label });
+      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) {
+        last.label = label || last.label;
+        if (o.id != null) last.id = o.id;
+        last.hold = o.hold ?? Math.min(Math.max(0.9 + 0.055 * last.label.length, 1.5), 6);
+      } else this.stops.push({ t: this.end, label, id: o.id, hold: o.hold ?? Math.min(Math.max(0.9 + 0.055 * label.length, 1.5), 6), scene: null });
       return this;
     }
     onSeek(fn) {
@@ -272,9 +275,11 @@
     tl.onSeek((t) => camera.apply(t));
     const layoutFns = [];
     let hud = null, raf = 0, anim = null;
+    let ended = false;
 
     const api = {
       el, world, tl, camera, index: 0, started: false,
+      params: Object.freeze({}),
       get reduced() { return E.reduced; },
       get stops() { return tl.stops; },
       get end() { return tl.end; },
@@ -293,11 +298,12 @@
         world.style.transform = tf;
         tl.seek(tl.t);
       },
-      seek(t) { cancel(); tl.seek(t); api.index = stopIndexAt(tl.t); updateHud(); return api; },
+      seek(t) { cancel(); tl.seek(t); setIndex(stopIndexAt(tl.t)); updateHud(); return api; },
       jump(i) {
         cancel();
-        api.index = Math.min(Math.max(i, 0), tl.stops.length - 1);
-        tl.seek(tl.stops[api.index].t);
+        i = Math.min(Math.max(i, 0), tl.stops.length - 1);
+        tl.seek(tl.stops[i].t);
+        setIndex(i);
         updateHud();
         return api;
       },
@@ -312,7 +318,7 @@
         }
         cancel();
         const from = tl.t, to = tl.stops[i].t;
-        api.index = i;
+        setIndex(i);
         const ms = (Math.abs(to - from) * 1000) / (to < from ? 3 : 1);
         if (ms < 1) { tl.seek(to); updateHud(); return api; }
         const t0 = performance.now();
@@ -333,11 +339,18 @@
       },
       prev() { return api.goto(api.index - 1); },
       snapshot() {
-        const out = [];
+        const out = [JSON.stringify(api.params)];
+        const geometry = ["cx", "cy", "r", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points", "transform", "d"];
         for (const n of [world, ...world.querySelectorAll("*")]) {
           let txt = "";
           for (const c of n.childNodes) if (c.nodeType === 3) txt += c.nodeValue;
-          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}`);
+          const cls = [...n.classList].filter((c) => c !== "eidos-fade").join(" ");
+          const attrs = [...n.attributes]
+            .filter((a) => geometry.includes(a.name) || a.name.startsWith("data-eidos-"))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((a) => [a.name, a.value]);
+          const input = n instanceof HTMLInputElement ? { value: n.value, checked: n.checked } : null;
+          out.push(`${n.getAttribute("style") || ""}|${n.getAttribute("d") || ""}|${txt.trim()}|${JSON.stringify([cls, attrs, input])}`);
         }
         return out.join("\n");
       },
@@ -354,6 +367,7 @@
         else if (opts.autoplay !== false) api.goto(1);
         api.started = true;
         window.__eidos = api;
+        api.ready = document.fonts.ready.then(() => { api.layout(); });
         return api;
       },
     };
@@ -368,6 +382,12 @@
       tl.stops.forEach((s, i) => { if (s.t <= t + 1e-9) idx = i; });
       return idx;
     }
+    function setIndex(i) {
+      if (api.index === i) return;
+      api.index = i;
+      const { id, label, scene } = tl.stops[i];
+      dispatchEvent(new CustomEvent("eidos:stop", { detail: { index: i, id, label, scene } }));
+    }
     function buildHud() {
       hud = document.createElement("div");
       hud.className = "eidos-hud";
@@ -377,15 +397,22 @@
       updateHud();
     }
     function updateHud() {
+      const atEnd = api.index === tl.stops.length - 1 && tl.t >= tl.stops[api.index].t;
+      if (atEnd && !ended) {
+        ended = true;
+        dispatchEvent(new CustomEvent("eidos:ended", { detail: { index: api.index } }));
+      } else if (!atEnd) ended = false;
       if (!hud) return;
       hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
-      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  → 다음`;
+      hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  →/Space 다음 · ← 이전 · P 재생 · 스크롤`;
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
     }
     function bindControls() {
       addEventListener("keydown", (e) => {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target.closest("input, select, textarea, [contenteditable], [data-eidos-nokeys]")) return;
         const k = e.key;
+        if (e.target.closest("button") && (k === " " || k === "Enter")) return;
         if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
         else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) api.prev();
         else if (k === "Home") api.jump(0);
@@ -395,7 +422,7 @@
         e.preventDefault();
       });
       el.addEventListener("click", (e) => {
-        if (e.target.closest("a, button, input, select, textarea, [data-eidos-noclick]")) return;
+        if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });
     }

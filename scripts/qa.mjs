@@ -112,6 +112,10 @@ const FEATURES = {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const s = A.stops.find((s) => s.id === "one"); return s && s.hold === 2 ? "" : "tl.stop(label, {id, hold}) did not store id/hold (stops[1] = " + JSON.stringify(A.stops[1]) + ")";`);
       }],
+      ["default and merged stop holds", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const t = new E.Timeline(); t.wait(1).stop("x").wait(1).stop("x".repeat(40)).wait(1).stop("x".repeat(200)); if (t.stops.map((s) => s.hold).join() !== "1.5,1.5,3.1,6") return "default hold formula or bounds incorrect"; t.stop("merged", { id: "merged", hold: 0 }); return t.stops.length === 4 && t.stops[3].id === "merged" && t.stops[3].hold === 0 ? "" : "merged stop lost options or explicit zero hold";`);
+      }],
       ["focused range + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const r = $("#r"); r.focus(); const i = A.index; key(r, "ArrowRight"); return A.index === i ? "" : "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index;`);
@@ -123,6 +127,14 @@ const FEATURES = {
       ["Space/Enter left to button", async (c) => {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const b = $("#play"); b.focus(); key(b, " "); key(b, "Enter"); return A.index === 1 ? "" : "Space/Enter on a focused button navigated (index 1 -> " + A.index + ")";`);
+      }],
+      ["editable ancestors and opt-out keys", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const bad = []; for (const html of ['<input>', '<select><option>x</option></select>', '<textarea></textarea>', '<div contenteditable="false"><span>x</span></div>', '<div data-eidos-nokeys><span>x</span></div>']) { const host = document.createElement("div"); host.innerHTML = html; A.world.appendChild(host); const target = host.querySelector("span") || host.firstElementChild; for (const k of ["ArrowRight", "ArrowLeft", " ", "Enter", "Home", "End"]) { const untouched = key(target, k); if (A.index !== 1 || !untouched) bad.push(html + ":" + k); A.jump(1); } host.remove(); } return bad.join("; ");`);
+      }],
+      ["dock and HUD button key ownership", async (c) => {
+        await c.open("motion=reduce&hud=0&stop=1");
+        return ev(c.view, `for (const cls of ["eidos-dock", "eidos-hud"]) { const host = document.createElement("div"); host.className = cls; host.innerHTML = "<button><span>control</span></button>"; A.el.appendChild(host); const target = host.querySelector("span"); click(target); if (A.index !== 1) return cls + " click navigated"; if (!key(target, " ") || !key(target, "Enter") || A.index !== 1) return cls + " button activation intercepted"; key(target, "ArrowRight"); if (A.index !== 2) return cls + " button arrows blocked"; A.jump(1); host.remove(); } return "";`);
       }],
       ["label click", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -144,9 +156,25 @@ const FEATURES = {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const s0 = A.snapshot(); $("#dot").setAttribute("cx", "42"); return s0 !== A.snapshot() ? "" : "snapshot() ignores SVG geometry attributes (cx)";`);
       }],
+      ["snapshot geometry checked and class filtering", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const bad = [], dot = $("#dot"); for (const name of ["cx", "cy", "r", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points", "transform", "d"]) { const before = A.snapshot(); dot.setAttribute(name, "42"); if (A.snapshot() === before) bad.push(name); dot.removeAttribute(name); } const input = document.createElement("input"); input.type = "checkbox"; A.world.appendChild(input); const before = A.snapshot(); input.checked = true; if (A.snapshot() === before) bad.push("checked"); input.remove(); const base = A.snapshot(); A.world.classList.add("eidos-fade"); if (A.snapshot() !== base) bad.push("runtime class"); A.world.classList.remove("eidos-fade"); $("#box").classList.add("eidos-custom"); if (A.snapshot() === base) bad.push("authored eidos class"); if (A.snapshot().split("\\n")[0] !== JSON.stringify(A.params)) bad.push("params prefix"); return bad.join(", ");`);
+      }],
       ["eidos:stop event", async (c) => {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `let got = null; addEventListener("eidos:stop", (e) => (got = e.detail)); A.next(); await waitFor(() => got, 2000); return got && got.index === 2 ? "" : "no eidos:stop {index: 2} after next() (got " + JSON.stringify(got) + ")";`);
+      }],
+      ["stop details and ended arrival once", async (c) => {
+        await c.open("motion=reduce&hud=0&stop=0");
+        return ev(c.view, `const stops = [], ends = []; addEventListener("eidos:stop", (e) => stops.push(e.detail)); addEventListener("eidos:ended", (e) => ends.push(e.detail)); A.jump(1); A.jump(1); const one = stops[0]; if (stops.length !== 1 || one.index !== 1 || one.id !== "one" || one.label !== "하나" || one.scene !== null) return "incorrect stop detail or duplicate event: " + JSON.stringify(stops); A.goto(A.stops.length - 1); A.goto(A.stops.length - 1); A.seek(A.end); if (ends.length !== 1 || ends[0].index !== A.stops.length - 1) return "ended not emitted once at arrival: " + JSON.stringify(ends); A.jump(1); A.goto(A.stops.length - 1); return ends.length === 2 ? "" : "ended did not reset after leaving last stop";`);
+      }],
+      ["rapid goto emits every index change", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const stops = [], ends = []; addEventListener("eidos:stop", (e) => stops.push(e.detail.index)); addEventListener("eidos:ended", (e) => ends.push(e.detail)); A.goto(3); A.goto(2); const result = stops.join() === "3,2" && ends.length === 0 ? "" : "index changes lost or ended emitted before arrival: " + JSON.stringify({ stops, ends }); A.jump(1); return result;`);
+      }],
+      ["ready waits for fonts and first layout", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `await A.ready; return document.fonts.status === "loaded" && A.camera.W === A.el.clientWidth && A.camera.H === A.el.clientHeight && near(A.t, A.stops[1].t) ? "" : "ready resolved before fonts, layout, or URL state";`);
       }],
       ["reduced goto has no fade diff", async (c) => {
         await c.open("motion=reduce&hud=0&stop=0");
