@@ -158,6 +158,42 @@ async function needIdx(c) {
 }
 
 const FEATURES = {
+  stopIdentity: {
+    api: `return [typeof A.scene === "function" ? "" : "s.scene"].filter(Boolean);`,
+    steps: ["cut", "camera"].flatMap((via) => ["full", "reduce"].map((motion) => [
+      `${via} dur 0 ${motion} stop identity and boundary reseek`,
+      async (c) => {
+        await c.open(`clock=manual&autoplay=0&hud=0&motion=${motion}&via=${via}`);
+        return ev(c.view, `
+          const bad = [], roots = [...A.world.querySelectorAll("[data-scene]")];
+          const visible = () => {
+            const viewport = A.el.getBoundingClientRect();
+            return roots.filter((el) => {
+              const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+              return Number(cs.opacity) > 0 && cs.visibility !== "hidden" && cs.display !== "none" &&
+                r.right > viewport.left && r.left < viewport.right && r.bottom > viewport.top && r.top < viewport.bottom;
+            }).map((el) => el.dataset.scene).join();
+          };
+          const check = (want, label) => { const got = visible(); if (got !== want) bad.push(label + ": visible=" + got + " want=" + want); };
+          for (let i = 0; i < A.stops.length; i++) {
+            const stop = A.stops[i], want = stop.scene ?? "a";
+            A.seek(stop.t); check(want, "stop " + i + " t=" + stop.t);
+            const next = A.stops[i + 1];
+            if (next && next.scene !== want) {
+              const entry = A.scenes.find((s) => s.id === next.scene);
+              if (entry.t0 !== stop.t) bad.push("fixture boundary does not equal previous stop");
+              A.seek(stop.t + 1e-6); check(next.scene, "after stop " + i);
+              A.seek(stop.t); check(want, "reseek stop " + i);
+            }
+          }
+          for (const stop of [...A.stops].reverse()) {
+            A.seek(stop.t); check(stop.scene ?? "a", "backward t=" + stop.t);
+          }
+          return bad.join("; ");
+        `);
+      },
+    ])),
+  },
   focus: {
     api: `return [typeof A.ready?.then === "function" ? "" : "__eidos.ready (Promise)"].filter(Boolean);`,
     skipOnMissing: false,

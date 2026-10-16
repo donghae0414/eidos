@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture - zero-duration stop identity</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  [data-scene] { position: absolute; inset: 0; display: grid; place-items: center; }
+</style>
+</head>
+<body>
+<div class="eidos-stage"><div class="eidos-world">
+  <section id="a" data-scene="a"><h1>Scene A</h1></section>
+  <section id="b" data-scene="b"><h1>Scene B</h1></section>
+  <section id="c" data-scene="c"><h1>Scene C</h1></section>
+</div></div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { stopIdentity: true };
+  const via = new URLSearchParams(location.search).get("via") || "cut";
+  const s = Eidos.stage(), { tl } = s;
+  if (via === "camera") {
+    for (const [i, el] of [...s.world.children].entries()) {
+      Object.assign(el.style, { left: `${i * 2000}px`, right: "auto", width: "100%" });
+    }
+    s.scene("a", { el: "#a", via, with: { dur: 0, zoom: 1 } });
+  } else s.scene("a", { el: "#a" });
+  tl.wait(1).stop("A");
+  s.scene("b", { el: "#b", via, with: { dur: 0, zoom: 1 } });
+  tl.wait(1).stop("B");
+  s.scene("c", { el: "#c", via, with: { dur: 0, zoom: 1 } });
+  tl.wait(1).stop("C");
+  s.start();
+</script>
+</body>
+</html>

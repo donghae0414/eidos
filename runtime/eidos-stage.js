@@ -651,8 +651,9 @@
       const trackStart = tl.tracks.length;
       if (o.via === "camera") {
         camera.to(target, { ...o.with, at });
-        // A spoke starts from its hub, even beside a zero-duration return.
-        if (parent != null) camera.kfs[camera.kfs.length - 1].after = true;
+        // Preserve the previous stop at a zero-duration boundary, including spoke entries.
+        const entry = camera.kfs[camera.kfs.length - 1];
+        if (parent != null || (previous && entry.dur === 0)) entry.after = true;
       }
       else if (o.via === "cut") {
         if (from) tl.tween(from, { opacity: [1, 0] }, { at, dur: 0 });
@@ -661,8 +662,8 @@
         const transition = E.fx[o.via](api, { ...o.with, from, to, at });
         tl.extend(transition.end);
       }
-      // Even zero-duration entry effects preserve the hub at the exact boundary.
-      if (nestedIn) for (const track of tl.tracks.slice(trackStart)) {
+      // Entry effects preserve the previous scene at the exact zero-duration boundary.
+      if (nestedIn || (previous && o.via === "cut")) for (const track of tl.tracks.slice(trackStart)) {
         const fn = track.fn;
         track.fn = (p) => fn(tl.t <= at ? 0 : p);
       }
