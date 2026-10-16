@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · bad-dock-hidden</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .grid { display: flex; gap: 8px; }
+  .cell { width: 60px; height: 60px; }
+  /* Negative fixture: the dock keeps its layout box but cannot be seen. */
+  .eidos-dock { visibility: hidden; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a"><h1 class="eidos-title">장면 A</h1><p class="x">A 첫째</p><p class="y">A 둘째</p><div class="grid" id="grid"><div class="cell eidos-card"></div><div class="cell eidos-card"></div></div></section>
+    <section class="scene" id="b"><h1 class="eidos-title">장면 B</h1><p class="x">B 첫째</p></section>
+    <section class="scene" id="c"><h1 class="eidos-title" id="ct">장면 C</h1><p class="x">C 첫째</p></section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = {
+    integration: {
+      when: { k: ["a1", "a2"], m: "c" },
+      layout: "k",
+      plain: "m",
+      captions: [{ scene: "b", lead: 0.3, prev: "A2", label: "B1" }, { scene: "c", trail: 0.2, prev: "B1", label: "C1" }],
+    },
+    expectFail: ["integration:control when visibility"],
+  };
+  window.__eidosFixtureBuild = [];
+  window.__qaLayouts = 0;
+  const F = (feature, fn) => { try { return fn(); } catch (e) { window.__eidosFixtureBuild.push(feature + ": " + String((e && e.message) || e)); } };
+  const s = Eidos.stage();
+  const { tl } = s;
+  F("integration", () => s.control("k", { type: "range", min: 1, max: 5, step: 1, value: 2, label: "칸 간격", layout: true, when: ["a1", "a2"] }));
+  F("integration", () => s.control("m", { type: "range", min: 0, max: 1, step: 0.5, value: 0, label: "자간", when: "c" }));
+  s.onLayout(() => { window.__qaLayouts++; });
+  F("integration", () => s.onParams(({ k, m }) => {
+    document.querySelector("#grid").style.gap = k * 4 + "px";
+    document.querySelector("#ct").style.letterSpacing = m + "em";
+  }));
+  F("integration", () => s.scene("a", { el: "#a", via: "cut", title: "A" }));
+  tl.tween("#a .x", { opacity: [0, 1] }, { dur: 0.4 }).stop("A1", { id: "a1" });
+  tl.tween("#a .y", { opacity: [0, 1] }, { dur: 0.4 }).stop("A2", { id: "a2" });
+  tl.wait(1);
+  F("integration", () => s.scene("b", { el: "#b", via: "cut", title: "B", lead: 0.3 }));
+  tl.tween("#b .x", { opacity: [0, 1] }, { dur: 0.6 }).stop("B1", { id: "b1" });
+  F("integration", () => s.scene("c", { el: "#c", via: "cut", title: "C", trail: 0.2 }));
+  tl.tween("#c .x", { opacity: [0, 1] }, { dur: 0.6 }).stop("C1", { id: "c1" });
+  s.start();
+</script>
+</body>
+</html>

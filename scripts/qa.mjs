@@ -579,7 +579,7 @@ const FEATURES = {
     steps: [
       ["control when visibility", async (c) => {
         await c.open(`${Q}&stop=0`);
-        return ev(c.view, `const W = ${JSON.stringify(c.fixture.integration.when)}, bad = [], dock = $(".eidos-dock"); if (!dock) return "no .eidos-dock"; const idx = (v) => typeof v === "number" ? v : A.stops.findIndex((s) => s.id === v); const shown = (n) => n.getClientRects().length > 0; for (let i = 0; i < A.stops.length; i++) { A.jump(i); await frames(); let any = false; for (const [name, w] of Object.entries(W)) { const inp = dock.querySelector('[name="' + name + '"]'); if (!inp) { bad.push("no dock input " + name); continue; } const want = Array.isArray(w) ? i >= idx(w[0]) && i <= idx(w[1]) : A.stops[i].scene === w; any ||= want; if (shown(inp) !== want) bad.push(name + " at stop " + i + " shown=" + shown(inp) + " (want " + want + ")"); } if (!any && shown(dock)) bad.push("dock shown at stop " + i + " with no control in range"); } return [...new Set(bad)].join("; ");`);
+        return ev(c.view, `const W = ${JSON.stringify(c.fixture.integration.when)}, bad = [], dock = $(".eidos-dock"); if (!dock) return "no .eidos-dock"; const idx = (v) => typeof v === "number" ? v : A.stops.findIndex((s) => s.id === v); const shown = (n) => { const r = n.getBoundingClientRect(); if (!(r.width > 0 && r.height > 0) || getComputedStyle(n).visibility !== "visible") return false; let o = 1; for (let m = n; m; m = m.parentElement) { const cs = getComputedStyle(m); if (cs.display === "none") return false; o *= Number(cs.opacity); } return o > 0.01; }; for (let i = 0; i < A.stops.length; i++) { A.jump(i); await frames(); let any = false; for (const [name, w] of Object.entries(W)) { const inp = dock.querySelector('[name="' + name + '"]'); if (!inp) { bad.push("no dock input " + name); continue; } const want = Array.isArray(w) ? i >= idx(w[0]) && i <= idx(w[1]) : A.stops[i].scene === w; any ||= want; if (shown(inp) !== want) bad.push(name + " at stop " + i + " shown=" + shown(inp) + " (want " + want + ")"); } if (!any && shown(dock)) bad.push("dock shown at stop " + i + " with no control in range"); } return [...new Set(bad)].join("; ");`);
       }],
       ["layout:true re-measures", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -803,13 +803,20 @@ async function contactSheet(view, file, slug, stops) {
     figcaption{height:${CAP}px;padding:2px 6px;overflow:hidden}
   </style><h1>${esc(slug)} - per-stop frames with 25/50/75% boundary frames</h1><div class="g">${rows
     .flat()
-    .map((c) => (c ? `<figure class="${c.stop ? "stop" : ""}"><img src="${esc(c.src)}"><figcaption>${esc(c.cap)}</figcaption></figure>` : "<div></div>"))
+    .map((c) => (c ? `<figure class="${c.stop ? "stop" : ""}"><img src="${esc(c.src)}" loading="eager" decoding="sync"><figcaption>${esc(c.cap)}</figcaption></figure>` : "<div></div>"))
     .join("")}</div>`;
   const page = join(dir, "contact.html");
   await Bun.write(page, html);
   await view.resize(4 * CW + 5 * GAP + 8, 40 + rows.length * (CH + CAP + 4 + GAP) + GAP);
   await view.navigate(`file://${page}`);
-  await view.evaluate(`Promise.all([...document.images].map((i) => i.decode().catch(() => null))).then(() => true)`);
+  // Every grid image loaded and decoded, fonts ready, then two frames so the composed grid is painted.
+  const painted = await view.evaluate(`new Promise((done) => {
+    const t0 = performance.now(), imgs = [...document.images];
+    const loaded = () => imgs.every((i) => i.complete && i.naturalWidth > 0);
+    const wait = () => loaded() ? Promise.all(imgs.map((i) => i.decode().catch(() => null))).then(() => document.fonts.ready).then(() => requestAnimationFrame(() => requestAnimationFrame(() => done(true)))) : performance.now() - t0 > 10000 ? done(false) : requestAnimationFrame(wait);
+    wait();
+  })`);
+  if (!painted) throw new Error(`contact sheet images did not load: ${page}`);
   await Bun.write(png, await view.screenshot());
   await view.resize(1280, 800);
   return png;
