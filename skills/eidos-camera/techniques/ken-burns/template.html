@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 켄 번스 (Ken Burns)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 5vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .figure { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  .graph { --rh: clamp(1.75rem, 6vh, 3rem); --gap: 3px; position: relative; height: calc(7 * (var(--rh) + var(--gap))); }
+  .row { position: absolute; left: 0; right: 0; height: var(--rh); bottom: calc(var(--r) * (var(--rh) + var(--gap))); }
+  .f { position: absolute; top: 0; bottom: 0; left: calc(var(--x) * 1%); width: calc(var(--w) * 1% - var(--gap)); padding: 0 0.45rem; display: flex; align-items: center; gap: 0.5rem; overflow: hidden; white-space: nowrap; border-radius: calc(var(--eidos-radius-sm) / 2); background: var(--eidos-fill-warm); color: var(--eidos-fg); font-family: var(--eidos-font-mono); font-size: clamp(0.62rem, 1.05vw, 0.78rem); }
+  .f span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .f em { margin-left: auto; font-style: normal; font-weight: 700; }
+  .f.hot { background: color-mix(in oklch, var(--eidos-accent) 30%, var(--eidos-fill-warm)); }
+  .f.leaf { background: color-mix(in oklch, var(--eidos-accent) 55%, var(--eidos-fill-warm)); }
+  .axis { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 1rem; padding-top: 6px; border-top: 1px solid var(--eidos-border); font-size: 0.75rem; color: var(--eidos-muted-fg); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">CPU 프로파일 · 플레임 그래프</div>
+        <h1 class="eidos-title">이 API 서버는 CPU를 어디에 쓰고 있을까요</h1>
+      </header>
+      <section class="figure">
+        <div class="graph">
+          <div class="row" style="--r:0"><div class="f" style="--x:0;--w:100"><span>(root)</span><em>100%</em></div></div>
+          <div class="row" style="--r:1"><div class="f" style="--x:0;--w:88"><span>Server.emit("request")</span></div><div class="f" style="--x:88;--w:12"><span>(GC)</span></div></div>
+          <div class="row" style="--r:2"><div class="f" style="--x:0;--w:88"><span>router.handle</span></div></div>
+          <div class="row" style="--r:3"><div class="f" style="--x:0;--w:54"><span>getProduct</span></div><div class="f" style="--x:54;--w:26"><span>renderPage</span></div><div class="f" style="--x:80;--w:8"><span>gzipSync</span></div></div>
+          <div class="row" style="--r:4"><div class="f hot" style="--x:0;--w:41"><span>loadConfig</span><em>41%</em></div><div class="f" style="--x:41;--w:13"><span>db.query</span></div><div class="f hot" style="--x:54;--w:22"><span>compileTemplate</span><em>22%</em></div><div class="f" style="--x:76;--w:4"><span>res.end</span></div><div class="f" style="--x:80;--w:8"><span>deflate</span></div></div>
+          <div class="row" style="--r:5"><div class="f hot" style="--x:0;--w:12"><span>readFileSync</span></div><div class="f hot" style="--x:12;--w:29"><span>JSON.parse</span></div><div class="f" style="--x:41;--w:11"><span>pg.query</span></div><div class="f hot" style="--x:54;--w:22"><span>ejs.compile</span></div></div>
+          <div class="row" style="--r:6"><div class="f leaf" style="--x:0;--w:10"><span>read</span></div><div class="f leaf" style="--x:12;--w:27"><span>parseObject</span></div><div class="f leaf" style="--x:56;--w:16"><span>new Function</span></div></div>
+        </div>
+        <div class="axis"><span>← 폭 = 30초 동안 CPU를 쓴 시간 비율 →</span><span>아래가 부르는 함수, 위가 불리는 함수</span></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".row", { opacity: [0, 1], y: [6, 0] }, { at: "<+=0.2", dur: 0.35, each: 0.07, ease: "out" })
+    .tween(".axis", { opacity: [0, 1] }, { dur: 0.4 })
+    .stop("30초 동안 잰 API 서버의 CPU 프로파일입니다. 가로 폭이 CPU 시간, 위로 쌓인 칸이 호출 깊이입니다");
+  const kb = s.fx("ken-burns", { in: ".graph", to: [0, 0, 0.6, 1] });
+  s.tl.stop("켄 번스: 그림은 그대로 두고 카메라만 천천히 다가갑니다. 가장 넓은 탑은 요청마다 설정 파일을 다시 읽고 파싱하는 loadConfig, CPU의 41%");
+  kb.drift([0.44, 0.04, 0.48, 0.96]);
+  s.tl.stop("옆으로 흐르며 조금 더 다가가면 두 번째 탑입니다. 요청마다 템플릿을 새로 컴파일하는 compileTemplate, 22%");
+  kb.drift("world", { dur: 3 });
+  s.tl.stop("두 탑은 매번 같은 결과를 만듭니다. 한 번만 계산해 캐시하면 CPU 시간의 63%가 사라집니다");
+  s.start();
+</script>
+</body>
+</html>

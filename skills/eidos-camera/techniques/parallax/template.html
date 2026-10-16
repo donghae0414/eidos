@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 패럴랙스 (Parallax)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .lanes { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1.5vh; }
+  .lane { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 8px 14px; }
+  .band { position: absolute; inset: 0 -5vw; z-index: -1; background: color-mix(in oklch, var(--tone) 9%, transparent); }
+  .name { display: flex; flex-wrap: wrap; gap: 0 0.6rem; align-items: baseline; }
+  .name b { font-size: 1.05rem; }
+  .name b::before { content: ""; display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: 0.45rem; border-radius: 50%; background: var(--tone); }
+  .name span { font-size: 0.75rem; color: var(--eidos-muted-fg); }
+  .track { align-self: flex-start; flex: none; width: calc(var(--span) * 100vw); display: flex; justify-content: space-between; gap: 1rem; }
+  .chip { flex: none; padding: 0.4rem 0.85rem; border: 1px solid color-mix(in oklab, var(--tone) 50%, var(--eidos-border)); border-radius: var(--eidos-radius); background: var(--eidos-surface); color: var(--eidos-surface-fg); font-size: 0.95rem; white-space: nowrap; }
+  .l-ui { --tone: var(--eidos-cat-4); }
+  .l-api { --tone: var(--eidos-cat-3); }
+  .l-data { --tone: var(--eidos-cat-2); }
+  .l-infra { --tone: var(--eidos-muted-fg); }
+  @media (max-width: 640px) {
+    .chip { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
+    .track { gap: 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header data-parallax="-1">
+        <div class="eidos-label">페이스 레이어링 (pace layering)</div>
+        <h1 class="eidos-title">한 서비스 안에서도 층마다 바뀌는 속도가 다릅니다</h1>
+      </header>
+      <section class="lanes">
+        <div class="lane l-ui"><div class="band" data-parallax="-1"></div>
+          <div class="name" data-parallax="-1"><b>UI 화면</b><span>매주 배포 · 가까운 층</span></div>
+          <div class="track" style="--span:3.73" data-parallax="0.6"><span class="chip">다크 모드</span><span class="chip">검색 자동완성</span><span class="chip">버튼 문구 A/B</span><span class="chip">온보딩 개편</span><span class="chip">알림 설정</span><span class="chip">장바구니 배지</span><span class="chip">추천 카드</span><span class="chip">리뷰 정렬</span><span class="chip">로딩 스켈레톤</span><span class="chip">탭바 개편</span><span class="chip">대비 수정</span></div></div>
+        <div class="lane l-api"><div class="band" data-parallax="-1"></div>
+          <div class="name" data-parallax="-1"><b>API · 도메인 규칙</b><span>분기마다 · 기준 평면</span></div>
+          <div class="track" style="--span:2.65" data-parallax="0"><span class="chip">쿠폰 중복 규칙</span><span class="chip">주문 취소 v2</span><span class="chip">재고 예약 10분</span><span class="chip">배송비 정책</span><span class="chip">결제 재시도</span><span class="chip">회원 등급 계산</span></div></div>
+        <div class="lane l-data"><div class="band" data-parallax="-1"></div>
+          <div class="name" data-parallax="-1"><b>데이터 스키마</b><span>1년에 몇 번 · 먼 층</span></div>
+          <div class="track" style="--span:1.66" data-parallax="-0.55"><span class="chip">orders 월별 파티션</span><span class="chip">email 유니크</span><span class="chip">이벤트 테이블 분리</span></div></div>
+        <div class="lane l-infra"><div class="band" data-parallax="-1"></div>
+          <div class="name" data-parallax="-1"><b>인프라 · 런타임</b><span>몇 년에 한 번 · 가장 먼 층</span></div>
+          <div class="track" style="--span:1.12" data-parallax="-0.85"><span class="chip">PostgreSQL 13 → 16</span><span class="chip">VM → Kubernetes</span></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.fx("parallax");
+  const along = (k) => (c) => ({ x: c.W * (0.5 + k), y: c.H / 2, s: 1 });
+  s.tl.tween("header", { opacity: [0, 1] }, { dur: 0.5 })
+    .stagger(".lane", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.4, each: 0.1, ease: "out" })
+    .stop("서비스의 변경을 바뀌는 속도로 나눠 층을 쌓았습니다. 위층일수록 자주, 아래층일수록 드물게 바뀝니다");
+  s.camera.to(along(0.9), { dur: 2.4, ease: "inOut" });
+  s.tl.stop("패럴랙스: 카메라가 옆으로 움직이면 가까운 UI 층은 빠르게 흘러가고, 먼 인프라 층은 거의 움직이지 않습니다");
+  s.camera.to(along(1.8), { dur: 2.4, ease: "inOut" });
+  s.tl.stop("끝까지 오는 동안 UI는 열한 번, API는 여섯 번, 스키마는 세 번, 인프라는 두 번 바뀌었습니다");
+  s.camera.to("world", { dur: 2.4, ease: "inOut" });
+  s.tl.stop("빠른 층이 느린 층 위에 올라탑니다. 그래서 의존은 위에서 아래로만 두고, 아래층 변경은 드물게 크게 계획합니다");
+  s.start();
+</script>
+</body>
+</html>

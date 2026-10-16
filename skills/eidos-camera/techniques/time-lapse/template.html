@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 타임랩스 (Time-lapse)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); grid-template-rows: auto minmax(0, 1fr); gap: 2.5vh 3vw; }
+  .panel { min-height: 0; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 8px; }
+  .panel h2 { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--eidos-muted-fg); }
+  .clock { font-family: var(--eidos-font-mono); font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 0.78rem; color: var(--eidos-muted-fg); }
+  .nums { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 1rem; font-size: 0.85rem; }
+  .nums b { font-family: var(--eidos-font-mono); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .p99 { font-family: var(--eidos-font-mono); font-weight: 700; }
+  .p99.bad { color: var(--eidos-danger); }
+  .bar { position: relative; height: 0.9rem; border-radius: var(--eidos-radius-sm); background: var(--eidos-fill-warm); }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: var(--eidos-cat-4); }
+  .bar.over i { background: var(--eidos-danger); }
+  .bar .capmark { position: absolute; top: -0.3rem; bottom: -0.3rem; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--eidos-fg); }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.75rem; color: var(--eidos-muted-fg); }
+  .pods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .pod { aspect-ratio: 1.4; display: grid; place-items: center; border: 1.5px dashed var(--eidos-border); border-radius: var(--eidos-radius-sm); font-family: var(--eidos-font-mono); font-size: 0.72rem; color: var(--eidos-muted-fg); }
+  .pod.on { border-style: solid; border-color: var(--eidos-cat-3); background: color-mix(in oklab, var(--eidos-cat-3) 22%, var(--eidos-surface)); color: var(--eidos-surface-fg); }
+  .chart { position: relative; flex: 1; min-height: 4rem; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .chart polyline { fill: none; stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .rps-line { stroke: var(--eidos-cat-4); }
+  .cap-line { stroke: var(--eidos-cat-3); stroke-dasharray: 6 4; }
+  .now { stroke: var(--eidos-fg); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .ticks { display: flex; justify-content: space-between; font-family: var(--eidos-font-mono); font-size: 0.7rem; color: var(--eidos-muted-fg); }
+  .key-rps, .key-cap { display: inline-block; width: 1.2rem; height: 0; margin-right: 0.35rem; vertical-align: middle; border-top: 2.5px solid var(--eidos-cat-4); }
+  .key-cap { border-top: 2.5px dashed var(--eidos-cat-3); }
+  @media (max-aspect-ratio: 1/1) {
+    .board { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr); gap: 1.5vh; }
+    .panel { padding: 0.7rem 0.8rem; gap: 6px; }
+    .clock-panel { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.8rem; }
+    .clock-panel h2 { width: 100%; }
+    .clock { font-size: 2.4rem; }
+    .pods { gap: 6px; }
+    .pod { aspect-ratio: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">오토스케일링 · 하루 타임랩스</div>
+        <h1 class="eidos-title">파드 수는 트래픽을 얼마나 잘 따라갈까요</h1>
+      </header>
+      <section class="board">
+        <div class="panel eidos-card clock-panel"><h2>시각</h2><div class="clock" id="clock">00:00</div><span class="sub">하루 24시간 · 한 시간마다 기록 1개</span></div>
+        <div class="panel eidos-card"><h2>요청량과 처리량</h2>
+          <div class="nums"><span><b id="rps">140</b> rps</span><span>처리량 <b id="cap">400</b> rps</span><span>p99 지연 <span class="p99" id="p99">85ms</span></span></div>
+          <div class="bar"><i></i><span class="capmark"></span></div>
+          <div class="legend"><span>막대: 지금 요청량</span><span>세로선: 처리량 = 파드 × 200 rps</span></div></div>
+        <div class="panel eidos-card"><h2>파드 (HPA 최소 2 · 최대 10)</h2>
+          <div class="pods"><span class="pod">1</span><span class="pod">2</span><span class="pod">3</span><span class="pod">4</span><span class="pod">5</span><span class="pod">6</span><span class="pod">7</span><span class="pod">8</span><span class="pod">9</span><span class="pod">10</span></div></div>
+        <div class="panel eidos-card"><h2>하루 요청량</h2>
+          <div class="legend"><span><i class="key-rps"></i>요청량</span><span><i class="key-cap"></i>처리량</span></div>
+          <div class="chart"><svg viewBox="0 0 240 100" preserveAspectRatio="none" aria-hidden="true"><polyline class="cap-line"></polyline><polyline class="rps-line"></polyline><line class="now" x1="0" y1="0" x2="0" y2="100"></line></svg></div>
+          <div class="ticks"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>24시</span></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const DAY = [[140, 2, 85], [100, 2, 80], [80, 2, 78], [70, 2, 78], [70, 2, 78], [90, 2, 80], [180, 2, 86], [380, 2, 140], [640, 4, 96], [860, 5, 92], [940, 5, 95], [980, 5, 99], [1150, 6, 97], [1020, 6, 90], [940, 6, 88], [920, 5, 93], [980, 5, 99], [1120, 6, 96], [1420, 8, 94], [1780, 9, 104], [2240, 10, 380], [2100, 10, 290], [1400, 10, 86], [650, 7, 80], [180, 4, 78]];
+  const frames = DAY.map(([rps, pods, p99], at) => ({ at, rps, pods, p99 }));
+  const $ = (q) => document.querySelector(q);
+  const pods = [...document.querySelectorAll(".pod")];
+  const num = new Intl.NumberFormat("en-US");
+  const y = (v) => Math.round((100 - v / 24) * 100) / 100;
+  const clock = (u) => {
+    const total = Math.floor(u * 60 + 1e-6);
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+  };
+  function render(f, u) {
+    const cap = f.pods * 200;
+    $("#rps").textContent = num.format(f.rps);
+    $("#cap").textContent = num.format(cap);
+    $("#p99").textContent = `${f.p99}ms`;
+    $("#p99").classList.toggle("bad", f.p99 > 200);
+    $(".bar").classList.toggle("over", f.rps > cap);
+    $(".bar i").style.width = `${((f.rps / 2400) * 100).toFixed(2)}%`;
+    $(".bar .capmark").style.left = `${((cap / 2400) * 100).toFixed(2)}%`;
+    pods.forEach((el, i) => el.classList.toggle("on", i < f.pods));
+    const seen = frames.filter((g) => g.at <= f.at);
+    $(".rps-line").setAttribute("points", seen.map((g) => `${g.at * 10},${y(g.rps)}`).join(" "));
+    $(".cap-line").setAttribute("points", seen.flatMap((g, i) => [...(i ? [`${g.at * 10},${y(seen[i - 1].pods * 200)}`] : []), `${g.at * 10},${y(g.pods * 200)}`]).join(" "));
+    const x = String(Math.round(u * 1000) / 100);
+    $(".now").setAttribute("x1", x);
+    $(".now").setAttribute("x2", x);
+  }
+
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".panel", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.4, each: 0.1, ease: "out" })
+    .stop("API 서버의 하루를 빨리 감아 봅니다. 자정에는 요청이 적어 최소치인 파드 2개면 충분합니다");
+  const lapse = s.fx("time-lapse", { frames, render, counter: "#clock", format: clock, from: 0, to: 9, dur: 3.2 });
+  s.tl.stop("타임랩스: 시계는 흐르고 화면은 매시 기록으로 한 칸씩 바뀝니다. 출근 시간, 파드가 2개에서 5개로");
+  lapse.to(20, { dur: 3.6 });
+  s.tl.stop("저녁 8시: 파드가 최대 10개에 닿았는데도 요청이 처리량 2,000 rps를 넘어 p99 지연이 380ms로 튑니다");
+  lapse.to(24, { dur: 2.4 });
+  s.tl.stop("밤에는 요청이 빨리 줄어도 파드는 한 시간 늦게 줄어듭니다. 출렁임을 막는 안정화 대기 때문입니다");
+  s.start();
+</script>
+</body>
+</html>

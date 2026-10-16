@@ -290,7 +290,9 @@
     to(target, o = {}) {
       const at = this.tl.resolveAt(o.at);
       const dur = o.dur ?? 1.2;
-      this.kfs.push({ target, o, at, dur, ease: easeOf(o.ease || "camera"), resolved: null });
+      const arc = o.arc ?? 0;
+      if (typeof arc !== "number" || !(arc >= 0 && arc <= 1)) errors.push(`camera.to arc must be a number from 0 to 1, got ${String(o.arc)}`);
+      this.kfs.push({ target, o, at, dur, arc: typeof arc === "number" && arc > 0 ? Math.min(arc, 1) : 0, ease: easeOf(o.ease || "camera"), resolved: null });
       this.kfs.sort((a, b) => a.at - b.at);
       this.tl.prevStart = at;
       this.tl.extend(at + dur);
@@ -314,10 +316,23 @@
       this.H = this.stage.clientHeight;
       for (const kf of this.kfs) kf.resolved = this.resolve(kf);
     }
-    static mix(a, b, e) {
+    // arc (0-1) turns the move into a zoom-out, travel, zoom-in flight. View extent v = 1/s widens by
+    // h * sin(pi e) at most, where arc = 1 sizes the mid-flight view to the span of both endpoint views in a
+    // W x H viewport. Position follows the accumulated extent (as the plain mix does), so screen-space travel
+    // speed stays even. arc 0 takes the plain path unchanged.
+    static mix(a, b, e, arc = 0, W = 0, H = 0) {
       const s = a.s * Math.pow(b.s / a.s, e);
-      const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
-      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      const va = 1 / a.s, vb = 1 / b.s, vm = Math.sqrt(va * vb);
+      const fit = arc > 0 && W > 0 && H > 0 ? Math.max(Math.abs(b.x - a.x) / W, Math.abs(b.y - a.y) / H) + (va + vb) / 2 : 0;
+      const h = arc * Math.max(0, fit - vm);
+      if (!(h > 1e-9 * vm)) {
+        const w = Math.abs(b.s - a.s) > 1e-6 ? (1 / a.s - 1 / s) / (1 / a.s - 1 / b.s) : e;
+        return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s, r: lerp(a.r, b.r, e) };
+      }
+      const k = Math.log(vb / va);
+      const extent = (q) => (Math.abs(k) > 1e-9 ? (va * Math.pow(vb / va, q) - va) / k : va * q) + (h * (1 - Math.cos(Math.PI * q))) / Math.PI;
+      const w = extent(e) / extent(1);
+      return { x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), s: 1 / (1 / s + h * Math.sin(Math.PI * e)), r: lerp(a.r, b.r, e) };
     }
     stateAt(t) {
       let st = this.home();
@@ -325,7 +340,7 @@
         if (t < kf.at) break;
         if (kf.after && t === kf.at) continue;
         const p = progressOf(t, kf.at, kf.dur);
-        st = Camera.mix(st, kf.resolved, kf.ease(p));
+        st = Camera.mix(st, kf.resolved, kf.ease(p), kf.arc, this.W, this.H);
         if (p < 1) break;
       }
       return st;

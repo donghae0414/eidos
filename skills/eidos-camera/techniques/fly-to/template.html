@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 플라이 투 (Fly-to)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  .map { position: relative; flex: 1; min-height: 0; border-radius: var(--eidos-radius); background-image: radial-gradient(circle, var(--eidos-border) 1.2px, transparent 1.6px); background-size: 1.25rem 1.25rem; }
+  .region, .node { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); }
+  .region { font-size: 0.8rem; letter-spacing: 0.12em; color: var(--eidos-muted-fg); }
+  .node { width: 13rem; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 2px; }
+  .node b { font-size: 1rem; }
+  .node > span { font-size: 0.78rem; color: var(--eidos-muted-fg); }
+  .detail { display: grid; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--eidos-border); font-size: 0.64rem; line-height: 1.55; }
+  .detail > div { grid-area: 1 / 1; }
+  .detail code { font-family: var(--eidos-font-mono); }
+  .tag { padding: 0 0.3rem; border-radius: calc(var(--eidos-radius-sm) / 2); font-weight: 700; }
+  .tag.miss { border: 1px solid var(--eidos-warning); }
+  .tag.hit { border: 1px solid var(--eidos-success); }
+  .routes { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .routes path { fill: none; stroke-width: 3; stroke-linecap: round; }
+  .route-go { stroke: var(--eidos-accent); }
+  .route-back { stroke: var(--eidos-cat-4); }
+  @media (max-aspect-ratio: 1/1) {
+    .region, .node { left: calc(var(--px) * 1%); top: calc(var(--py) * 1%); }
+    .node { width: 10rem; padding: 0.55rem 0.75rem; }
+    .node b { font-size: 0.92rem; }
+    .node > span { font-size: 0.72rem; }
+    .detail { font-size: 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">CDN 캐시 미스</div>
+        <h1 class="eidos-title">이미지 하나가 태평양을 건너는 이유</h1>
+      </header>
+      <section class="map">
+        <svg class="routes" aria-hidden="true"><path class="route-go"></path><path class="route-back"></path></svg>
+        <span class="region" style="--x:6;--y:88;--px:62;--py:3">아시아</span>
+        <span class="region" style="--x:42;--y:44;--px:30;--py:46">태평양</span>
+        <span class="region" style="--x:66;--y:88;--px:8;--py:92">북아메리카</span>
+        <div class="node eidos-card" id="icn" style="--x:14;--y:26;--px:6;--py:3"><b>서울 엣지</b><span>ICN · CDN 엣지 서버</span>
+          <div class="detail">
+            <div class="d-miss"><code>GET /img/hero.webp</code><br>사본 없음: 캐시 <span class="tag miss">MISS</span> → 원본에 요청</div>
+            <div class="d-hit">사본 저장, TTL 1일<br>다음 요청부터 캐시 <span class="tag hit">HIT</span></div>
+          </div></div>
+        <div class="node eidos-card" id="nrt" style="--x:26;--y:60;--px:54;--py:19"><b>도쿄 엣지</b><span>NRT · CDN 엣지 서버</span></div>
+        <div class="node eidos-card" id="iad" style="--x:76;--y:50;--px:46;--py:72"><b>원본 서버</b><span>us-east-1 · S3 버킷</span>
+          <div class="detail"><div class="d-origin"><code>200 OK</code> · 184 KB<br>서울에서 왕복 약 180ms</div></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".region", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5 })
+    .stagger(".node", { opacity: [0, 1], scale: [0.94, 1] }, { at: "<+=0.1", dur: 0.4, each: 0.1, ease: "out" })
+    .stop("서울 사용자가 상품 이미지를 요청합니다. 원본 파일은 미국 동부(us-east-1)에 있습니다");
+  s.camera.to("#icn", { zoom: 2.2, dur: 1.4 });
+  s.tl.tween("#icn .d-miss", { opacity: [0, 1], y: [6, 0] }, { at: "-=0.4", dur: 0.4, ease: "out" });
+  s.tl.stop("가장 가까운 서울 엣지에는 아직 사본이 없습니다. 캐시 MISS, 원본까지 가야 합니다");
+  s.fx("fly-to", { target: "#iad", from: "#icn", route: ".route-go", arc: 0.7, zoom: 2.2, reveal: "#iad .d-origin" });
+  s.tl.stop("플라이 투: 높이 올라 두 곳을 함께 보여 준 뒤 원본에 내려앉습니다. 태평양을 건너 왕복 약 180ms");
+  const back = s.fx("fly-to", { target: "#icn", from: "#iad", route: ".route-back", arc: 0.7, zoom: 2.2, reveal: "#icn .d-hit" });
+  s.tl.tween("#icn .d-miss", { opacity: [1, 0] }, { at: back.end - 0.75, dur: 0.3 });
+  s.tl.stop("응답이 돌아오며 서울 엣지에 사본이 남습니다(TTL 1일)");
+  s.camera.to("world", { dur: 1.6 });
+  s.tl.stop("다음 사용자부터는 서울에서 끝납니다. 첫 요청은 약 230ms, 그다음부터는 약 9ms");
+  s.start();
+</script>
+</body>
+</html>

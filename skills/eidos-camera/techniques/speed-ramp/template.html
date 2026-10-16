@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 스피드램프 (Speed Ramp)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 3vh; word-break: keep-all; }
+  .scene { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 5vw; align-items: center; }
+  .clients { display: flex; flex-direction: column; gap: 7vh; }
+  .client { position: relative; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 2px; }
+  .client b { font-size: 1rem; }
+  .client span { font-size: 0.78rem; color: var(--eidos-muted-fg); }
+  .client .done { margin-top: 4px; font-size: 0.82rem; font-weight: 700; color: var(--eidos-fg); }
+  .client .done::before { content: "✓ "; color: var(--eidos-success); }
+  .dock { display: inline-block; flex: none; width: 1.75rem; height: 1.75rem; }
+  .client .dock, .db .dock { position: absolute; top: 50%; margin-top: -0.875rem; }
+  .client .dock { right: -0.875rem; }
+  .db .dock { left: -0.875rem; }
+  .mid { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .chip { padding: 0.25rem 0.8rem; border-radius: var(--eidos-radius); background: var(--eidos-fg); color: var(--eidos-bg); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
+  .server { width: 100%; padding: 0.8rem 0.9rem; display: flex; flex-direction: column; gap: 8px; }
+  .server > b { font-size: 1rem; }
+  .thread { display: flex; align-items: center; gap: 8px; padding: 0.4rem 0.6rem 0.4rem 0.3rem; border-left: 3px solid var(--tone); border-radius: var(--eidos-radius-sm); background: color-mix(in oklch, var(--tone) 12%, transparent); font-size: 0.8rem; }
+  .thread code { margin-left: auto; font-family: var(--eidos-font-mono); font-size: 0.78rem; white-space: nowrap; }
+  .t-a { --tone: var(--eidos-cat-4); }
+  .t-b { --tone: var(--eidos-cat-2); }
+  .db { position: relative; padding: 0.9rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 2px; border-width: 2px; }
+  .db > span { font-size: 0.78rem; color: var(--eidos-muted-fg); }
+  .db .stock { font-family: var(--eidos-font-mono); font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; line-height: 1.1; }
+  .db .lost { margin-top: 4px; padding: 0.2rem 0.6rem; border: 1px solid var(--eidos-danger); border-radius: var(--eidos-radius-sm); font-size: 0.75rem; font-weight: 700; color: var(--eidos-fg); text-align: center; }
+  .fix { padding: 0.7rem 0.9rem; font-size: 0.85rem; }
+  .fix code { font-family: var(--eidos-font-mono); font-size: 0.8rem; font-weight: 600; }
+  .tok { position: absolute; left: 0; top: 0; z-index: 2; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; color: var(--eidos-accent-fg); }
+  .tok-a { background: var(--eidos-cat-4); }
+  .tok-b { background: var(--eidos-cat-2); }
+  @media (max-aspect-ratio: 1/1) {
+    .scene { grid-template-columns: 1fr; gap: 3vh; align-content: center; }
+    .clients { flex-direction: row; gap: 4vw; }
+    .client { flex: 1; }
+    .client .dock { top: auto; right: auto; bottom: -0.875rem; left: 50%; margin: 0 0 0 -0.875rem; }
+    .db { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; }
+    .db .stock { font-size: 2.2rem; }
+    .db .dock { top: -0.875rem; left: 50%; margin: 0 0 0 -0.875rem; }
+    .fix { font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">동시성 버그 · 갱신 손실 (lost update)</div>
+        <h1 class="eidos-title">재고 1개에 주문 2건이 성공하는 순간</h1>
+      </header>
+      <section class="scene">
+        <div class="clients">
+          <div class="client eidos-card" id="ca"><b>주문 A</b><span>민지 · 10:00:00.012</span><span class="done">주문 완료</span><i class="dock" id="ka"></i></div>
+          <div class="client eidos-card" id="cb"><b>주문 B</b><span>준호 · 10:00:00.015</span><span class="done">주문 완료</span><i class="dock" id="kb"></i></div>
+        </div>
+        <div class="mid">
+          <span class="chip">빨리 감기</span>
+          <div class="server eidos-card"><b>주문 API 서버</b>
+            <div class="thread t-a"><i class="dock" id="ta"></i><span>요청 A</span><code>대기</code></div>
+            <div class="thread t-b"><i class="dock" id="tb"></i><span>요청 B</span><code>대기</code></div>
+          </div>
+        </div>
+        <div class="db eidos-card" id="db"><span>products #7 재고</span><div class="stock">1</div><span class="lost">갱신 손실: A의 차감이 덮어써짐</span><i class="dock" id="kd"></i></div>
+      </section>
+      <div class="fix eidos-card"><b>고치기:</b> 읽기와 쓰기를 한 문장으로 <code>UPDATE products SET stock = stock - 1 WHERE id = 7 AND stock &gt; 0</code> · 두 번째 요청은 0행을 바꾸고 품절로 응답합니다</div>
+    </main>
+    <span class="tok tok-a" aria-hidden="true">A</span>
+    <span class="tok tok-b" aria-hidden="true">B</span>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { lerp } = Eidos.util;
+  const D = {};
+  s.onLayout(() => { for (const id of ["ka", "kb", "ta", "tb", "kd"]) D[id] = s.measure("#" + id); });
+  const hump = (p) => { const q = p < 0.5 ? p * 2 : 2 - p * 2; return q * q * (3 - 2 * q); };
+  const path = (a, b, f) => ({ x: (p) => lerp(D[a].x, D[b].x, f(p)), y: (p) => lerp(D[a].y, D[b].y, f(p)) });
+  const step = (cuts, texts) => (p) => texts[cuts.filter((c) => p * 4.8 >= c).length];
+
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".clients, .mid, .db", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.4, each: 0.12 })
+    .stop("마지막 1개 남은 상품을 두 사람이 거의 동시에 주문합니다");
+
+  const T = s.tl.end;
+  s.tl.tween(".tok-a", { opacity: [0, 1] }, { at: T, dur: 0.15 })
+    .tween(".tok-a", path("ka", "ta", (p) => p), { at: T + 0.1, dur: 1.1 })
+    .tween(".tok-b", { opacity: [0, 1] }, { at: T + 0.25, dur: 0.15 })
+    .tween(".tok-b", path("kb", "tb", (p) => p), { at: T + 0.35, dur: 1.1 })
+    .tween(".tok-a", path("ta", "kd", hump), { at: T + 1.6, dur: 0.4, ease: "linear" })
+    .tween(".tok-b", path("tb", "kd", hump), { at: T + 2.0, dur: 0.4, ease: "linear" })
+    .tween(".tok-a", path("ta", "kd", hump), { at: T + 2.4, dur: 0.4, ease: "linear" })
+    .tween(".tok-b", path("tb", "kd", hump), { at: T + 2.8, dur: 0.4, ease: "linear" })
+    .tween(".tok-a", path("ta", "ka", (p) => p), { at: T + 3.3, dur: 1.0 })
+    .tween(".tok-b", path("tb", "kb", (p) => p), { at: T + 3.45, dur: 1.0 })
+    .tween(".tok-a", { opacity: [1, 0] }, { at: T + 4.3, dur: 0.15 })
+    .tween(".tok-b", { opacity: [1, 0] }, { at: T + 4.45, dur: 0.15 })
+    .tween("#ca .done", { opacity: [0, 1] }, { at: T + 4.3, dur: 0.2 })
+    .tween("#cb .done", { opacity: [0, 1] }, { at: T + 4.45, dur: 0.2 })
+    .tween(".t-a code", { text: step([1.2, 1.6, 2.0, 2.4, 2.8], ["대기", "요청 받음", "SELECT stock …", "읽음: stock = 1", "UPDATE stock = 0 …", "씀: stock = 0"]) }, { at: T, dur: 4.8, ease: "linear" })
+    .tween(".t-b code", { text: step([1.45, 2.0, 2.4, 2.8, 3.2], ["대기", "요청 받음", "SELECT stock …", "읽음: stock = 1", "UPDATE stock = 0 …", "씀: stock = 0"]) }, { at: T, dur: 4.8, ease: "linear" })
+    .tween("#db .stock", { text: step([2.6], ["1", "0"]) }, { at: T, dur: 4.8, ease: "linear" })
+    .tween("#db", { style: (p) => ({ borderColor: p * 4.8 >= 3.0 ? "var(--eidos-danger)" : "" }) }, { at: T, dur: 4.8, ease: "linear" })
+    .tween("#db .lost", { opacity: [0, 1] }, { at: T + 3.0, dur: 0.2 })
+    .tween(".chip", { text: step([1.6, 3.2], ["빨리 감기", "슬로모션", "빨리 감기"]) }, { at: T, dur: 4.8, ease: "linear" })
+    .tween(".chip", { opacity: [0, 1] }, { at: T + 0.05, dur: 0.15 })
+    .tween(".chip", { opacity: [1, 0] }, { at: T + 4.65, dur: 0.15 });
+  s.fx("speed-ramp", { at: T, dur: 4.8, focus: [T + 1.6, T + 3.2], rate: 0.5 });
+  s.tl.stop("스피드램프: 요청이 오가는 동안은 빠르게, 같은 재고를 읽고 쓰는 순간만 느리게. 둘 다 1을 읽고 0을 써서 주문 2건이 모두 성공했습니다");
+  s.tl.tween(".fix", { opacity: [0, 1], y: [8, 0] }, { dur: 0.6, ease: "out" });
+  s.tl.stop("읽기와 쓰기를 한 문장으로 합치면 두 번째 주문은 품절로 끝납니다");
+  s.start();
+</script>
+</body>
+</html>

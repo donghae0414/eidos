@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 크레인업 (Crane Up)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  .stack { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+  .tier { display: grid; grid-template-columns: minmax(8rem, 15rem) minmax(0, 1fr); gap: 14px; align-items: center; padding: 8px 14px; border-left: 3px solid var(--tone); border-radius: var(--eidos-radius-sm); background: color-mix(in oklch, var(--tone) 9%, transparent); }
+  .tier-name b { display: block; font-size: 0.95rem; }
+  .tier-name span { font-size: 0.74rem; color: var(--eidos-muted-fg); }
+  .call { width: min(100%, 32rem); padding: 0.5rem 0.8rem; display: flex; flex-direction: column; gap: 2px; }
+  .call code { font-family: var(--eidos-font-mono); font-size: 0.8rem; color: var(--eidos-surface-fg); }
+  .call span { font-size: 0.72rem; color: var(--eidos-muted-fg); }
+  .t-app { --tone: var(--eidos-cat-4); }
+  .t-node { --tone: var(--eidos-cat-5); }
+  .t-uv { --tone: var(--eidos-cat-3); }
+  .t-libc { --tone: var(--eidos-cat-2); }
+  .t-kernel { --tone: var(--eidos-muted-fg); }
+  #syscall { border: 2px solid var(--eidos-accent); }
+  #syscall code { color: var(--eidos-accent); font-weight: 600; }
+  #syscall .detail { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--eidos-border); font-family: var(--eidos-font-mono); font-size: 6.5px; line-height: 1.5; color: var(--eidos-surface-fg); }
+  .callpath { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .callpath path { fill: none; stroke: var(--eidos-accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-aspect-ratio: 1/1) {
+    .layout { padding-top: 5vh; gap: 2vh; }
+    .tier { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 6px 10px; }
+    .tier-name b { display: inline; font-size: 0.86rem; }
+    .tier-name span { margin-left: 6px; }
+    .call { width: 100%; padding: 0.4rem 0.6rem; }
+    .call code { font-size: 0.72rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header class="ctx">
+        <div class="eidos-label">호출 스택 단면</div>
+        <h1 class="eidos-title">fs.readFile() 한 줄은 어디까지 내려갈까요</h1>
+      </header>
+      <section class="stack">
+        <div class="tier t-app ctx"><div class="tier-name"><b>앱 코드</b><span>JavaScript</span></div>
+          <div class="call eidos-card"><code>await fs.readFile("config.json")</code><span>Promise를 받고 이벤트 루프로 돌아갑니다</span></div></div>
+        <div class="tier t-node ctx"><div class="tier-name"><b>Node.js 런타임</b><span>C++ 바인딩</span></div>
+          <div class="call eidos-card"><code>FSReqPromise → uv_fs_read()</code><span>요청을 libuv에 넘깁니다</span></div></div>
+        <div class="tier t-uv ctx"><div class="tier-name"><b>libuv 스레드 풀</b><span>워커 4개</span></div>
+          <div class="call eidos-card"><code>worker #2: uv__fs_read()</code><span>메인 스레드 대신 기다리는 쪽</span></div></div>
+        <div class="tier t-libc ctx"><div class="tier-name"><b>libc</b><span>glibc</span></div>
+          <div class="call eidos-card"><code>read(17, buf, 65536)</code><span>시스템 콜 번호 0을 레지스터에 싣습니다</span></div></div>
+        <div class="tier t-kernel"><div class="tier-name ctx"><b>리눅스 커널</b><span>커널 모드</span></div>
+          <div class="call eidos-card" id="syscall"><code>sys_read → vfs_read → ext4_file_read_iter</code><span>페이지 캐시에 있으면 디스크를 읽지 않습니다</span>
+            <div class="detail">fd=17 (config.json) · count=65536<br>페이지 캐시 적중 → 4,096바이트 복사 → 반환값 4096</div></div></div>
+      </section>
+      <svg class="callpath" aria-hidden="true"><path></path></svg>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.onLayout(() => {
+    const calls = [...document.querySelectorAll(".call")].map((el) => s.measure(el));
+    const x = Math.min(...calls.map((r) => r.x)) - 10;
+    const d = calls.map((r, i) => `${i ? "L" : "M"} ${x} ${r.y + r.h / 2} L ${r.x} ${r.y + r.h / 2} L ${x} ${r.y + r.h / 2}`).join(" ");
+    document.querySelector(".callpath path").setAttribute("d", d);
+  });
+
+  const crane = s.fx("crane-up", { from: "#syscall", context: ".ctx", tilt: 14 });
+  s.tl.stop("커널 안의 read() 시스템 콜 하나. 여기만 보면 누가, 왜 불렀는지 알 수 없습니다");
+  crane.rise({ dur: 2.4 });
+  s.tl.stop("크레인업: 위로 올라가면 보입니다. 앱의 fs.readFile() 한 줄이 Node.js, libuv, libc를 지나 내려온 호출입니다");
+  s.tl.tween(".callpath path", { draw: [0, 1] }, { dur: 1.4, ease: "inOut" })
+    .tween("#syscall", { scale: (p) => 1 + 0.04 * Math.sin(p * Math.PI) }, { at: "-=0.3", dur: 0.5, ease: "linear" });
+  s.tl.stop("호출은 다섯 층을 내려갔다가, 읽은 4,096바이트를 들고 같은 길로 올라옵니다");
+  s.start();
+</script>
+</body>
+</html>
