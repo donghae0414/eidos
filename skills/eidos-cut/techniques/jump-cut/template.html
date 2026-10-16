@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 점프컷 (Jump Cut)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .lead { margin: 0; max-width: 46em; color: var(--eidos-muted-fg); font-size: 1rem; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  code, .mono { font-family: var(--eidos-font-mono); font-size: 0.82em; }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .lead { font-size: 0.9rem; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { padding: 0.55rem 0.8rem; gap: 2px; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { font-size: 0.76rem; }
+  }
+  .graph { padding: 14px 18px; }
+  .graph svg { display: block; width: 100%; height: auto; max-height: 34vh; }
+  .graph .lane { font-family: var(--eidos-font-mono); font-size: 14px; fill: var(--eidos-muted-fg); }
+  .graph line, .graph path { stroke: var(--eidos-border); stroke-width: 4; fill: none; }
+  .graph path.br { stroke: var(--eidos-cat-2); }
+  .graph .c { stroke: var(--eidos-bg); stroke-width: 3; }
+  .graph .c.main { fill: var(--eidos-fg); }
+  .graph .c.feat { fill: var(--eidos-cat-2); }
+  .graph .c.merge { fill: var(--eidos-accent); }
+  .cmd { align-self: flex-start; padding: 6px 12px; border-radius: var(--eidos-radius-sm); background: var(--eidos-surface); border: 1px solid var(--eidos-border); }
+  .cmd code { font-size: 0.9rem; }
+  @media (max-width: 640px) { .graph { padding: 8px; } .cmd code { font-size: 0.78rem; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">git 브랜치 · 1 / 3</div>
+        <h1 class="eidos-title">main에 커밋 세 개가 쌓여 있다</h1>
+      </header>
+      <div class="graph eidos-card">
+        <svg viewBox="0 0 640 170" role="img" aria-label="main에 커밋 세 개가 쌓여 있다">
+          <text class="lane" x="0" y="54">main</text>
+          <text class="lane" x="0" y="134">feature/login</text>
+          <line x1="140" y1="50" x2="620" y2="50"/><circle class="c main" cx="170" cy="50" r="11"/><circle class="c main" cx="250" cy="50" r="11"/><circle class="c main" cx="330" cy="50" r="11"/>
+        </svg>
+      </div>
+      <div class="cmd"><code>git log --oneline main</code></div>
+      <ul class="notes">
+        <li>모든 작업이 한 줄 위에 있다</li>
+        <li>배포되는 코드는 이 줄의 끝이다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">git 브랜치 · 2 / 3</div>
+        <h1 class="eidos-title">feature/login이 갈라져 커밋 두 개를 더했다</h1>
+      </header>
+      <div class="graph eidos-card">
+        <svg viewBox="0 0 640 170" role="img" aria-label="feature/login이 갈라져 커밋 두 개를 더했다">
+          <text class="lane" x="0" y="54">main</text>
+          <text class="lane" x="0" y="134">feature/login</text>
+          <line x1="140" y1="50" x2="620" y2="50"/><path class="br" d="M330 50 C 370 50 370 130 410 130 L 490 130"/><circle class="c main" cx="170" cy="50" r="11"/><circle class="c main" cx="250" cy="50" r="11"/><circle class="c main" cx="330" cy="50" r="11"/><circle class="c feat" cx="410" cy="130" r="11"/><circle class="c feat" cx="490" cy="130" r="11"/>
+        </svg>
+      </div>
+      <div class="cmd"><code>git switch -c feature/login</code></div>
+      <ul class="notes">
+        <li>main은 그대로다</li>
+        <li>새 커밋은 feature/login에만 있다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">git 브랜치 · 3 / 3</div>
+        <h1 class="eidos-title">merge 커밋 하나로 다시 main에 합쳐졌다</h1>
+      </header>
+      <div class="graph eidos-card">
+        <svg viewBox="0 0 640 170" role="img" aria-label="merge 커밋 하나로 다시 main에 합쳐졌다">
+          <text class="lane" x="0" y="54">main</text>
+          <text class="lane" x="0" y="134">feature/login</text>
+          <line x1="140" y1="50" x2="620" y2="50"/><path class="br" d="M330 50 C 370 50 370 130 410 130 L 490 130 C 530 130 530 50 570 50"/><circle class="c main" cx="170" cy="50" r="11"/><circle class="c main" cx="250" cy="50" r="11"/><circle class="c main" cx="330" cy="50" r="11"/><circle class="c feat" cx="410" cy="130" r="11"/><circle class="c feat" cx="490" cy="130" r="11"/><circle class="c merge" cx="570" cy="50" r="11"/>
+        </svg>
+      </div>
+      <div class="cmd"><code>git merge --no-ff feature/login</code></div>
+      <ul class="notes">
+        <li>그림의 배치는 처음과 같다</li>
+        <li>바뀐 것은 선 하나와 점 셋뿐이다</li>
+      </ul>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("main", { el: "#a", title: "main" });
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .c", { opacity: [0, 1], scale: [0.4, 1] }, { at: "<+=0.2", dur: 0.35, each: 0.1, ease: "pop" })
+    .stagger("#a .cmd, #a .notes li", { opacity: [0, 1] }, { dur: 0.35, each: 0.1 })
+    .stop("main 위에 커밋 세 개");
+
+  s.scene("branch", { el: "#b", via: "jump-cut", reason: "같은 그림의 나중 상태", title: "브랜치" });
+  tl.wait(0.4).stop("점프컷 → 같은 그림, 브랜치가 갈라진 뒤");
+
+  s.scene("merged", { el: "#c", via: "jump-cut", with: { flash: false }, reason: "같은 그림의 나중 상태", title: "merge" });
+  tl.wait(0.4).stop("점프컷(플래시 없음) → merge 커밋으로 합쳐진 뒤");
+  s.start();
+</script>
+</body>
+</html>

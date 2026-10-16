@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 아이리스 (Iris)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .lead { margin: 0; max-width: 46em; color: var(--eidos-muted-fg); font-size: 1rem; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  code, .mono { font-family: var(--eidos-font-mono); font-size: 0.82em; }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .lead { font-size: 0.9rem; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { padding: 0.55rem 0.8rem; gap: 2px; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { font-size: 0.76rem; }
+  }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .svc { display: flex; flex-direction: column; gap: 4px; }
+  .svc .name { font-weight: 600; }
+  .svc .metric { font-family: var(--eidos-font-mono); font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  .svc.alert { border-color: var(--eidos-danger); box-shadow: inset 0 0 0 2px var(--eidos-danger); }
+  .svc.alert .metric { color: var(--eidos-danger); font-weight: 600; }
+  .log { margin: 0; padding: 14px 16px; border-radius: var(--eidos-radius-sm); border: 1px solid var(--eidos-border); background: var(--eidos-surface); font-family: var(--eidos-font-mono); font-size: 0.82rem; line-height: 1.7; overflow: hidden; white-space: pre-wrap; word-break: break-all; }
+  .log .lv { color: var(--eidos-muted-fg); }
+  .log .culprit { display: block; color: var(--eidos-danger); font-weight: 600; }
+  .fix { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  .fix .eidos-card { display: flex; flex-direction: column; gap: 8px; }
+  .fix .k { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; color: var(--eidos-muted-fg); }
+  .fix pre { margin: 0; font-family: var(--eidos-font-mono); font-size: 0.82rem; white-space: pre-wrap; }
+  .fix .after pre { color: var(--eidos-success); }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .svc { padding: 0.6rem 0.75rem; }
+    .svc .metric { font-size: 0.72rem; }
+    .log { font-size: 0.7rem; padding: 10px 12px; line-height: 1.55; }
+    .fix { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .fix pre { font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">장애 대응 · 1 / 3</div>
+        <h1 class="eidos-title">서비스 지도에서 빨간 칸 하나가 눈에 띈다</h1>
+      </header>
+      <div class="grid">
+        <article class="svc eidos-card"><div class="name">게이트웨이</div><div class="metric">p99 42ms</div></article>
+        <article class="svc eidos-card"><div class="name">회원</div><div class="metric">p99 31ms</div></article>
+        <article class="svc eidos-card"><div class="name">상품 검색</div><div class="metric">p99 88ms</div></article>
+        <article class="svc eidos-card"><div class="name">장바구니</div><div class="metric">p99 27ms</div></article>
+        <article class="svc eidos-card alert" id="pay"><div class="name">결제 API</div><div class="metric">p99 4,210ms</div></article>
+        <article class="svc eidos-card"><div class="name">알림</div><div class="metric">p99 55ms</div></article>
+      </div>
+      <ul class="notes"><li>다른 서비스는 모두 100ms 안쪽</li><li>결제 API만 4초를 넘는다</li></ul>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">장애 대응 · 2 / 3 · 결제 API 로그</div>
+        <h1 class="eidos-title">로그를 열면 같은 경고가 줄지어 있다</h1>
+      </header>
+<pre class="log"><span class="lv">14:02:11.204 INFO </span> POST /payments 200 38ms
+<span class="lv">14:02:11.517 WARN </span> pool wait 1,920ms (active=20/20)
+<span class="lv">14:02:12.031 WARN </span> pool wait 2,840ms (active=20/20)
+<span class="culprit" id="culprit"><span class="lv">14:02:12.880 ERROR</span> HikariPool-1 - Connection is not available, request timed out after 3000ms</span><span class="lv">14:02:13.002 WARN </span> pool wait 3,010ms (active=20/20)</pre>
+      <ul class="notes"><li>DB는 멀쩡하다: 쿼리 자체는 40ms</li><li>기다리는 시간은 커넥션을 얻는 데 쓰인다</li></ul>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">장애 대응 · 3 / 3 · 원인</div>
+        <h1 class="eidos-title">원인: 외부 PG 호출이 커넥션을 쥔 채 기다린다</h1>
+      </header>
+      <div class="fix">
+        <div class="eidos-card before"><div class="k">고치기 전</div><pre>@Transactional
+fun pay(req) {
+  repo.save(order)
+  pg.charge(req)   // 3초, 커넥션 점유
+}</pre></div>
+        <div class="eidos-card after"><div class="k">고친 뒤</div><pre>fun pay(req) {
+  val r = pg.charge(req)  // 트랜잭션 밖
+  tx { repo.save(order, r) }
+}</pre></div>
+      </div>
+      <ul class="notes"><li>커넥션 점유 시간 3,000ms → 40ms</li><li>풀 크기를 늘리는 건 증상만 미룬다</li></ul>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("map", { el: "#a", title: "서비스 지도" });
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .svc", { opacity: [0, 1], scale: [0.96, 1] }, { at: "<+=0.2", dur: 0.4, each: 0.06, ease: "out" })
+    .tween("#a .notes", { opacity: [0, 1] }, { dur: 0.4 })
+    .stop("서비스 지도: 결제 API 하나만 p99가 4초를 넘는다");
+
+  s.scene("log", { el: "#b", via: "iris", with: { origin: "#pay" }, reason: "출발한 요소(빨간 칸)가 중요함", title: "결제 API 로그" });
+  tl.tween("#b .notes", { opacity: [0, 1] }, { at: "-=0.2", dur: 0.4 })
+    .stop("아이리스(reveal) → 빨간 칸에서 열린 로그: 커넥션 풀 대기가 쌓인다");
+
+  s.scene("cause", { el: "#c", via: "iris", with: { origin: "#culprit", mode: "cover", color: "cat-4" }, reason: "오류 한 줄에서 원인으로 들어감", title: "원인" });
+  tl.tween("#c .after", { opacity: [0, 1], y: [10, 0] }, { at: "-=0.2", dur: 0.5, ease: "out" })
+    .tween("#c .notes", { opacity: [0, 1] }, { dur: 0.4 })
+    .stop("아이리스(cover) → 원인: 외부 호출을 트랜잭션 밖으로 뺀다");
+  s.start();
+</script>
+</body>
+</html>

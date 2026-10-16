@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 와이프 (Wipe)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .lead { margin: 0; max-width: 46em; color: var(--eidos-muted-fg); font-size: 1rem; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  code, .mono { font-family: var(--eidos-font-mono); font-size: 0.82em; }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .lead { font-size: 0.9rem; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { padding: 0.55rem 0.8rem; gap: 2px; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { font-size: 0.76rem; }
+  }
+  .node.hot { border-color: var(--eidos-accent); box-shadow: inset 0 0 0 1px var(--eidos-accent); }
+  .step { align-self: flex-start; margin-top: auto; padding: 2px 9px; border-radius: 999px; background: var(--eidos-fill-warm); font-size: 0.72rem; font-weight: 600; }
+  @media (max-width: 640px) { .step { margin-top: 2px; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">캐시 쓰기 전략 · 1 / 3</div>
+        <h1 class="eidos-title">Cache-aside: 앱이 DB에 쓰고 캐시는 지운다</h1>
+      </header>
+      <p class="lead">쓰기는 DB로 바로 가고, 캐시 항목은 무효화만 합니다. 다음 읽기에서 캐시가 다시 채워집니다.</p>
+      <div class="flow">
+        <article class="node eidos-card"><div class="name">앱 서버</div><div class="who"><code>UPDATE users …</code><span class="step">1. DB에 쓰기</span></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card hot"><div class="name">DB</div><div class="who">원본 데이터</div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card"><div class="name">캐시</div><div class="who"><code>DEL user:42</code><span class="step">2. 키 삭제</span></div></article>
+      </div>
+      <ul class="notes">
+        <li>구현이 가장 단순하다</li>
+        <li>쓰기 직후 첫 읽기는 캐시 미스</li>
+        <li>삭제와 읽기가 겹치면 잠깐 옛 값이 보일 수 있다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">캐시 쓰기 전략 · 2 / 3</div>
+        <h1 class="eidos-title">Write-through: 캐시를 거쳐 DB까지 함께 쓴다</h1>
+      </header>
+      <p class="lead">캐시가 쓰기를 받아 DB에 동기로 반영합니다. 응답은 둘 다 끝난 뒤에 나갑니다.</p>
+      <div class="flow">
+        <article class="node eidos-card"><div class="name">앱 서버</div><div class="who"><code>SET user:42</code><span class="step">1. 캐시에 쓰기</span></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card hot"><div class="name">캐시</div><div class="who"><code>user:42 = {…}</code><span class="step">2. 동기 반영</span></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card"><div class="name">DB</div><div class="who">원본 데이터</div></article>
+      </div>
+      <ul class="notes">
+        <li>캐시와 DB가 항상 같다</li>
+        <li>쓰기 지연 = 캐시 + DB</li>
+        <li>한 번도 안 읽힐 값도 캐시에 들어간다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">캐시 쓰기 전략 · 3 / 3</div>
+        <h1 class="eidos-title">Write-back: 캐시에만 쓰고 DB는 나중에 몰아서</h1>
+      </header>
+      <p class="lead">캐시가 쓰기를 모아 두었다가 주기적으로 DB에 내려보냅니다.</p>
+      <div class="flow">
+        <article class="node eidos-card"><div class="name">앱 서버</div><div class="who"><code>SET user:42</code><span class="step">1. 캐시에 쓰기</span></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card hot"><div class="name">캐시</div><div class="who">dirty 항목 128개<span class="step">2. 모아 두기</span></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card"><div class="name">DB</div><div class="who"><code>flush every 5s</code><span class="step">3. 일괄 반영</span></div></article>
+      </div>
+      <ul class="notes">
+        <li>쓰기 응답이 가장 빠르다</li>
+        <li>캐시 노드가 죽으면 아직 안 내려간 쓰기는 사라진다</li>
+        <li>DB 부하가 고르게 퍼진다</li>
+      </ul>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("aside", { el: "#a", title: "Cache-aside" });
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .flow > *", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.2", dur: 0.45, each: 0.08, ease: "out" })
+    .stagger("#a .notes li", { opacity: [0, 1], x: [-6, 0] }, { dur: 0.4, each: 0.1, ease: "out" })
+    .stop("Cache-aside: 쓰기는 DB로, 캐시는 지우기만 한다");
+
+  s.scene("through", { el: "#b", via: "wipe", with: { dir: "left" }, reason: "나란한 다른 전략으로 교체", title: "Write-through" });
+  tl.stagger("#b .notes li", { opacity: [0, 1], x: [-6, 0] }, { at: "-=0.1", dur: 0.4, each: 0.1, ease: "out" })
+    .stop("와이프 → Write-through: 캐시를 거쳐 DB까지 동기로 쓴다");
+
+  s.scene("back", { el: "#c", via: "wipe", with: { dir: "down", soft: true, dur: 0.9 }, reason: "나란한 다른 전략으로 교체", title: "Write-back" });
+  tl.stagger("#c .notes li", { opacity: [0, 1], x: [-6, 0] }, { at: "-=0.1", dur: 0.4, each: 0.1, ease: "out" })
+    .stop("부드러운 경계 와이프 → Write-back: 캐시에만 쓰고 DB는 나중에");
+  s.start();
+</script>
+</body>
+</html>

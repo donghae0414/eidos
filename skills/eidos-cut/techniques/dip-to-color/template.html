@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 딥 투 컬러 (Dip to Color)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .lead { margin: 0; max-width: 46em; color: var(--eidos-muted-fg); font-size: 1rem; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  code, .mono { font-family: var(--eidos-font-mono); font-size: 0.82em; }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .lead { font-size: 0.9rem; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { padding: 0.55rem 0.8rem; gap: 2px; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { font-size: 0.76rem; }
+  }
+  .lanes { display: flex; flex-direction: column; gap: 10px; }
+  .lane { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); align-items: center; gap: 12px; }
+  .lane .k { font-family: var(--eidos-font-mono); font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  .track { display: flex; gap: 6px; min-width: 0; }
+  .req { flex: 0 0 auto; padding: 6px 10px; border-radius: var(--eidos-radius-sm); font-family: var(--eidos-font-mono); font-size: 0.78rem; background: var(--eidos-fill-warm); color: var(--eidos-fg); }
+  .req.wait { background: none; border: 1px dashed var(--eidos-border); color: var(--eidos-muted-fg); }
+  .req.c2 { background: var(--eidos-cat-2); color: var(--eidos-accent-fg); }
+  .req.c4 { background: var(--eidos-cat-4); color: var(--eidos-accent-fg); }
+  .req.c3 { background: var(--eidos-cat-3); color: var(--eidos-accent-fg); }
+  .req.lost { background: var(--eidos-danger); color: var(--eidos-accent-fg); }
+  @media (max-width: 640px) {
+    .lane { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .track { flex-wrap: wrap; gap: 4px; }
+    .req { font-size: 0.7rem; padding: 4px 7px; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">1장 · HTTP/1.1</div>
+        <h1 class="eidos-title">연결 하나에 요청 하나씩, 앞이 끝나야 뒤가 간다</h1>
+      </header>
+      <div class="lanes eidos-card">
+        <div class="lane"><span class="k">TCP 연결 1</span><div class="track"><span class="req">style.css</span><span class="req">app.js</span><span class="req wait">대기</span></div></div>
+        <div class="lane"><span class="k">TCP 연결 2</span><div class="track"><span class="req">logo.png</span><span class="req wait">대기</span><span class="req wait">대기</span></div></div>
+      </div>
+      <ul class="notes"><li>브라우저는 호스트당 연결을 6개까지 연다</li><li>느린 응답 하나가 뒤 요청을 막는다 (HOL 블로킹)</li></ul>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">2장 · HTTP/2</div>
+        <h1 class="eidos-title">연결 하나에 스트림 여러 개가 섞여 흐른다</h1>
+      </header>
+      <div class="lanes eidos-card">
+        <div class="lane"><span class="k">TCP 연결 1</span><div class="track"><span class="req c2">css#1</span><span class="req c4">js#3</span><span class="req c3">png#5</span><span class="req c2">css#1</span><span class="req c4">js#3</span></div></div>
+      </div>
+      <ul class="notes"><li>요청마다 스트림 번호를 붙여 프레임 단위로 섞는다</li><li>HTTP 수준의 줄서기는 사라졌다</li><li>하지만 TCP 패킷 하나를 잃으면 모든 스트림이 멈춘다</li></ul>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">3장 · HTTP/3</div>
+        <h1 class="eidos-title">QUIC은 UDP 위에서 스트림마다 따로 복구한다</h1>
+      </header>
+      <div class="lanes eidos-card">
+        <div class="lane"><span class="k">스트림 #1</span><div class="track"><span class="req c2">css</span><span class="req c2">css</span></div></div>
+        <div class="lane"><span class="k">스트림 #3</span><div class="track"><span class="req lost">손실</span><span class="req c4">js 재전송</span></div></div>
+        <div class="lane"><span class="k">스트림 #5</span><div class="track"><span class="req c3">png</span><span class="req c3">png</span></div></div>
+      </div>
+      <ul class="notes"><li>손실은 그 스트림만 기다리게 한다</li><li>연결 수립과 TLS를 1-RTT로 합쳤다</li></ul>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("h1", { el: "#a", title: "HTTP/1.1" });
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .req", { opacity: [0, 1], x: [-8, 0] }, { at: "<+=0.2", dur: 0.3, each: 0.08, ease: "out" })
+    .stagger("#a .notes li", { opacity: [0, 1] }, { dur: 0.35, each: 0.12 })
+    .stop("HTTP/1.1: 연결마다 요청이 줄을 선다");
+
+  s.scene("h2", { el: "#b", via: "dip-to-color", with: { title: "2장 · HTTP/2" }, reason: "장이 바뀜", title: "HTTP/2" });
+  tl.stagger("#b .req", { opacity: [0, 1], x: [-8, 0] }, { dur: 0.3, each: 0.07, ease: "out" })
+    .stop("딥 투 컬러 → 2장: 한 연결 안에서 스트림이 섞인다");
+
+  s.scene("h3", { el: "#c", via: "dip-to-color", with: { color: "cat-4", title: "3장 · HTTP/3" }, reason: "장이 바뀜", title: "HTTP/3" });
+  tl.stagger("#c .lane", { opacity: [0, 1], x: [-8, 0] }, { dur: 0.35, each: 0.1, ease: "out" })
+    .stop("파란색 딥 → 3장: 손실은 그 스트림만 멈춘다");
+  s.start();
+</script>
+</body>
+</html>

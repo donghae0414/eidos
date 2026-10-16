@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 휩팬 (Whip Pan)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 9vh 6vw 14vh; display: flex; flex-direction: column; gap: 4vh; word-break: keep-all; overflow-wrap: break-word; }
+  .scene header { display: flex; flex-direction: column; gap: 6px; }
+  .lead { margin: 0; max-width: 46em; color: var(--eidos-muted-fg); font-size: 1rem; }
+  .notes { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; padding: 0; list-style: none; font-size: 0.95rem; color: var(--eidos-muted-fg); }
+  .notes li::before { content: "—"; margin-right: 8px; color: var(--eidos-accent); }
+  .flow { display: flex; align-items: stretch; gap: 8px; }
+  .node { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .node .name { font-weight: 600; font-size: 1.02rem; }
+  .node .who { font-size: 0.82rem; color: var(--eidos-muted-fg); }
+  code, .mono { font-family: var(--eidos-font-mono); font-size: 0.82em; }
+  .arrow { flex: 0 0 22px; display: flex; align-items: center; justify-content: center; color: var(--eidos-muted-fg); }
+  .arrow svg { width: 16px; height: 16px; }
+  @media (max-width: 640px) {
+    .scene { padding: 5vh 5vw 15vh; gap: 2.4vh; }
+    .lead { font-size: 0.9rem; }
+    .notes { flex-direction: column; gap: 4px; font-size: 0.86rem; }
+    .flow { flex-direction: column; gap: 2px; }
+    .arrow { flex-basis: 18px; }
+    .arrow svg { transform: rotate(90deg); }
+    .node { padding: 0.55rem 0.8rem; gap: 2px; }
+    .node .name { font-size: 0.95rem; }
+    .node .who { font-size: 0.76rem; }
+  }
+  .node.svc { border-color: var(--eidos-accent); box-shadow: inset 0 0 0 1px var(--eidos-accent); }
+  .node.svc .name { font-size: 1.15rem; }
+  @media (max-width: 640px) { .node.svc .name { font-size: 1rem; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene" id="a">
+      <header>
+        <div class="eidos-label">주문 한 건의 여정 · 1 / 3</div>
+        <h1 class="eidos-title">주문 서비스: 주문을 만들고 바로 응답한다</h1>
+      </header>
+      <p class="lead">결제와 배송을 기다리지 않습니다. 주문을 저장한 뒤 이벤트만 남깁니다.</p>
+      <div class="flow">
+        <article class="node eidos-card ev"><div class="name">받는 이벤트</div><div class="who"><code>HTTP 요청 (사용자)</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card svc"><div class="name">주문 서비스</div><div class="who"><code>POST /orders</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card ev"><div class="name">내보내는 이벤트</div><div class="who"><code>OrderCreated</code></div></article>
+      </div>
+      <ul class="notes">
+        <li>응답 시간 = 주문 저장 시간</li>
+        <li>결제가 느려도 주문 화면은 빠르다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="b">
+      <header>
+        <div class="eidos-label">주문 한 건의 여정 · 2 / 3</div>
+        <h1 class="eidos-title">결제 서비스: 같은 이벤트를 받아 돈을 처리한다</h1>
+      </header>
+      <p class="lead">주문 서비스와 같은 층위의 이웃입니다. 이벤트 하나로만 연결됩니다.</p>
+      <div class="flow">
+        <article class="node eidos-card ev"><div class="name">받는 이벤트</div><div class="who"><code>OrderCreated</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card svc"><div class="name">결제 서비스</div><div class="who"><code>PaymentWorker</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card ev"><div class="name">내보내는 이벤트</div><div class="who"><code>PaymentApproved</code></div></article>
+      </div>
+      <ul class="notes">
+        <li>실패하면 PaymentFailed를 내보낸다</li>
+        <li>재시도해도 한 번만 결제되게 멱등 키를 쓴다</li>
+      </ul>
+    </section>
+
+    <section class="scene" id="c">
+      <header>
+        <div class="eidos-label">주문 한 건의 여정 · 3 / 3</div>
+        <h1 class="eidos-title">배송 서비스: 결제가 끝난 주문만 출고한다</h1>
+      </header>
+      <p class="lead">세 서비스는 서로를 호출하지 않고, 이벤트를 따라 옆으로 이어집니다.</p>
+      <div class="flow">
+        <article class="node eidos-card ev"><div class="name">받는 이벤트</div><div class="who"><code>PaymentApproved</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card svc"><div class="name">배송 서비스</div><div class="who"><code>ShipmentWorker</code></div></article>
+        <div class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+        <article class="node eidos-card ev"><div class="name">내보내는 이벤트</div><div class="who"><code>ShipmentScheduled</code></div></article>
+      </div>
+      <ul class="notes">
+        <li>결제 서비스가 죽어도 배송 큐는 쌓여서 기다린다</li>
+        <li>각 서비스는 따로 배포한다</li>
+      </ul>
+    </section>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const { tl } = s;
+  s.scene("order", { el: "#a", title: "주문" });
+  tl.tween("#a header", { opacity: [0, 1], y: [12, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#a .flow > *", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.2", dur: 0.4, each: 0.08, ease: "out" })
+    .stagger("#a .lead, #a .notes li", { opacity: [0, 1] }, { dur: 0.35, each: 0.1 })
+    .stop("주문 서비스: 저장하고 OrderCreated를 내보낸다");
+
+  s.scene("payment", { el: "#b", via: "whip-pan", with: { dir: "right" }, reason: "나란한 이웃 서비스로 옆 이동", title: "결제" });
+  tl.stagger("#b .notes li", { opacity: [0, 1] }, { at: "-=0.1", dur: 0.35, each: 0.1 })
+    .stop("휩팬 → 결제 서비스: OrderCreated를 받아 결제한다");
+
+  s.scene("shipping", { el: "#c", via: "whip-pan", with: { dir: "right" }, reason: "나란한 이웃 서비스로 옆 이동", title: "배송" });
+  tl.stagger("#c .notes li", { opacity: [0, 1] }, { at: "-=0.1", dur: 0.35, each: 0.1 })
+    .stop("휩팬 → 배송 서비스: 결제가 끝난 주문만 출고한다");
+  s.start();
+</script>
+</body>
+</html>
