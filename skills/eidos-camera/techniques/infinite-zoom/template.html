@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 무한 줌 (Infinite Zoom)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 1.2vh; word-break: keep-all; }
+  .crumbs { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem; font-size: 0.8rem; color: var(--eidos-fg); }
+  .crumbs li + li::before { content: "›"; margin-right: 0.5rem; color: var(--eidos-muted-fg); }
+  .crumbs code { font-family: var(--eidos-font-mono); }
+  .zoom-view { position: relative; flex: 1; min-height: 0; overflow: hidden; border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); }
+  .zoom-level { position: absolute; inset: 0; container-type: size; background: var(--eidos-bg); display: flex; flex-direction: column; gap: 0.6rem; padding: 0.9rem 1rem; }
+  .lv-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.8rem; }
+  .lv-kind { font-size: 0.72rem; letter-spacing: 0.06em; color: var(--eidos-muted-fg); }
+  .lv-name { margin: 0; font-size: clamp(1rem, 2.2vw, 1.3rem); font-weight: 700; }
+  .lv-note { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: var(--eidos-fg); }
+  .lv-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 0.6rem; }
+  .unit { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0.25rem; padding: 0.55rem 0.7rem; }
+  .unit h3 { margin: 0; font-size: 0.95rem; }
+  .unit p { margin: 0; font-size: 0.75rem; color: var(--eidos-muted-fg); }
+  .portal { flex: none; align-self: center; width: 24cqw; height: 24cqh; margin-top: 0.3rem; border-radius: 4px; outline: 2px solid var(--eidos-accent); outline-offset: 2px; background: var(--eidos-surface); }
+  .fn { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1.1rem; }
+  .code { margin: 0; padding: 0.8rem 1.1rem; font-family: var(--eidos-font-mono); font-size: clamp(0.8rem, 2.2vw, 1.4rem); line-height: 1.5; color: var(--eidos-surface-fg); }
+  .code mark { background: none; color: inherit; font-weight: 700; border-bottom: 2px solid var(--eidos-accent); }
+  .math { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: clamp(0.85rem, 1.6vw, 1.1rem); }
+  .math b { font-family: var(--eidos-font-mono); }
+  @media (max-aspect-ratio: 1/1) {
+    .lv-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .unit.go { grid-row: span 2; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">조직에서 코드까지 · 무한 줌</div>
+        <h1 class="eidos-title">하루 140만 원 오차는 어디서 나올까</h1>
+        <ol class="crumbs">
+          <li id="c0">커머스 본부</li>
+          <li id="c1">결제팀</li>
+          <li id="c2">정산 배치</li>
+          <li id="c3"><code>FeeCalculator.calculateFee</code></li>
+        </ol>
+      </header>
+      <section class="zoom-view" id="view">
+        <div class="zoom-level" id="lv0">
+          <div class="lv-head"><span class="lv-kind">조직</span><h2 class="lv-name">커머스 본부</h2><span class="lv-note">정산 오차 하루 −140만 원</span></div>
+          <div class="lv-grid">
+            <article class="unit eidos-card"><h3>검색팀</h3><p>서비스 4 · 11명</p></article>
+            <article class="unit eidos-card"><h3>주문팀</h3><p>서비스 6 · 15명</p></article>
+            <article class="unit eidos-card go"><h3>결제팀</h3><p>서비스 6 · 9명</p><div class="portal" data-portal></div></article>
+            <article class="unit eidos-card"><h3>배송팀</h3><p>서비스 3 · 8명</p></article>
+            <article class="unit eidos-card"><h3>회원팀</h3><p>서비스 4 · 7명</p></article>
+            <article class="unit eidos-card"><h3>광고팀</h3><p>서비스 5 · 10명</p></article>
+          </div>
+        </div>
+        <div class="zoom-level" id="lv1">
+          <div class="lv-head"><span class="lv-kind">팀 · 서비스</span><h2 class="lv-name">결제팀</h2><span class="lv-note">대사 리포트: 하루 140만 원 불일치</span></div>
+          <div class="lv-grid">
+            <article class="unit eidos-card"><h3>승인 API</h3><p>카드 승인 · p99 120ms</p></article>
+            <article class="unit eidos-card go"><h3>정산 배치</h3><p>매일 02:00 가맹점 정산</p><div class="portal" data-portal></div></article>
+            <article class="unit eidos-card"><h3>환불 서비스</h3><p>부분 환불 · 취소</p></article>
+            <article class="unit eidos-card"><h3>웹훅 발송</h3><p>가맹점에 결과 통보</p></article>
+            <article class="unit eidos-card"><h3>대사 리포트</h3><p>PG 입금과 장부 비교</p></article>
+            <article class="unit eidos-card"><h3>결제 DB</h3><p>원장 · 거래 내역</p></article>
+          </div>
+        </div>
+        <div class="zoom-level" id="lv2">
+          <div class="lv-head"><span class="lv-kind">서비스 · 모듈</span><h2 class="lv-name">정산 배치</h2><span class="lv-note">수수료가 장부보다 조금씩 적게 나옵니다</span></div>
+          <div class="lv-grid">
+            <article class="unit eidos-card"><h3>SettlementJob</h3><p>스케줄 · 재시도</p></article>
+            <article class="unit eidos-card"><h3>MerchantRates</h3><p>가맹점별 수수료율</p></article>
+            <article class="unit eidos-card go"><h3>FeeCalculator</h3><p>건별 수수료 계산</p><div class="portal" data-portal></div></article>
+            <article class="unit eidos-card"><h3>PayoutClient</h3><p>지급 요청</p></article>
+            <article class="unit eidos-card"><h3>LedgerWriter</h3><p>원장 기록</p></article>
+            <article class="unit eidos-card"><h3>ReportExporter</h3><p>대사 파일 생성</p></article>
+          </div>
+        </div>
+        <div class="zoom-level" id="lv3">
+          <div class="lv-head"><span class="lv-kind">모듈 · 함수</span><h2 class="lv-name">FeeCalculator.calculateFee</h2></div>
+          <div class="fn">
+            <pre class="code eidos-card">function calculateFee(amount, rate) {
+  return <mark>Math.floor</mark>(amount * rate);
+}</pre>
+            <ul class="math">
+              <li><b>12,345원 × 2.9% = 358.005원</b> → 358원, 0.005원을 버립니다</li>
+              <li>버리는 금액은 건마다 0~1원, 평균 <b>0.5원</b></li>
+              <li>하루 <b>280만 건 × 0.5원 ≈ 140만 원</b>: 본부에서 본 그 오차입니다</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const zoom = s.fx("infinite-zoom", { levels: ".zoom-level" });
+
+  s.tl.tween(".layout header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#view", { opacity: [0, 1] }, { at: "<+=0.15", dur: 0.6 })
+    .stop("커머스 본부의 정산이 하루 140만 원씩 맞지 않습니다. 원인을 찾아 안으로 들어갑니다");
+
+  const steps = [
+    [1, "#c1", "결제팀 안에는 서비스가 여섯 개. 불일치는 정산 배치에서 생깁니다"],
+    [2, "#c2", "정산 배치 안에서 수수료를 계산하는 모듈은 FeeCalculator 하나입니다"],
+    [3, "#c3", "함수 한 줄: Math.floor가 건마다 1원 미만을 버립니다. 하루 280만 건이면 140만 원"],
+  ];
+  for (const [depth, crumb, caption] of steps) {
+    const z = zoom.to(depth, { dur: 1.8 });
+    s.tl.tween(crumb, { opacity: [0, 1] }, { at: z.end - 0.4, dur: 0.4 }).stop(caption);
+  }
+
+  zoom.to(0, { dur: 3 });
+  s.tl.stop("다시 본부까지 한 번에 나오면, 함수 한 줄의 버림이 조직 단위 숫자(하루 140만 원)를 만들었습니다");
+  s.start();
+</script>
+</body>
+</html>

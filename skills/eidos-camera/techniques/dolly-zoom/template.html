@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 돌리줌 (Dolly Zoom)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 1vh; word-break: keep-all; }
+  .dolly-view { --u: min(80vw, 44vh, 420px); position: relative; flex: 1; min-height: 0; }
+  .dolly-rig { position: absolute; left: 50%; top: 40%; width: 0; height: 0; }
+  .shelf { width: min(92vw, calc(var(--u) * 2.1)); height: calc(var(--u) * 1.15); padding: calc(var(--u) * 0.045); display: grid; grid-template-columns: 27% 1fr 27%; grid-template-rows: auto 1fr; gap: calc(var(--u) * 0.025); border: 2px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); }
+  .shelf-label { grid-column: 1 / -1; font-family: var(--eidos-font-mono); font-size: calc(var(--u) * 0.05); color: var(--eidos-muted-fg); white-space: nowrap; }
+  .col { display: flex; flex-direction: column; justify-content: space-between; }
+  .col.r { grid-column: 3; align-items: flex-end; }
+  .bar { position: relative; display: block; height: calc(var(--u) * 0.042); border-radius: 2px; background: color-mix(in oklch, var(--eidos-muted-fg) 38%, transparent); }
+  .bar b { position: absolute; inset: -3px; border-radius: 3px; background: var(--eidos-accent); }
+  .frame { width: min(92vw, calc(var(--u) * 2.1)); height: calc(var(--u) * 1.15); border: 1.5px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); }
+  .query { width: min(86vw, 400px); padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; border-color: var(--eidos-muted-fg); }
+  .q-label { font-size: 0.75rem; color: var(--eidos-muted-fg); letter-spacing: 0.04em; }
+  .query pre { margin: 0; font-family: var(--eidos-font-mono); font-size: 0.9rem; line-height: 1.45; color: var(--eidos-surface-fg); }
+  .idx { font-family: var(--eidos-font-mono); font-size: 0.8rem; font-weight: 700; color: var(--eidos-surface-fg); border-left: 3px solid var(--eidos-accent); padding-left: 0.5rem; }
+  .query dl { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--eidos-border); }
+  .query dt { font-size: 0.7rem; color: var(--eidos-muted-fg); }
+  .query dd { margin: 0; font-family: var(--eidos-font-mono); font-size: 1.05rem; font-weight: 700; color: var(--eidos-surface-fg); font-variant-numeric: tabular-nums; }
+  .plan { font-size: 0.8rem; color: var(--eidos-fg); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">인덱스와 데이터 규모 · 돌리줌</div>
+        <h1 class="eidos-title">같은 쿼리가 운영에서만 느린 이유</h1>
+      </header>
+      <section class="dolly-view">
+        <div class="dolly-rig" id="rig">
+          <div class="plane shelf" id="s1" data-z="-0.6"><span class="shelf-label">출시 첫 주 · 1천 행</span><div class="col l"></div><div class="col r"></div></div>
+          <div class="plane frame" id="f1" data-z="-1.2"></div>
+          <div class="plane shelf" id="s2" data-z="-1.8"><span class="shelf-label">6개월 · 100만 행</span><div class="col l"></div><div class="col r"></div></div>
+          <div class="plane frame" id="f2" data-z="-2.7"></div>
+          <div class="plane shelf" id="s3" data-z="-3.6"><span class="shelf-label">1년 · 1천만 행</span><div class="col l"></div><div class="col r"></div></div>
+          <div class="plane frame" id="f3" data-z="-5.3"></div>
+          <div class="plane shelf" id="s4" data-z="-7"><span class="shelf-label">3년 · 1억 행</span><div class="col l"></div><div class="col r"></div></div>
+          <div class="plane frame" id="f4" data-z="-10"></div>
+          <article class="plane query eidos-card" id="q" data-y="0.47">
+            <div class="q-label">GET /orders · 내 주문 내역</div>
+            <pre>SELECT * FROM orders
+ WHERE user_id = 42;</pre>
+            <div class="idx" id="idx">CREATE INDEX ON orders (user_id);</div>
+            <dl>
+              <div><dt>테이블 행 수</dt><dd id="rows">1,000</dd></div>
+              <div><dt>읽은 행</dt><dd id="scan">1,000</dd></div>
+              <div><dt>응답 시간</dt><dd id="lat">3ms</dd></div>
+            </dl>
+            <div class="plan" id="plan">실행 계획: Seq Scan (처음부터 끝까지)</div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const rng = Eidos.rng(7);
+  for (const col of document.querySelectorAll(".shelf .col")) {
+    for (let i = 0; i < 8; i++) {
+      const bar = document.createElement("i");
+      bar.className = "bar";
+      bar.style.width = `${Math.round(45 + rng() * 55)}%`;
+      col.appendChild(bar);
+    }
+  }
+  const hit = document.querySelector("#s4 .col.r .bar:nth-child(3)");
+  hit.classList.add("hit");
+  hit.appendChild(document.createElement("b"));
+
+  const sig = (v) => Number(v.toPrecision(3));
+  const comma = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const rows = (n) => { const v = sig(n); return v >= 1e8 ? `${sig(v / 1e8)}억` : v >= 1e4 ? `${comma(sig(v / 1e4))}만` : comma(v); };
+  const ms = (v) => (v < 1000 ? `${Math.round(v)}ms` : `${sig(v / 1000)}초`);
+  const geo = (a, b) => (p) => a * Math.pow(b / a, p);
+  const SEQ = "실행 계획: Seq Scan (처음부터 끝까지)", IDX = "실행 계획: Index Scan (user_id로 바로)";
+
+  const s = Eidos.stage();
+  const dolly = s.fx("dolly-zoom", { rig: "#rig", from: 7 });
+
+  s.tl.tween(".layout header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#q", { opacity: [0, 1] }, { at: "<+=0.15", dur: 0.5 })
+    .tween("#s1", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.6 })
+    .stop("개발 DB의 orders는 1,000행. 이 쿼리는 3ms에 끝나고, 데이터는 바로 뒤에 있습니다");
+
+  const far = dolly.to(1.15, { dur: 2.6 });
+  const sync = { at: far.start, dur: 2.6, ease: "inOut" };
+  const toBig = geo(1e3, 1e8), toSlow = geo(3, 42000);
+  s.tl.stagger("#f1, #s2, #f2, #s3, #f3, #s4, #f4", { opacity: [0, 1] }, { at: far.start + 0.2, dur: 0.5, each: 0.28 })
+    .tween("#rows, #scan", { text: (p) => rows(toBig(p)) }, sync)
+    .tween("#lat", { text: (p) => ms(toSlow(p)) }, sync)
+    .stop("3년 뒤 운영 DB. 쿼리와 코드는 그대로인데 뒤에 쌓인 데이터가 1억 행이 되어, 다 읽는 데 42초가 걸립니다");
+
+  const toFew = geo(1e8, 12), toFast = geo(42000, 4);
+  s.tl.tween("#idx", { opacity: [0, 1], x: [-8, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".bar:not(.hit), .shelf-label", { opacity: [1, 0.2] }, { at: "<+=0.2", dur: 0.7 })
+    .tween(".bar.hit b", { opacity: [0, 1] }, { at: "<+=0.3", dur: 0.5 })
+    .tween("#plan", { text: (p) => (p < 0.5 ? SEQ : IDX) }, { at: "<", dur: 0.4, ease: "linear" })
+    .tween("#scan", { text: (p) => rows(toFew(p)) }, { at: "<", dur: 0.8 })
+    .tween("#lat", { text: (p) => ms(toFast(p)) }, { at: "<", dur: 0.8 })
+    .stop("user_id에 인덱스를 걸면 1억 행을 다 읽지 않고 필요한 12행으로 바로 갑니다. 42초가 4ms가 됩니다");
+
+  dolly.to(7, { dur: 2.4 });
+  s.tl.stop("인덱스가 있으면 1억 행도 처음 1,000행처럼 가깝습니다. 규모가 커지면 코드보다 접근 경로를 먼저 봅니다");
+  s.start();
+</script>
+</body>
+</html>

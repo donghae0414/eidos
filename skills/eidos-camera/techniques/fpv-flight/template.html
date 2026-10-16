@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · FPV 비행 (FPV Flight)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 1vh; word-break: keep-all; }
+  .rail { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.9rem; font-size: 0.8rem; color: var(--eidos-fg); }
+  .rail span { font-family: var(--eidos-font-mono); color: var(--eidos-muted-fg); }
+  .rail .total { margin-left: auto; font-weight: 600; }
+  .rail .total b { font-family: var(--eidos-font-mono); }
+  .fpv-view { --u: min(84vw, 46vh, 460px); position: relative; flex: 1; min-height: 0; }
+  .fpv-rig { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+  .gate { --c: var(--eidos-fg); width: var(--u); height: calc(var(--u) * 0.66); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: calc(var(--u) * 0.022) solid var(--c); border-radius: var(--eidos-radius-sm); }
+  .g-head, .g-foot { background: var(--eidos-surface); color: var(--eidos-surface-fg); }
+  .g-head { display: flex; align-items: baseline; gap: calc(var(--u) * 0.03); padding: calc(var(--u) * 0.025) calc(var(--u) * 0.04); border-bottom: 1px solid var(--eidos-border); }
+  .g-no { font-family: var(--eidos-font-mono); font-size: calc(var(--u) * 0.042); font-weight: 700; color: var(--c); }
+  .g-name { font-size: calc(var(--u) * 0.064); font-weight: 700; }
+  .g-ms { margin-left: auto; font-family: var(--eidos-font-mono); font-size: calc(var(--u) * 0.06); font-weight: 700; }
+  .g-foot { padding: calc(var(--u) * 0.022) calc(var(--u) * 0.04); font-size: calc(var(--u) * 0.04); line-height: 1.35; color: var(--eidos-muted-fg); border-top: 1px solid var(--eidos-border); }
+  .dns { --c: var(--eidos-cat-4); }
+  .cdn { --c: var(--eidos-cat-3); }
+  .lb { --c: var(--eidos-cat-5); }
+  .api { --c: var(--eidos-cat-2); }
+  .db { --c: var(--eidos-accent); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">요청 경로 · FPV 비행</div>
+        <h1 class="eidos-title">fetch 하나가 응답이 되기까지 지나는 다섯 관문</h1>
+        <ol class="rail">
+          <li id="r1">DNS <span>12</span></li>
+          <li id="r2">CDN <span>28</span></li>
+          <li id="r3">LB <span>2</span></li>
+          <li id="r4">API <span>18</span></li>
+          <li id="r5">DB <span>96</span></li>
+          <li class="total">누적 <b id="total">0</b>ms</li>
+        </ol>
+      </header>
+      <section class="fpv-view">
+        <div class="fpv-rig" id="rig">
+          <article class="gate dns" id="g1" data-x="0" data-y="0" data-z="0">
+            <div class="g-head"><span class="g-no">1</span><span class="g-name">DNS</span><span class="g-ms">+12ms</span></div>
+            <div class="g-foot">api.shop.kr를 IP로 바꿉니다. 캐시가 비어 있으면 리졸버가 루트부터 다시 묻습니다</div>
+          </article>
+          <article class="gate cdn" id="g2" data-x="0.5" data-y="-0.2" data-z="-2.6" data-ry="-10.9">
+            <div class="g-head"><span class="g-no">2</span><span class="g-name">CDN 엣지</span><span class="g-ms">+28ms</span></div>
+            <div class="g-foot">가까운 엣지에서 TLS를 맺고, /api는 캐시하지 않으니 오리진으로 넘깁니다</div>
+          </article>
+          <article class="gate lb" id="g3" data-x="-0.3" data-y="0.1" data-z="-5.2" data-ry="17.1">
+            <div class="g-head"><span class="g-no">3</span><span class="g-name">로드 밸런서</span><span class="g-ms">+2ms</span></div>
+            <div class="g-foot">헬스 체크를 통과한 API 서버 중 한 대를 고릅니다</div>
+          </article>
+          <article class="gate api" id="g4" data-x="0.4" data-y="-0.15" data-z="-7.8" data-ry="-15.1">
+            <div class="g-head"><span class="g-no">4</span><span class="g-name">API 서버</span><span class="g-ms">+18ms</span></div>
+            <div class="g-foot">토큰을 검증하고 주문 조회 쿼리를 만듭니다</div>
+          </article>
+          <article class="gate db" id="g5" data-x="0" data-y="0.05" data-z="-10.4" data-ry="8.7">
+            <div class="g-head"><span class="g-no">5</span><span class="g-name">DB</span><span class="g-ms">+96ms</span></div>
+            <div class="g-foot">orders 전체를 훑는 조회. 인덱스가 없어서 가장 오래 걸립니다</div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  if (matchMedia("(max-aspect-ratio: 1/1)").matches) {
+    const gates = [...document.querySelectorAll("#rig .gate")];
+    gates.forEach((g) => { g.dataset.x = String(Number(g.dataset.x) * 0.45); });
+    gates.forEach((g, i) => {
+      if (!i) return;
+      const a = gates[i - 1].dataset, b = g.dataset;
+      g.dataset.ry = String((Math.atan2(a.x - b.x, a.z - b.z) * 180) / Math.PI);
+    });
+  }
+  const s = Eidos.stage();
+  const fly = s.fx("fpv-flight", { rig: "#rig", lens: 1.6, from: { x: 0, y: -1.2, z: 2.6, look: [0, 0.1, -4.5] } });
+
+  s.tl.tween(".layout header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#rig .gate", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.6 })
+    .stop("fetch('/api/orders') 하나가 응답이 되기까지 관문 다섯 개를 지납니다. 관문마다 시간이 붙습니다");
+
+  const legs = [
+    ["#g1", "#r1", 12, "1. DNS: 도메인을 IP로 바꾸는 데 12ms"],
+    ["#g2", "#r2", 28, "2. CDN 엣지: TLS를 맺고 오리진으로 넘기는 데 28ms"],
+    ["#g3", "#r3", 2, "3. 로드 밸런서: 서버 한 대를 고르는 데 2ms"],
+    ["#g4", "#r4", 18, "4. API 서버: 인증과 쿼리 준비에 18ms"],
+    ["#g5", "#r5", 96, "5. DB: 인덱스 없는 조회에 96ms. 전체 156ms의 62%가 이 관문 하나에서 나옵니다"],
+  ];
+  let total = 0;
+  for (const [gate, rail, ms, caption] of legs) {
+    const leg = fly.to(gate, { dur: gate === "#g1" ? 2 : 1.7 });
+    const from = total, to = (total += ms);
+    s.tl.tween(rail, { opacity: [0.35, 1] }, { at: leg.end - 0.5, dur: 0.5 })
+      .tween("#total", { text: (p) => String(Math.round(from + (to - from) * p)) }, { at: leg.end - 0.5, dur: 0.5 })
+      .stop(caption);
+  }
+  s.start();
+</script>
+</body>
+</html>

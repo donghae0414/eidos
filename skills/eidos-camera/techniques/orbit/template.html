@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 오빗 (Orbit)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 15vh; display: flex; flex-direction: column; gap: 1vh; word-break: keep-all; }
+  .orbit-view { --u: min(66vw, 50vh, 480px); position: relative; flex: 1; min-height: 0; }
+  .orbit-rig { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+  .plane { position: absolute; left: 0; top: 0; }
+  .slab { --c: var(--eidos-fg); width: var(--u); height: calc(var(--u) * 0.62); padding: calc(var(--u) * 0.05) calc(var(--u) * 0.065); display: flex; flex-direction: column; gap: calc(var(--u) * 0.02); border-top: calc(var(--u) * 0.02) solid var(--c); }
+  .slab .tag { font-size: calc(var(--u) * 0.038); font-weight: 600; letter-spacing: 0.06em; color: var(--c); }
+  .slab h3 { margin: 0; font-size: calc(var(--u) * 0.075); line-height: 1.2; }
+  .slab code { font-family: var(--eidos-font-mono); font-size: calc(var(--u) * 0.046); color: var(--c); }
+  .slab p { margin: 0; font-size: calc(var(--u) * 0.045); color: var(--eidos-muted-fg); }
+  .ui { --c: var(--eidos-cat-4); }
+  .svc { --c: var(--eidos-cat-3); }
+  .data { --c: var(--eidos-cat-2); }
+  .side { width: calc(var(--u) * 0.9); height: calc(var(--u) * 0.44); padding: 0; }
+  .side svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .side .cap { font-size: 38px; fill: var(--eidos-muted-fg); letter-spacing: 0.04em; }
+  .side .edge { stroke-width: 8; stroke-linecap: round; }
+  .side .edge.ui { stroke: var(--eidos-cat-4); }
+  .side .edge.svc { stroke: var(--eidos-cat-3); }
+  .side .edge.data { stroke: var(--eidos-cat-2); }
+  .side .layer { font-size: 58px; font-weight: 700; fill: var(--eidos-surface-fg); text-anchor: middle; }
+  .side .cls { font-size: 38px; font-family: var(--eidos-font-mono); fill: var(--eidos-muted-fg); text-anchor: middle; }
+  .side .call { fill: none; stroke: var(--eidos-fg); stroke-width: 5; stroke-linecap: round; }
+  .side .call-head { fill: var(--eidos-fg); }
+  .side .call-label { font-size: 36px; font-family: var(--eidos-font-mono); fill: var(--eidos-fg); text-anchor: middle; }
+  .side .skip { fill: none; stroke: var(--eidos-danger); stroke-width: 5; stroke-linecap: round; }
+  .side .skip-head { fill: var(--eidos-danger); }
+  .side .skip-label { font-size: 38px; font-weight: 700; fill: var(--eidos-danger); text-anchor: middle; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">계층형 아키텍처 · 오빗</div>
+        <h1 class="eidos-title">같은 3계층도 어느 쪽에서 보느냐에 따라 보이는 것이 다릅니다</h1>
+      </header>
+      <section class="orbit-view" id="view">
+        <div class="orbit-rig" id="rig">
+          <article class="plane slab eidos-card data" data-y="-0.26" data-z="-0.3">
+            <span class="tag">DATA · 데이터</span><h3>데이터 계층</h3><code>OrderRepository</code><p>SQL과 테이블 구조를 아는 유일한 곳입니다.</p>
+          </article>
+          <article class="plane slab eidos-card svc" data-y="-0.26" data-z="0">
+            <span class="tag">BUSINESS · 서비스</span><h3>서비스 계층</h3><code>OrderService</code><p>주문 규칙과 트랜잭션 경계를 정합니다.</p>
+          </article>
+          <article class="plane slab eidos-card ui" data-y="-0.26" data-z="0.3">
+            <span class="tag">PRESENTATION · 화면</span><h3>화면 계층</h3><code>OrderController</code><p>요청을 검증하고 응답 모양을 만듭니다.</p>
+          </article>
+          <article class="plane side eidos-card" id="side" data-x="0.5" data-y="0.37" data-ry="90">
+            <svg viewBox="0 0 900 440" role="img" aria-label="옆에서 본 호출 방향">
+              <text class="cap" x="30" y="54">옆면 · 호출 방향</text>
+              <line class="edge ui" x1="150" y1="74" x2="150" y2="112"/>
+              <line class="edge svc" x1="450" y1="74" x2="450" y2="112"/>
+              <line class="edge data" x1="750" y1="74" x2="750" y2="112"/>
+              <text class="layer" x="150" y="172">화면</text><text class="cls" x="150" y="216">Controller</text>
+              <text class="layer" x="450" y="172">서비스</text><text class="cls" x="450" y="216">Service</text>
+              <text class="layer" x="750" y="172">데이터</text><text class="cls" x="750" y="216">Repository</text>
+              <text class="call-label" x="300" y="258">place()</text>
+              <text class="call-label" x="600" y="258">save()</text>
+              <path class="call" d="M 212 282 L 378 282"/>
+              <path class="call" d="M 512 282 L 678 282"/>
+              <path class="call-head" d="M 374 268 L 400 282 L 374 296 Z"/>
+              <path class="call-head" d="M 674 268 L 700 282 L 674 296 Z"/>
+              <path class="skip" d="M 160 304 C 300 380, 600 380, 735 316"/>
+              <path class="skip-head" d="M 744 312 L 726 334 L 715 312 Z"/>
+              <text class="skip-label" x="450" y="420">findAll() 직접 호출 ✕</text>
+            </svg>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const orbit = s.fx("orbit", { rig: "#rig", yaw: 0, pitch: -14, perspective: 3 });
+
+  s.tl.tween(".layout header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger("#rig .slab", { opacity: [0, 1] }, { at: "<+=0.15", dur: 0.45, each: 0.15 })
+    .tween("#side", { opacity: [0, 1] }, { at: "<", dur: 0.6 })
+    .stop("정면에서는 화면 계층 하나만 보입니다. 서비스와 데이터 계층은 그 뒤에 가려져 있습니다");
+
+  orbit.to(-48, { pitch: -26, dur: 1.6 });
+  s.tl.stop("비스듬히 위에서 보면 화면 뒤에 서비스와 데이터 계층이 한 줄로 겹겹이 서 있습니다");
+
+  orbit.to(-76, { pitch: -8, dur: 1.6 });
+  s.tl.stagger("#side .call", { draw: [0, 1] }, { dur: 0.45, each: 0.3 })
+    .tween("#side .call-head, #side .call-label", { opacity: [0, 1] }, { at: "<+=0.35", dur: 0.35 })
+    .stop("옆에서 보면 세 계층이 한 줄로 늘어서고, 호출은 한 방향으로만 흐릅니다: 화면 → 서비스 → 데이터");
+
+  s.tl.tween("#side .skip", { draw: [0, 1] }, { dur: 0.7 })
+    .tween("#side .skip-head, #side .skip-label", { opacity: [0, 1] }, { at: "<+=0.55", dur: 0.3 })
+    .stop("화면이 Repository를 직접 부르면 서비스를 건너뛰는 화살표가 생깁니다. 의존 규칙 위반입니다");
+
+  orbit.to(0, { pitch: -14, dur: 1.8 });
+  s.tl.stop("정면으로 돌아오면 그 화살표는 다시 보이지 않습니다. 의존 방향은 옆에서 봐야 보입니다");
+  s.start();
+</script>
+</body>
+</html>
