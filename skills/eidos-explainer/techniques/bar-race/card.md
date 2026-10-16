@@ -31,7 +31,7 @@ ref: [awesome-ai-motion/bar-chart-race, awesome-ai-motion/bump-rank-reveal]
 ```
 ```js
 const race = stage.fx("bar-race", {
-  el: "#race", top: 5, unit: "단위: 만 건", mono: true,
+  el: "#race", top: 2, unit: "단위: 만 건", mono: true,
   items: [{ id: "search", label: "/search" }, { id: "feed", label: "/feed", color: "var(--eidos-accent)" }],
   rows: [
     { time: 1, label: "1월", values: { search: 48, feed: 12 } },
