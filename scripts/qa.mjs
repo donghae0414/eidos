@@ -5,7 +5,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
 const args = process.argv.slice(2);
-const VALUE_FLAGS = ["--shots", "--expect", "--only", "--contact"];
+const VALUE_FLAGS = ["--shots", "--expect", "--only", "--contact", "--step"];
 const opt = (name) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
@@ -16,6 +16,7 @@ const only = opt("--only");
 const expect = opt("--expect") ? Number(opt("--expect")) : undefined;
 const allStops = args.includes("--all-stops");
 const stopDiff = args.includes("--stop-diff");
+const stepRe = opt("--step") ? new RegExp(opt("--step")) : null;
 const files = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && VALUE_FLAGS.includes(args[i - 1])));
 
 let targets = files.length
@@ -84,6 +85,10 @@ const PRELUDE = `
     const c = () => { let v = false; try { v = f(); } catch {} if (v) r(true); else if (performance.now() - t0 > ms) r(false); else requestAnimationFrame(c); };
     c();
   });
+  const frames = () => new Promise((z) => requestAnimationFrame(() => requestAnimationFrame(z)));
+  // Visible scene state without snapshot()'s params line, so a params-only change is not a visual change.
+  const GEO = ["cx", "cy", "r", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points", "transform", "d"];
+  const scene = () => [A.world, ...A.world.querySelectorAll("*")].map((n) => { let txt = ""; for (const c of n.childNodes) if (c.nodeType === 3) txt += c.nodeValue; const cls = [...n.classList].filter((c) => c !== "eidos-fade").join(" "); const at = [...n.attributes].filter((x) => GEO.includes(x.name) || x.name.startsWith("data-eidos-")).map((x) => x.name + "=" + x.value).join(","); return [n.getAttribute("style") || "", cls, at, txt.trim(), "value" in n ? n.value : "", n.checked ?? ""].join("|"); }).join("\\n");
   const settle = (i, ms = 5000) => waitFor(() => A.index === i && near(A.t, A.stops[i].t, 1e-6), ms);
 `;
 async function ev(view, body) {
@@ -103,6 +108,22 @@ async function ev(view, body) {
 const Q = "motion=full&hud=0";
 const QM = "clock=manual&autoplay=0&hud=0&motion=full";
 
+const HUB_ORDER = ["hub.0", "A.0", "A.1", "hub.ret-A", "B.0", "B.1", "hub.ret-B", "outro.0"];
+// Stop keys (scene.(id ?? local)) by index; computed once per fixture run so any hub step can run alone.
+async function hubIdx(c) {
+  if (c.idx) return c.idx;
+  await c.open(`${Q}&stop=0`);
+  c.keys = await ev(c.view, `return A.stops.map((s, i) => { A.jump(i); const w = A.where(); return w.scene + "." + (s.id ?? w.local); });`);
+  c.idx = Object.fromEntries(c.keys.map((k, i) => [k, i]));
+  return c.idx;
+}
+async function needIdx(c) {
+  const I = await hubIdx(c);
+  const miss = HUB_ORDER.filter((k) => !(k in I));
+  if (miss.length) throw new Error(`hub stop keys lack ${miss.join(", ")} (keys ${JSON.stringify(c.keys)})`);
+  return I;
+}
+
 const FEATURES = {
   focus: {
     api: `return [typeof A.ready?.then === "function" ? "" : "__eidos.ready (Promise)"].filter(Boolean);`,
@@ -118,7 +139,7 @@ const FEATURES = {
       }],
       ["focused range + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
-        return ev(c.view, `const r = $("#r"); r.focus(); const i = A.index; key(r, "ArrowRight"); return A.index === i ? "" : "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index;`);
+        return ev(c.view, `const r = $("#r"); r.focus(); const i = A.index; const untouched = key(r, "ArrowRight"); if (A.index !== i) return "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index; return untouched ? "" : "keydown on a focused range input was canceled (slider cannot move)";`);
       }],
       ["click Play then ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -187,6 +208,7 @@ const FEATURES = {
   },
 
   autoplay: {
+    apiQuery: `${QM}&t=0.1`, // advance() is only promised on ?clock=manual pages
     api: `return [...["play", "pause", "speed", "advance"].filter((k) => typeof A[k] !== "function").map((k) => "__eidos." + k + "()"), ...("playing" in A ? [] : ["__eidos.playing"])];`,
     skipOnMissing: true,
     steps: [
@@ -271,13 +293,14 @@ const FEATURES = {
         }
         return out.length ? `in-page setControls+seek != fresh load at ${out.join(", ")}` : "";
       }],
-      ["every control changes the snapshot", async (c) => {
+      ["every control changes the scene", async (c) => {
         await c.open(`${Q}&t=${c.end}`);
-        return ev(c.view, `const S = ${JSON.stringify(c.fixture.controls)}, dead = []; for (const k in S) { const seen = new Set(S[k].map((v) => (A.setControls({ [k]: v }), A.snapshot()))); if (seen.size < 2) dead.push(k); } return dead.length ? "controls never change the snapshot: " + dead.join(", ") : "";`);
+        // scene() excludes the params line of snapshot(), so a control that only updates params fails.
+        return ev(c.view, `const S = ${JSON.stringify(c.fixture.controls)}, dead = []; for (const k in S) { const seen = new Set(); for (const v of S[k]) { A.setControls({ [k]: v }); await frames(); seen.add(scene()); } if (seen.size < 2) dead.push(k); } return dead.length ? "controls never change the visible scene: " + dead.join(", ") : "";`);
       }],
       ["A->B->A restores", async (c) => {
         await c.open(`${Q}&t=${c.end}`);
-        return ev(c.view, `A.setControls({ n: 2 }); const a = A.snapshot(); A.setControls({ n: 7 }); A.setControls({ n: 2 }); return a === A.snapshot() ? "" : "n 2->7->2 did not restore the snapshot";`);
+        return ev(c.view, `A.setControls({ n: 2 }); await frames(); const a = scene(), sa = A.snapshot(); A.setControls({ n: 7 }); await frames(); if (scene() === a) return "n 2->7 did not change the scene"; A.setControls({ n: 2 }); await frames(); return a === scene() && sa === A.snapshot() ? "" : "n 2->7->2 did not restore the scene/snapshot";`);
       }],
       ["URL clamp", async (c) => {
         await c.open(`${Q}&t=${c.end}&c.n=99`);
@@ -317,7 +340,18 @@ const FEATURES = {
       }],
       ["focused slider + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
-        return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; r.focus(); key(r, "ArrowRight"); return A.index === 1 ? "" : "ArrowRight on focused dock slider changed index 1 -> " + A.index;`);
+        // Bun.WebView press() does not deliver arrow keys to a range input (probed on WebKit), so the
+        // key guard is checked with a synthetic keydown that must reach window uncanceled, and the
+        // slider -> params -> scene wiring with the input event its default action fires.
+        return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; r.focus(); let seen = false; const probe = () => (seen = true); addEventListener("keydown", probe); const untouched = key(r, "ArrowRight"); removeEventListener("keydown", probe); if (A.index !== 1) return "ArrowRight on focused dock slider changed index 1 -> " + A.index; if (!untouched) return "keydown on focused dock slider was canceled (slider cannot move)"; if (!seen) return "keydown on focused dock slider was swallowed before reaching window"; await frames(); const n0 = A.params.n, s0 = scene(); r.stepUp(); r.dispatchEvent(new Event("input", { bubbles: true })); await frames(); return A.params.n === n0 + 1 && scene() !== s0 && A.index === 1 ? "" : "slider step did not update params and scene (n " + n0 + " -> " + A.params.n + ", index " + A.index + ")";`);
+      }],
+      ["sticky keeps, non-sticky clears, drive < override", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const last = A.stops.length - 1; if (!near(A.params.w, 0.2)) return "default w at stop 1 = " + A.params.w + " (want 0.2)"; A.setControls({ w: 0.5, n: 6 }); await frames(); if (!near(A.params.w, 0.5)) return "override w=0.5 not applied (w=" + A.params.w + ")"; A.jump(last); await frames(); if (A.params.n !== 6) return "sticky n lost on stop change (n=" + A.params.n + ")"; if (!near(A.params.w, 0.9)) return "non-sticky w after stop change = " + A.params.w + " (want drive value 0.9: override must clear)"; A.setControls({ w: 0.5 }); await frames(); if (!near(A.params.w, 0.5)) return "override did not beat the drive at the same stop (w=" + A.params.w + ")"; A.jump(1); await frames(); return near(A.params.w, 0.2) ? "" : "w back at stop 1 = " + A.params.w + " (want default 0.2)";`);
+      }],
+      ["control edits pause playback", async (c) => {
+        await c.open(`${QM}&stop=1`);
+        return ev(c.view, `if (typeof A.play !== "function") return "needs the todo 4 transport (__eidos.play)"; A.play(); A.setControls({ n: 5 }); if (A.playing) return "setControls did not pause playback"; const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; A.play(); r.stepUp(); r.dispatchEvent(new Event("input", { bubbles: true })); return A.playing ? "dock slider input did not pause playback" : "";`);
       }],
       ["wheel over dock", async (c) => {
         await c.open(`${Q}&stop=1`);
@@ -331,57 +365,65 @@ const FEATURES = {
     skipOnMissing: true,
     steps: [
       ["stop order", async (c) => {
-        await c.open(`${Q}&stop=0`);
-        c.keys = await ev(c.view, `return A.stops.map((s, i) => { A.jump(i); const w = A.where(); return w.scene + "." + (s.id ?? w.local); });`);
-        const want = ["hub.0", "A.0", "A.1", "hub.ret-A", "B.0", "B.1", "hub.ret-B", "outro.0"];
+        await hubIdx(c);
         const at = c.keys.indexOf("hub.0");
-        c.idx = Object.fromEntries(c.keys.map((k, i) => [k, i]));
-        return at >= 0 && want.every((k, j) => c.keys[at + j] === k) ? "" : `stop keys ${JSON.stringify(c.keys)} do not contain ${JSON.stringify(want)} in order`;
+        return at >= 0 && HUB_ORDER.every((k, j) => c.keys[at + j] === k) ? "" : `stop keys ${JSON.stringify(c.keys)} do not contain ${JSON.stringify(HUB_ORDER)} in order`;
+      }],
+      ["next() chain + hash", async (c) => {
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        return ev(c.view, `const want = ${JSON.stringify(HUB_ORDER)}, got = []; for (let j = 1; j < want.length; j++) { const i = A.index; A.next(); if (!(await settle(i + 1))) return "next() after " + want[j - 1] + " did not settle on the following stop (index " + A.index + ")"; const w = A.where(), k = w.scene + "." + (A.stops[A.index].id ?? w.local); got.push(k); if (k !== want[j]) return "next() chain reached " + JSON.stringify(got) + " (want " + JSON.stringify(want.slice(1, j + 1)) + ")"; await waitFor(() => location.hash === "#" + k, 1000); if (location.hash !== "#" + k) return "URL hash at " + k + " is '" + location.hash + "'"; } return "";`);
       }],
       ["hub invariant", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
+        const I = await needIdx(c);
         await c.open(`${Q}&stop=0`);
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}, snap = (t) => (A.seek(t), A.snapshot()); const h = snap(A.stops[I["hub.0"]].t), bad = []; const sp = A.scenes.find((s) => s.id === "A"); if (!sp) return "no scene record for spoke A"; if (snap(sp.t0) !== h) bad.push("spoke A t0"); if (snap(A.stops[I["hub.ret-A"]].t) !== h) bad.push("hub.ret-A"); if (snap(A.stops[I["hub.ret-B"]].t) !== h) bad.push("hub.ret-B"); return bad.length ? "snapshot differs from hub.0 at " + bad.join(", ") : "";`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}, snap = (t) => (A.seek(t), A.snapshot()); const h = snap(A.stops[I["hub.0"]].t), bad = []; for (const id of ["A", "B"]) { const sp = A.scenes.find((s) => s.id === id); if (!sp) bad.push("no scene record for spoke " + id); else if (snap(sp.t0) !== h) bad.push("spoke " + id + " t0"); } if (snap(A.stops[I["hub.ret-A"]].t) !== h) bad.push("hub.ret-A"); if (snap(A.stops[I["hub.ret-B"]].t) !== h) bad.push("hub.ret-B"); return bad.length ? "snapshot differs from hub.0 at " + bad.join(", ") : "";`);
       }],
-      ["enter/exit + hash", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`${Q}&stop=${c.idx["hub.0"]}`);
-        const r = await ev(c.view, `const I = ${JSON.stringify(c.idx)}; A.enter("A"); if (!(await settle(I["A.0"]))) return "enter('A') did not land on A.0 (index " + A.index + ")"; A.exit(); if (!(await settle(I["hub.ret-A"]))) return "exit() did not land on hub.ret-A (index " + A.index + ")"; await waitFor(() => location.hash === "#hub.ret-A", 1000); if (location.hash !== "#hub.ret-A") return "URL hash after exit() is '" + location.hash + "' (want #hub.ret-A)"; window.__qaSnap = A.snapshot(); A.next(); return (await settle(I["B.0"])) ? "" : "next() from hub.ret-A did not land on B.0 (index " + A.index + ")";`);
-        return r;
-      }],
-      ["fresh #hub.ret-A", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`${Q}&stop=${c.idx["hub.ret-A"]}`);
-        const want = await ev(c.view, `return A.snapshot();`);
+      ["exit() returns to the hub state", async (c) => {
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        const r = await ev(c.view, `const I = ${JSON.stringify(I)}; await frames(); const hub = scene(); A.enter("A"); if (!(await settle(I["A.0"]))) return { err: "enter('A') did not land on A.0 (index " + A.index + ")" }; A.exit(); if (!(await settle(I["hub.ret-A"]))) return { err: "exit() did not land on hub.ret-A (index " + A.index + ")" }; await frames(); await waitFor(() => location.hash === "#hub.ret-A", 1000); if (location.hash !== "#hub.ret-A") return { err: "URL hash after exit() is '" + location.hash + "' (want #hub.ret-A)" }; if (scene() !== hub) return { err: "scene after exit() differs from the hub.0 scene (stale spoke state)" }; const exitSnap = A.snapshot(); A.next(); if (!(await settle(I["B.0"]))) return { err: "next() after exit() did not land on B.0 (index " + A.index + ")" }; return { exitSnap };`);
+        if (r.err) return r.err;
         await c.open(Q, "hub.ret-A");
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}; if (A.index !== I["hub.ret-A"]) return "#hub.ret-A loaded index " + A.index; if (A.snapshot() !== ${JSON.stringify(want)}) return "#hub.ret-A snapshot != ?stop snapshot"; A.next(); return (await settle(I["B.0"])) ? "" : "next() from fresh #hub.ret-A did not land on B.0 (index " + A.index + ")";`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}; if (A.index !== I["hub.ret-A"]) return "fresh #hub.ret-A loaded index " + A.index; await frames(); if (A.snapshot() !== ${JSON.stringify(r.exitSnap)}) return "fresh #hub.ret-A snapshot != snapshot after exit()"; A.next(); return (await settle(I["B.0"])) ? "" : "next() from fresh #hub.ret-A did not land on B.0 (index " + A.index + ")";`);
       }],
       ["fresh #hub.0 next -> A.0", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
+        const I = await needIdx(c);
         await c.open(Q, "hub.0");
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}; if (A.index !== I["hub.0"]) return "#hub.0 loaded index " + A.index; A.next(); return (await settle(I["A.0"])) ? "" : "next() from #hub.0 did not land on A.0 (index " + A.index + ")";`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}; if (A.index !== I["hub.0"]) return "#hub.0 loaded index " + A.index; A.next(); return (await settle(I["A.0"])) ? "" : "next() from #hub.0 did not land on A.0 (index " + A.index + ")";`);
       }],
       ["#A.1 == ?stop", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`${Q}&stop=${c.idx["A.1"]}`);
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["A.1"]}`);
         const want = await ev(c.view, `return A.snapshot();`);
         await c.open(Q, "A.1");
-        return ev(c.view, `return A.snapshot() === ${JSON.stringify(want)} ? "" : "#A.1 snapshot != ?stop=${c.idx["A.1"]} snapshot (index " + A.index + ")";`);
+        return ev(c.view, `if (A.index !== ${I["A.1"]}) return "#A.1 loaded index " + A.index + " (want ${I["A.1"]})"; return A.snapshot() === ${JSON.stringify(want)} ? "" : "#A.1 snapshot != ?stop=${I["A.1"]} snapshot";`);
       }],
       ["nested enter/exit stack", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`${Q}&stop=${c.idx["hub.0"]}`);
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}; A.enter("A"); if (!(await settle(I["A.0"]))) return "enter A failed"; A.enter("B"); if (!(await settle(I["B.0"]))) return "enter B from A failed (index " + A.index + ")"; A.exit(); if (!(await settle(I["hub.ret-B"]))) return "first exit() did not land on hub.ret-B (index " + A.index + ")"; A.exit(); return (await settle(I["hub.ret-A"])) ? "" : "second exit() did not land on hub.ret-A (index " + A.index + ")";`);
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}; A.enter("A"); if (!(await settle(I["A.0"]))) return "enter A failed"; A.enter("B"); if (!(await settle(I["B.0"]))) return "enter B from A failed (index " + A.index + ")"; A.exit(); if (!(await settle(I["hub.ret-B"]))) return "first exit() did not land on hub.ret-B (index " + A.index + ")"; A.exit(); return (await settle(I["hub.ret-A"])) ? "" : "second exit() did not land on hub.ret-A (index " + A.index + ")";`);
       }],
-      ["spoke tag, keys 1-9, Esc", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`${Q}&stop=${c.idx["hub.0"]}`);
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}; if ($("#node-a").dataset.eidosSpoke !== "A") return "#node-a lacks data-eidos-spoke=A"; key(document.body, "1"); if (!(await settle(I["A.0"]))) return "key 1 did not enter A (index " + A.index + ")"; key(document.body, "Escape"); return (await settle(I["hub.ret-A"])) ? "" : "Esc did not exit to hub.ret-A (index " + A.index + ")";`);
+      ["empty exit() is a no-op", async (c) => {
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        return ev(c.view, `const t = A.t; A.exit(); await frames(); return A.index === ${I["hub.0"]} && A.t === t ? "" : "exit() with an empty return stack moved to index " + A.index + " t=" + A.t;`);
+      }],
+      ["spoke tag, origin click, keys 1-9, Esc", async (c) => {
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        // Clicking B's origin must enter B; a plain next() from hub.0 would land on A.0 instead.
+        const m = await ev(c.view, `const I = ${JSON.stringify(I)}; if ($("#node-a").dataset.eidosSpoke !== "A" || $("#node-b").dataset.eidosSpoke !== "B") return "spoke origins lack data-eidos-spoke"; click($("#node-b")); return (await settle(I["B.0"])) ? "" : "click on spoke origin #node-b did not enter B (index " + A.index + ")";`);
+        if (m) return m;
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}; key(document.body, "2"); if (!(await settle(I["B.0"]))) return "key 2 did not enter B (index " + A.index + ")"; key(document.body, "Escape"); return (await settle(I["hub.ret-B"])) ? "" : "Esc did not exit to hub.ret-B (index " + A.index + ")";`);
       }],
       ["breadcrumb + eidos:scene", async (c) => {
-        if (!c.idx) return "skipped: stop order unknown";
-        await c.open(`motion=full&stop=${c.idx["hub.0"]}`);
-        return ev(c.view, `const I = ${JSON.stringify(c.idx)}; let got = null; addEventListener("eidos:scene", (e) => (got = got || e.detail)); A.enter("A"); await settle(I["A.0"]); if (!got || got.id !== "A") return "no eidos:scene {id: 'A'} on enter (got " + JSON.stringify(got) + ")"; const crumb = [...document.querySelectorAll("body *")].some((n) => !n.closest(".eidos-world") && /›/.test(n.textContent)); return crumb ? "" : "no 'hub › A' breadcrumb outside .eidos-world";`);
+        const I = await needIdx(c);
+        await c.open(`motion=full&stop=${I["hub.0"]}`);
+        // The breadcrumb element itself must sit outside the world: ancestors of the world
+        // (stage, body) are excluded so text inside the world cannot satisfy the check.
+        return ev(c.view, `const I = ${JSON.stringify(I)}; let got = null; addEventListener("eidos:scene", (e) => (got = got || e.detail)); A.enter("A"); await settle(I["A.0"]); if (!got || got.id !== "A") return "no eidos:scene {id: 'A'} on enter (got " + JSON.stringify(got) + ")"; const crumb = [...document.querySelectorAll("body *")].find((n) => !n.contains(A.world) && !n.closest(".eidos-world") && /(hub|지도)\\s*›\\s*A\\b/.test(n.textContent)); return crumb ? "" : "no 'hub › A' breadcrumb outside .eidos-world";`);
       }],
       ["scene without via errors", async (c) => {
         await c.open(`${Q}&bad=novia`);
@@ -410,6 +452,10 @@ const FEATURES = {
           a = run([{ dy: 6, mode: 1, t: 0 }]); if (a.join() !== "next") bad.push("deltaMode 1 (6 lines = 96px) -> " + JSON.stringify(a));
           a = run([{ dy: -100, t: 0 }]); if (a.join() !== "prev") bad.push("dy -100 -> " + JSON.stringify(a));
           a = run([{ dy: 30, t: 0 }, { dy: 30, t: 16 }]); if (a.length) bad.push("60px below threshold -> " + JSON.stringify(a));
+          a = run([{ dy: 81, t: 0 }]); if (a.join() !== "next") bad.push("81px -> " + JSON.stringify(a) + " (want next)");
+          a = run([{ dy: 79, t: 0 }]); if (a.length) bad.push("79px -> " + JSON.stringify(a) + " (want none)");
+          a = run([...flick(0), ...flick(80 + 150)]); if (a.join() !== "next") bad.push("150ms gap (same burst) -> " + JSON.stringify(a));
+          a = run([...flick(0), ...flick(80 + 170)]); if (a.join() !== "next,next") bad.push("170ms gap (new burst) -> " + JSON.stringify(a));
           return bad.join("; ");`);
       }],
       ["DOM wheel burst -> one next", async (c) => {
@@ -447,6 +493,48 @@ const FEATURES = {
         await c.open("motion=reduce&hud=0&stop=1");
         return ev(c.view, `for (let i = 0; i < 30; i++) wheel(A.world, { deltaY: 60 * 0.85 ** i + 0.5 }); const w = A.index; swipe(A.world, -60, 0); return w === 2 && A.index === 3 ? "" : "reduced motion: wheel burst -> " + w + " (want 2), then swipe -> " + A.index + " (want 3)";`);
       }],
+      ["DOM deltaMode line/page", async (c) => {
+        const out = [];
+        for (const [dy, mode, want, what] of [[6, 1, 2, "6 lines (96px)"], [4, 1, 1, "4 lines (64px)"], [1, 2, 2, "1 page"]]) {
+          await c.open(`${Q}&stop=1`);
+          const m = await ev(c.view, `wheel(A.world, { deltaY: ${dy}, deltaMode: ${mode} }); return A.index === ${want} ? "" : "wheel ${what}: index 1 -> " + A.index + " (want ${want})";`);
+          if (m) out.push(m);
+        }
+        return out.join("; ");
+      }],
+      ["swipe directions", async (c) => {
+        const out = [];
+        for (const [dx, dy, want, what] of [[0, -60, 2, "up 60px"], [60, 0, 0, "right 60px"], [0, 60, 0, "down 60px"]]) {
+          await c.open(`${Q}&stop=1`);
+          const m = await ev(c.view, `swipe(A.world, ${dx}, ${dy}); await settle(${want}, 2000); return A.index === ${want} ? "" : "swipe ${what}: index 1 -> " + A.index + " (want ${want})";`);
+          if (m) out.push(m);
+        }
+        return out.join("; ");
+      }],
+      ["nested child of scrollable panel", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `$("#panel").scrollTop = 0; for (let i = 0; i < 5; i++) wheel($("#panel .tall"), { deltaY: 60 }); return A.index === 1 ? "" : "wheel on a child of a scrollable panel navigated (index " + A.index + ")";`);
+      }],
+      ["preventDefault only when stage owns", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        const m = await ev(c.view, `return wheel(A.world, { deltaY: 100 }) ? "stage-owned wheel was not preventDefault()ed" : "";`);
+        if (m) return m;
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `$("#panel").scrollTop = 0; return wheel($("#panel"), { deltaY: 100 }) ? "" : "wheel owned by a scrollable panel was preventDefault()ed";`);
+      }],
+      ["ownership released on a new burst", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        // The 160 ms quiet period is the behavior under test, so a real 250 ms gap is required.
+        return ev(c.view, `const p = $("#panel"); p.scrollTop = 0; for (let i = 0; i < 5; i++) wheel(p, { deltaY: 60 }); p.scrollTop = p.scrollHeight; wheel(p, { deltaY: 60 }); if (A.index !== 1) return "panel-owned burst navigated"; await new Promise((z) => setTimeout(z, 250)); for (let i = 0; i < 3; i++) wheel(p, { deltaY: 60 }); return A.index === 2 ? "" : "new burst at the panel bottom did not navigate (index " + A.index + ")";`);
+      }],
+      ["touch-action and body overflow", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `const ta = getComputedStyle(A.el).touchAction, ov = getComputedStyle(document.body).overflow; return /pan-y/.test(ta) && /pinch-zoom/.test(ta) && ov === "hidden" ? "" : "stage touch-action '" + ta + "', body overflow '" + ov + "' (want 'pan-y pinch-zoom' and hidden)";`);
+      }],
+      ["gestures pause playback", async (c) => {
+        await c.open(`${QM}&stop=1`);
+        return ev(c.view, `if (typeof A.play !== "function") return "needs the todo 4 transport (__eidos.play)"; A.play(); wheel(A.world, { deltaY: 100 }); if (A.playing) return "wheel navigation did not pause playback"; A.play(); swipe(A.world, -60, 0); return A.playing ? "swipe navigation did not pause playback" : "";`);
+      }],
     ],
   },
 };
@@ -455,13 +543,14 @@ async function runFeature(name, ctx) {
   const spec = FEATURES[name];
   if (!spec) return [`unknown fixture feature "${name}"`];
   const out = [];
-  await ctx.open(`${Q}&stop=0`);
+  await ctx.open(spec.apiQuery ?? `${Q}&stop=0`);
   const missing = await ev(ctx.view, spec.api);
   if (missing.length) {
     out.push(`missing runtime API: ${missing.join(", ")}`);
     if (spec.skipOnMissing) return out;
   }
   for (const [label, step] of spec.steps) {
+    if (stepRe && !stepRe.test(label)) continue;
     try {
       const m = await step(ctx);
       if (m) out.push(`${label}: ${m}`);

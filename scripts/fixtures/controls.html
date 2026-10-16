@@ -27,7 +27,7 @@
 </div>
 <script src="../../runtime/eidos-stage.js"></script>
 <script>
-  window.__eidosFixture = { controls: { n: [1, 4, 8], grid: [false, true], mode: ["bars", "dots"] } };
+  window.__eidosFixture = { controls: { n: [1, 4, 8], grid: [false, true], mode: ["bars", "dots"], w: [0.2, 0.9] } };
   window.__eidosFixtureBuild = [];
   const F = (feature, fn) => { try { return fn(); } catch (e) { window.__eidosFixtureBuild.push(feature + ": " + String((e && e.message) || e)); } };
   const s = Eidos.stage();
@@ -36,15 +36,19 @@
   F("controls", () => s.control("n", { type: "range", min: 1, max: 8, step: 1, value: 4, label: "막대 수 (개)", sticky: true }));
   F("controls", () => s.control("grid", { type: "toggle", value: false, label: "격자 표시" }));
   F("controls", () => s.control("mode", { type: "select", options: ["bars", "dots"], value: "bars", label: "모양" }));
-  F("controls", () => s.onParams(({ n, grid, mode }) => {
+  // Non-sticky and driven: default 0.2, tween to 0.9 between the last two stops; overrides clear on stop change.
+  const w = F("controls", () => s.control("w", { type: "range", min: 0, max: 1, step: 0.1, value: 0.2, label: "여백 (비율)" }));
+  F("controls", () => s.onParams(({ n, grid, mode, w }) => {
     document.querySelectorAll("#chart .bar").forEach((b, i) => {
       b.style.opacity = i < n ? "1" : "0.15";
       b.style.borderRadius = mode === "dots" ? "50%" : "0";
     });
     document.querySelector("#chart").style.outline = grid ? "1px dashed currentColor" : "none";
+    document.querySelector("#note").style.paddingLeft = Math.round(w * 100) + "px";
   }));
   tl.tween("#title", { opacity: [0, 1] }, { dur: 0.4 }).stop("막대");
   tl.tween("#chart", { y: [20, 0], opacity: [0, 1] }, { dur: 0.5 }).stop("차트");
+  F("controls", () => w.drive(0.2, 0.9, { at: 0.9, dur: 0.4 }));
   tl.tween("#note", { opacity: [0, 1] }, { dur: 0.4 }).stop("설명");
   s.start();
 </script>
