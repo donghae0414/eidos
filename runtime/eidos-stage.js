@@ -456,7 +456,8 @@
           if (!result?.ok) { errors.push(`Invalid control value: ${name}=${String(v)}`); return api; }
           next.push([name, result.value]);
         }
-        api.pause();
+        // Stops playback only; an in-flight goto() still arrives at its stop.
+        if (playing) api.pause();
         for (const [name, v] of next) {
           overrides.set(name, v);
           if (controls.get(name).layout) needsLayout = true;
@@ -999,7 +1000,8 @@
         e.preventDefault();
       });
       el.addEventListener("click", (e) => {
-        api.pause();
+        // Keep an in-flight goto() so next() below completes it, as ArrowRight does.
+        if (playing) api.pause();
         const origin = e.target.closest("[data-eidos-spoke]");
         if (origin && !e.target.closest("input, select, textarea, label, [data-eidos-noclick]")) {
           api.enter(origin.dataset.eidosSpoke);
@@ -1008,8 +1010,8 @@
         if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });
-      addEventListener("input", () => api.pause());
-      addEventListener("change", () => api.pause());
+      addEventListener("input", () => { if (playing) api.pause(); });
+      addEventListener("change", () => { if (playing) api.pause(); });
     }
     return api;
   };
