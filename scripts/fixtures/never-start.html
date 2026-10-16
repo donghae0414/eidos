@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · never-start</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene"><h1 class="eidos-title" id="t">시작하지 않는 페이지</h1></section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  // Negative fixture: the build throws before s.start(), so the stage never starts.
+  // DETERMINISM and REDUCED must count this file as failed, never as passed.
+  window.__eidosFixture = { expectFail: ["errors", "determinism", "reduced"] };
+  const s = Eidos.stage();
+  s.tl.tween("#t", { opacity: [0, 1] }, { dur: 0.4 }).stop("하나");
+  throw new Error("fixture: build failed before s.start()");
+</script>
+</body>
+</html>

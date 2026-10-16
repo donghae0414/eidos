@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · bad-3d</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+</style>
+</head>
+<body>
+<!-- Negative fixture: a 3D transform on an ancestor of the world, applied by inline style
+     regardless of motion mode. The REDUCED check must catch it (declared expectFail). -->
+<div class="eidos-stage" style="transform: perspective(600px) rotateY(30deg)">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title" id="title">3D 기울기</h1>
+      <p id="note">줄인 움직임에서도 기울어진 채로 남습니다</p>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { expectFail: ["reduced"] };
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#title", { opacity: [0, 1] }, { dur: 0.4 }).stop("제목");
+  tl.tween("#note", { opacity: [0, 1] }, { dur: 0.4 }).stop("설명");
+  s.start();
+</script>
+</body>
+</html>

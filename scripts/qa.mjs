@@ -65,9 +65,11 @@ const READY = `new Promise((r) => {
 
 let navSeq = 0;
 // A unique _qa param forces a real reload even when only the hash differs between loads.
+// After readiness, two more animation frames so screenshots never capture a pre-paint (blank) frame.
 async function open(view, file, query, hash = "") {
   await view.navigate(`file://${file}?${query}&_qa=${++navSeq}${hash ? `#${hash}` : ""}`);
-  return view.evaluate(READY);
+  if (!(await view.evaluate(READY))) return false;
+  return view.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`);
 }
 
 const PRELUDE = `
@@ -467,6 +469,11 @@ const FEATURES = {
         // (stage, body) are excluded so text inside the world cannot satisfy the check.
         return ev(c.view, `const I = ${JSON.stringify(I)}; let got = null; addEventListener("eidos:scene", (e) => (got = got || e.detail)); A.enter("A"); await settle(I["A.0"]); if (!got || got.id !== "A") return "no eidos:scene {id: 'A'} on enter (got " + JSON.stringify(got) + ")"; const crumb = [...document.querySelectorAll("body *")].find((n) => !n.contains(A.world) && !n.closest(".eidos-world") && /(hub|지도)\\s*›\\s*A\\b/.test(n.textContent)); return crumb ? "" : "no 'hub › A' breadcrumb outside .eidos-world";`);
       }],
+      ["wheel inside a spoke, then Esc", async (c) => {
+        const I = await needIdx(c);
+        await c.open(`${Q}&stop=${I["hub.0"]}`);
+        return ev(c.view, `const I = ${JSON.stringify(I)}; key(document.body, "1"); if (!(await settle(I["A.0"]))) return "key 1 did not enter A (index " + A.index + ")"; wheel(A.el, { deltaY: 100 }); if (!(await settle(I["A.1"]))) return "wheel inside spoke A did not reach A.1 (index " + A.index + ")"; key(document.body, "Escape"); return (await settle(I["hub.ret-A"])) ? "" : "Esc after a wheel step did not return to hub.ret-A (index " + A.index + ")";`);
+      }],
       ["scene without via errors", async (c) => {
         await c.open(`${Q}&bad=novia`);
         return ev(c.view, `return errs().some((m) => /via/i.test(m)) ? "" : "s.scene without via did not report a via error (errors: " + JSON.stringify(errs()) + ")";`);
@@ -474,6 +481,51 @@ const FEATURES = {
       ["via non-transition errors", async (c) => {
         await c.open(`${Q}&bad=kind`);
         return ev(c.view, `return errs().some((m) => /transition|kind/i.test(m)) ? "" : "via naming a non-transition fx did not report a kind error (errors: " + JSON.stringify(errs()) + ")";`);
+      }],
+    ],
+  },
+
+  // Cross-feature checks. The fixture declares what it authored (window.__eidosFixture.integration);
+  // scripts/fixtures/bad-integration.html declares the same but violates each, and must fail each step.
+  integration: {
+    api: `return [...["setControls", "onLayout", "goto"].filter((k) => typeof A[k] !== "function").map((k) => "__eidos." + k + "()"), ...(Array.isArray(A.scenes) ? [] : ["__eidos.scenes"])];`,
+    skipOnMissing: true,
+    steps: [
+      ["control when visibility", async (c) => {
+        await c.open(`${Q}&stop=0`);
+        return ev(c.view, `const W = ${JSON.stringify(c.fixture.integration.when)}, bad = [], dock = $(".eidos-dock"); if (!dock) return "no .eidos-dock"; const idx = (v) => typeof v === "number" ? v : A.stops.findIndex((s) => s.id === v); const shown = (n) => n.getClientRects().length > 0; for (let i = 0; i < A.stops.length; i++) { A.jump(i); await frames(); let any = false; for (const [name, w] of Object.entries(W)) { const inp = dock.querySelector('[name="' + name + '"]'); if (!inp) { bad.push("no dock input " + name); continue; } const want = Array.isArray(w) ? i >= idx(w[0]) && i <= idx(w[1]) : A.stops[i].scene === w; any ||= want; if (shown(inp) !== want) bad.push(name + " at stop " + i + " shown=" + shown(inp) + " (want " + want + ")"); } if (!any && shown(dock)) bad.push("dock shown at stop " + i + " with no control in range"); } return [...new Set(bad)].join("; ");`);
+      }],
+      ["layout:true re-measures", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        const { layout, plain } = c.fixture.integration;
+        return ev(c.view, `const other = (n) => { const r = $('.eidos-dock [name="' + n + '"]'); return A.params[n] === Number(r.max) ? Number(r.min) : Number(r.max); }; await frames(); let c0 = window.__qaLayouts; A.setControls({ ${JSON.stringify(layout)}: other(${JSON.stringify(layout)}) }); await frames(); const dl = window.__qaLayouts - c0; c0 = window.__qaLayouts; A.setControls({ ${JSON.stringify(plain)}: other(${JSON.stringify(plain)}) }); await frames(); const dp = window.__qaLayouts - c0; return dl >= 1 && dp === 0 ? "" : "layout() runs: layout control -> " + dl + " (want >= 1), plain control -> " + dp + " (want 0)";`);
+      }],
+      ["URL writes only on stop and change", async (c) => {
+        await c.open(`${Q}&stop=1`);
+        return ev(c.view, `let n = 0; const orig = history.replaceState; history.replaceState = function (...a) { n++; return orig.apply(this, a); }; try { const r = $(".eidos-dock input[type=range]:not([hidden])") || $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; const got = {}; const lo = Number(r.min), span = Number(r.max) - lo + 1; for (let k = 0; k < 200; k++) { r.value = String(lo + (k % span)); r.dispatchEvent(new Event("input", { bubbles: true })); } await frames(); got.input200 = n; n = 0; r.dispatchEvent(new Event("change", { bubbles: true })); got.change = n; n = 0; A.seek((A.stops[1].t + A.stops[2].t) / 2); A.layout(); await frames(); got.seekMid_layout = n; n = 0; A.goto(2); if (!(await settle(2))) return "goto(2) did not settle"; await frames(); got.arrive = n; const want = { input200: 0, change: 1, seekMid_layout: 0, arrive: 1 }; const bad = Object.keys(want).filter((k) => got[k] !== want[k]); return bad.length ? "replaceState calls " + JSON.stringify(got) + " (want " + JSON.stringify(want) + ")" : ""; } finally { history.replaceState = orig; }`);
+      }],
+      ["J/L caption timing", async (c) => {
+        await c.open("motion=full&stop=0");
+        return ev(c.view, `const C = ${JSON.stringify(c.fixture.integration.captions)}, el = $(".eidos-hud-caption"); if (!el) return "no .eidos-hud-caption (HUD on)"; const bad = []; for (const x of C) { const sc = A.scenes.find((s) => s.id === x.scene); if (!sc) { bad.push("no scene " + x.scene); continue; } const at = sc.t0 - (x.lead ?? 0) + (x.trail ?? 0); for (const [t, want] of [[at - 0.02, x.prev], [at, x.label], [at + 0.02, x.label]]) { A.seek(t); await frames(); if (el.textContent !== want) bad.push(x.scene + " t=" + t.toFixed(3) + " caption '" + el.textContent + "' (want '" + want + "')"); } } return bad.join("; ");`);
+      }],
+      ["click mid-transition lands like ArrowRight", async (c) => {
+        const out = [];
+        for (const [what, code] of [["ArrowRight", `key(document.body, "ArrowRight")`], ["click", "click(A.world)"]]) {
+          await c.open(`${Q}&stop=1`);
+          const m = await ev(c.view, `A.goto(2); if (near(A.t, A.stops[2].t, 1e-6)) return "goto(2) finished instantly; nothing to interrupt"; ${code}; await frames(); return A.index === 2 && near(A.t, A.stops[2].t, 1e-9) ? "" : "${what} during goto(1 -> 2): index " + A.index + " t=" + A.t + " (want index 2 at t=" + A.stops[2].t + ")";`);
+          if (m) out.push(m);
+        }
+        return out.join("; ");
+      }],
+      ["control edit mid-transition still arrives", async (c) => {
+        const out = [];
+        const P = JSON.stringify(c.fixture.integration.plain);
+        for (const [what, code] of [["setControls", `A.setControls({ [${P}]: 1 })`], ["dock input event", `const r = $('.eidos-dock [name=' + ${P} + ']'); r.value = r.max; r.dispatchEvent(new Event("input", { bubbles: true }))`]]) {
+          await c.open(`${Q}&stop=1`);
+          const m = await ev(c.view, `A.goto(2); ${code}; return (await settle(2, 4000)) ? "" : "${what} during goto(1 -> 2) stranded the stage at index " + A.index + " t=" + A.t + " (want arrival at stop 2, t=" + A.stops[2].t + ")";`);
+          if (m) out.push(m);
+        }
+        return out.join("; ");
       }],
     ],
   },
@@ -681,11 +733,17 @@ async function runOne(file) {
   const name = file.startsWith(root + "/") ? file.slice(root.length + 1) : file;
   const slug = name.replace(/\//g, "__").replace(/\.html$/, "");
   const res = { name, errors: [], structure: checkStructure(file), determinism: [], reduced: [], features: {}, expected: [], shots: [], stopDiff: [] };
+  // A check that never ran (stage never started, qa exception) is a failure, not a pass.
+  const ran = { determinism: false, reduced: false };
+  const addErrors = (list) => res.errors.push(...(list || []).filter((m) => !res.errors.includes(m)));
   const consoleErrors = [];
   const view = new Bun.WebView({ width: 1280, height: 800, console: (type, ...a) => type === "error" && consoleErrors.push(a.map(String).join(" ")) });
   try {
     if (!(await open(view, file, "motion=full&hud=0"))) {
       res.errors.push("stage did not start within 5s (window.__eidos.started is false)");
+      addErrors(await view.evaluate("window.__eidosErrors || []"));
+      const fx = await view.evaluate("window.__eidosFixture ?? null");
+      if (fx && Array.isArray(fx.expectFail)) res.expectFailList = fx.expectFail;
       return res;
     }
     const info = await view.evaluate(
@@ -714,23 +772,46 @@ async function runOne(file) {
       if (fresh !== seq.bwd[i]) res.determinism.push(`t=${ts[i]}: backward seek != fresh load`);
       for (const [j, snap] of seq.mixed) if (j === i && snap !== fresh) res.determinism.push(`t=${ts[i]}: out-of-order seek != fresh load`);
     }
+    ran.determinism = true;
 
     if (stopDiff) res.stopDiff = await view.evaluate(STOP_DIFF);
 
     await open(view, file, "motion=reduce&hud=0&stop=0");
+    // Under ?motion=reduce: every stop is reached instantly; no 3D or blur in the COMPUTED style of the
+    // world, its ancestors and its descendants; wheel/swipe and autoplay only ever land on stop times.
     const red = await view.evaluate(`(() => {
       const a = __eidos, out = [];
       if (!a.reduced) out.push("reduced flag not set by ?motion=reduce");
+      const FLAT = /perspective\\(|rotateX|rotateY|matrix3d|blur\\(/;
+      const chain = [a.world];
+      for (let n = a.world.parentElement; n; n = n.parentElement) chain.push(n);
+      const tag = (n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "") + [...n.classList].map((c) => "." + c).join("");
+      const flat = (where) => {
+        for (const n of [...chain, ...a.world.querySelectorAll("*")]) {
+          const cs = getComputedStyle(n);
+          for (const p of ["transform", "filter", "backdrop-filter", "-webkit-backdrop-filter"]) {
+            const v = cs.getPropertyValue(p);
+            if (FLAT.test(v)) return out.push(where + ": computed " + p + " of " + tag(n) + " is " + v.slice(0, 80));
+          }
+        }
+      };
+      flat("stop 0");
       for (let i = 1; i < a.stops.length; i++) {
         a.goto(i);
         if (Math.abs(a.t - a.stops[i].t) > 1e-9) out.push("stop " + i + ": not reached instantly (t=" + a.t + ")");
         if (/blur\\(/.test(a.snapshot())) out.push("stop " + i + ": blur filter present under reduced motion");
+        flat("stop " + i);
       }
       return out;
     })()`);
     res.reduced.push(...red);
-    const lateErrors = await view.evaluate("window.__eidosErrors");
-    res.errors.push(...lateErrors);
+    const AT_STOP = `const atStop = () => A.stops.findIndex((s) => Math.abs(s.t - A.t) < 1e-9);`;
+    res.reduced.push(...(await ev(view, `${AT_STOP} const bad = []; A.jump(0); if (A.stops.length > 1) { wheel(A.el, { deltaY: 100 }); if (A.index !== 1 || atStop() !== 1) bad.push("reduced wheel next: index " + A.index + " t=" + A.t + " (want stop 1 at once)"); } if (A.stops.length > 2) { swipe(A.el, -60, 0); if (A.index !== 2 || atStop() !== 2) bad.push("reduced swipe next: index " + A.index + " t=" + A.t + " (want stop 2 at once)"); } return bad;`)));
+    addErrors(await view.evaluate("window.__eidosErrors"));
+    await open(view, file, "clock=manual&autoplay=0&motion=reduce&hud=0&stop=0");
+    res.reduced.push(...(await ev(view, `${AT_STOP} if (typeof A.play !== "function") return ["no __eidos.play() for the reduced autoplay check"]; A.play({ speed: 1 }); let k = 0; for (; k < 2000 && A.playing; k++) { A.advance(100); if (atStop() < 0) return ["reduced autoplay passed through t=" + A.t + " between stops"]; } return A.index === A.stops.length - 1 ? [] : ["reduced autoplay did not reach the last stop (index " + A.index + " after " + k * 100 + " ms)"];`)));
+    addErrors(await view.evaluate("window.__eidosErrors"));
+    ran.reduced = true;
 
     if (shotsDir) {
       const variants = [
@@ -772,6 +853,7 @@ async function runOne(file) {
     res.errors.push(`qa exception: ${e?.message ?? e}`);
   } finally {
     view.close();
+    for (const k of ["determinism", "reduced"]) if (!ran[k]) res[k].push(`not run (${res.stops == null ? "stage never started" : "qa aborted before this check"}): counted as failed`);
   }
   res.errors.push(...consoleErrors.filter((m) => !res.errors.some((x) => m.includes(x))));
   return res;
@@ -781,13 +863,24 @@ async function runOne(file) {
 // a declared check that passes is itself a failure (the negative fixture lost its teeth).
 function applyExpectFail(r, fixtureExpect) {
   for (const check of fixtureExpect) {
+    // "feature:step label" inverts one step of a feature; the feature's other steps must still pass.
+    const sep = check.indexOf(":");
+    if (sep > 0 && check.slice(0, sep) in r.features) {
+      const list = r.features[check.slice(0, sep)], label = `${check.slice(sep + 1)}: `;
+      const hit = list.filter((m) => m.startsWith(label));
+      if (hit.length) {
+        r.expected.push(`${check} (${hit[0].slice(label.length)})`);
+        list.splice(0, list.length, ...list.filter((m) => !m.startsWith(label)));
+      } else r.errors.push(`expectFail "${check}" declared but the check passed`);
+      continue;
+    }
     const list = check === "errors" ? r.errors : check in r.features ? r.features[check] : r[check];
     if (!Array.isArray(list)) {
       r.errors.push(`expectFail names unknown check "${check}"`);
       continue;
     }
     if (list.length) {
-      r.expected.push(check);
+      r.expected.push(`${check} (${list[0]})`);
       list.length = 0;
     } else r.errors.push(`expectFail "${check}" declared but the check passed`);
   }
