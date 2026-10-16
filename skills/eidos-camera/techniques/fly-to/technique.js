@@ -3,6 +3,35 @@
   E.fx["fly-to"] = (stage, o = {}) => {
     const { tl, camera } = stage;
     const { r3 } = E.util;
+    const fail = (message) => {
+      const error = `fly-to: ${message}`;
+      window.__eidosErrors.push(error);
+      throw new TypeError(error);
+    };
+    const nodes = (v) => {
+      try { return (typeof v === "string" || v instanceof Element || Array.isArray(v) || v instanceof NodeList || v instanceof HTMLCollection) && E.$all(v, stage.world).length > 0 && E.$all(v, stage.world).every((el) => el instanceof Element); }
+      catch { return false; }
+    };
+    const finite = Number.isFinite, nonnegative = (v) => finite(v) && v >= 0;
+    const target = (v) => {
+      if (v && typeof v === "object" && !(v instanceof Element) && !Array.isArray(v) && !(v instanceof NodeList) && !(v instanceof HTMLCollection)) {
+        return Reflect.ownKeys(v).every((k) => ["x", "y", "w", "h"].includes(k)) && ["x", "y", "w", "h"].every((k) => Object.hasOwn(v, k) && finite(v[k])) && v.w > 0 && v.h > 0;
+      }
+      return v === "world" || nodes(v);
+    };
+    const atTime = (v) => (nonnegative(v) || (typeof v === "string" && /^(?:<(?:[+-]?(?:\d+(?:\.\d*)?|\.\d+)|\+=(?:\d+(?:\.\d*)?|\.\d+))?|[+-]=(?:\d+(?:\.\d*)?|\.\d+)|(?:\d+(?:\.\d*)?|\.\d+))$/.test(v))) && nonnegative(tl.resolveAt(v));
+    const rules = {
+      target, from: target, route: (v) => nodes(v) && E.$all(v, stage.world).every((el) => el instanceof SVGPathElement),
+      reveal: nodes, arc: (v) => finite(v) && v >= 0 && v <= 1, dur: nonnegative,
+      zoom: (v) => finite(v) && v > 0, pad: nonnegative, bend: finite, at: atTime,
+      ease: (v) => typeof v === "function" || (typeof v === "string" && Object.hasOwn(E.ease, v)),
+    };
+    if (!o || typeof o !== "object" || Array.isArray(o) || ![Object.prototype, null].includes(Object.getPrototypeOf(o))) fail("options must be a plain object");
+    for (const key of Reflect.ownKeys(o)) {
+      if (!Object.hasOwn(rules, key)) fail(`unknown option ${String(key)}`);
+      if (o[key] !== undefined && !rules[key](o[key])) fail(`invalid ${String(key)} (${typeof o[key]})`);
+    }
+    if (!target(o.target)) fail("target must be an element, selector, world or finite {x, y, w, h} rectangle");
     const start = tl.resolveAt(o.at);
     const dur = o.dur ?? 2.4;
     const route = o.route ? E.$all(o.route, stage.world)[0] : null;
