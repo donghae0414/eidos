@@ -197,13 +197,15 @@
 
 P0만으로 "OAuth 흐름 설명"(설정숏 → 시퀀스 메시지 드로우 → 트래킹 → 프리즈 프레임)이나 "REST vs GraphQL 비교"(스플릿 스크린 → 랙 포커스 → 하이라이트 스윕) 같은 대표 질문을 처리할 수 있어야 합니다.
 
-### P1: 두 번째 묶음 (22개)
+### P1: 두 번째 묶음 (22개, 구현됨)
 
-원팝전환, 화면 속 다이브, 글자관통줌, 크레인업, 스피드램프, 타임랩스, 점프컷, 휩팬, 와이프, 스매시 컷, 켄 번스, 패럴랙스, 플라이 투, 교차 편집, 딥 투 컬러, 모핑, 키네틱 타이포, 텍스트 스크램블/타자기, 고정 패널 스크롤리텔링, 분해도, 단계·패널 동기 진행, 차트 간 전환
+원팝전환 `iris`, 화면 속 다이브 `screen-dive`, 글자관통줌 `zoom-through`, 크레인업 `crane-up`, 스피드램프 `speed-ramp`, 타임랩스 `time-lapse`, 점프컷 `jump-cut`, 휩팬 `whip-pan`, 와이프 `wipe`, 스매시 컷 `smash-cut`, 켄 번스 `ken-burns`, 패럴랙스 `parallax`, 플라이 투 `fly-to`, 교차 편집 `cross-cutting`, 딥 투 컬러 `dip-to-color`, 모핑 `shape-morph`, 키네틱 타이포 `kinetic-type`, 텍스트 스크램블/타자기 `text-scramble`, 고정 패널 스크롤리텔링 `pinned-scrollytelling`, 분해도 `exploded-view`, 단계·패널 동기 진행 `step-panel`, 차트 간 전환 `chart-morph`
 
-### P2: 연출용 (10개)
+### P2: 연출용 (10개, 구현됨)
 
-픽셀디졸브, 텍스트샌드위치, 오빗, 돌리줌, FPV 드론, 무한 줌, 컷어웨이, 입자 흩어짐·모임, 라이트 스윕, 순위 경쟁
+픽셀디졸브 `pixel-dissolve`, 텍스트샌드위치 `text-sandwich`, 오빗 `orbit`, 돌리줌 `dolly-zoom`, FPV 드론 `fpv-flight`, 무한 줌 `infinite-zoom`, 컷어웨이 `cutaway`, 입자 흩어짐·모임 `particle-assemble`, 라이트 스윕 `light-sweep`, 순위 경쟁 `bar-race`
+
+P0 20개와 합쳐 52개가 모두 `skills/*/techniques/<id>/`에 card·technique·template으로 들어가 있습니다.
 
 ### 변형 (독립 기법이 아닌 옵션)
 
@@ -296,14 +298,14 @@ awesome-ai-motion의 카드 필드를 EIDOS 용도로 줄였습니다.
 | M3 | P0 모션그래픽·도해·데이터 11개 카드와 템플릿 | 같음 |
 | M4 | `eidos-visualize` 진입 Skill과 결정표 | 대표 질문 5개를 넣었을 때 알맞은 기법 조합으로 HTML이 생성됨 |
 | M5 | Claude Code / Codex 플러그인 패키징 | 두 환경에서 Skill이 로드됨 |
-| M6 | P1 기법 추가 | Phase 2 착수 전 완료 |
+| M6 | P1·P2 기법 추가 | 완료 (52개) |
 
 ---
 
 ## 9. 열린 결정
 
 - **애니메이션 엔진:** 지금은 무의존(WAAPI + 자체 타임라인)을 추천합니다. 두 레퍼런스 모두 GSAP을 쓰지만, 인라인 번들 크기와 라이선스를 따져야 합니다.
-- **3D가 필요한 기법**(오빗, FPV 드론): CSS 3D로 충분한지, 아니면 Three.js를 선택적으로 허용할지 정해야 합니다.
+- **3D가 필요한 기법**(오빗, FPV 드론): 결정됨. CSS 3D만 씁니다. Three.js 같은 3D 라이브러리는 허용하지 않습니다.
 - **Skill 구조:** 6장의 "진입 Skill 1개 + 그룹 Skill 4개" 구조를 roadmap.md에 반영할지 정해야 합니다.
 
 ---

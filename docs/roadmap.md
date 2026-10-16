@@ -73,7 +73,7 @@ skills/
 ├── eidos-visualize/              # 진입: 의도 → 기법 선택 → HTML 한 파일
 │   ├── SKILL.md
 │   ├── references/{decision-table.md, principles.md}
-│   └── examples/{oauth-flow.html, rest-vs-graphql.html}
+│   └── examples/{vllm-serving, oauth-flow, rest-vs-graphql}.{html, storyboard.md}
 ├── eidos-camera/ eidos-cut/ eidos-motion/ eidos-explainer/
 │   ├── SKILL.md
 │   └── techniques/<id>/{card.md, technique.js, template.html}
@@ -98,6 +98,13 @@ scripts/{inline.mjs, qa.mjs}                # 한 파일로 묶기, 브라우저
 - [x] Codex에서도 같은 Skill을 사용할 수 있다 (로컬 marketplace로 설치, `codex exec`에서 로드 확인)
 - [x] P0 기법 20개가 각각 card·technique·template을 갖고, `bun scripts/qa.mjs`가 20/20 통과한다 (오류, seek 결정성, reduced-motion)
 - [x] 질문을 던지면 에이전트가 알맞은 Skill을 골라 HTML을 생성한다 (Claude Code `claude -p`, Codex `codex exec` 각각 OAuth 질문에 skill을 스스로 골라 HTML을 만들었고, 두 결과물 모두 QA 통과)
+
+#### 동적 기본값
+
+- [x] 에이전트가 HTML보다 먼저 스토리보드(`*.storyboard.md`)를 쓰고, 장면 구조와 장면 경계 전환을 정한다
+- [x] P0·P1·P2 기법 52개(camera 16, cut 14, motion 11, explainer 11)가 모두 card·technique·template을 갖고 QA를 통과한다
+- [x] 자동 재생(`P`, `?autoplay=1`), 속도(`[` `]`, `?speed=`), 휠·스와이프 한 번에 한 스톱, 슬라이더·토글 컨트롤 독이 런타임 기본 기능이다 ([runtime-api.md](runtime-api.md))
+- [x] `scripts/repro.sh`로 같은 프롬프트를 Claude Code와 Codex에서 다시 돌려 결과를 재현할 수 있다
 
 ---
 
@@ -146,12 +153,12 @@ Deck
 - [ ] 여러 Skill을 조합한 덱이 HTML 파일 하나로 생성된다
 - [ ] 키보드, 마우스, 스크롤로 모두 진행할 수 있다
 - [ ] 장면 내부 단계 진행과 장면 간 전환이 동작한다
-- [ ] URL 해시로 특정 장면에 바로 이동할 수 있다
+- [x] URL 해시로 특정 장면에 바로 이동할 수 있다 (Phase 1 런타임에서 먼저 구현: `#scene.k`)
 
 ---
 
 ## 열린 질문
 
-- Skill을 몇 개로 시작할지 (전부 vs 대표 5~6개 먼저)
-- 애니메이션 구현 방식: 순수 CSS/JS vs 라이브러리 인라인 번들
+- ~~Skill을 몇 개로 시작할지~~ → 해결: P0 20개로 시작해 P1·P2까지 52개를 모두 구현했다
+- ~~애니메이션 구현 방식~~ → 해결: 순수 JS(무의존 런타임). 라이브러리를 인라인하지 않는다
 - Phase 2에서 발표자 노트, PDF 내보내기 지원 여부
