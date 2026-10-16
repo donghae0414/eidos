@@ -214,6 +214,7 @@
     seek(t) {
       t = Math.min(Math.max(t, 0), this.end);
       this.t = t;
+      if (this.paramsAt) this.paramsAt(t);
       const u = this.sourceTime(t);
       const future = [], started = [];
       for (const tr of this.tracks) (tr.at > u + 1e-9 ? future : started).push(tr);
@@ -321,10 +322,71 @@
     const manual = params.get("clock") === "manual";
     let playing = false, speed = 1, holding = null, lastFrame = 0;
     let ended = false;
+    const controls = new Map(), overrides = new Map(), paramFns = [];
+    let values = Object.freeze({}), renderedValues = values, paramStop = 0, paramsRaf = 0, needsLayout = false, dock = null;
+    tl.paramsAt = resolveParams;
 
     const api = {
       el, world, tl, camera, index: 0, started: false,
-      params: Object.freeze({}),
+      get params() { return values; },
+      onParams(fn) { paramFns.push(fn); return api; },
+      control(name, o) {
+        if (!name || controls.has(name) || !["range", "toggle", "select"].includes(o.type)) {
+          errors.push(`Invalid control: ${name}`);
+          return;
+        }
+        const c = { ...o, tracks: [], input: null, row: null };
+        if (c.type === "range") {
+          c.min ??= 0; c.max ??= 1; c.step ??= 1;
+          if (![c.min, c.max, c.step].every(Number.isFinite) || c.max < c.min || c.step <= 0) {
+            errors.push(`Invalid range: ${name}`);
+            return;
+          }
+        }
+        if (c.type === "select") {
+          if (!Array.isArray(c.options) || !c.options.length) { errors.push(`Invalid options: ${name}`); return; }
+          c.options = c.options.map((v) => typeof v === "object" ? v : { value: v, label: String(v) });
+        }
+        const initial = normalize(c, c.value ?? (c.type === "range" ? c.min : c.type === "toggle" ? false : c.options[0].value));
+        if (!initial.ok) { errors.push(`Invalid default for control: ${name}`); return; }
+        c.value = initial.value;
+        controls.set(name, c);
+        values = Object.freeze({ ...values, [name]: c.value });
+        const handle = {
+          get value() { return values[name]; },
+          set(v) { api.setControls({ [name]: v }); return handle; },
+          drive(a, b, o = {}) {
+            const from = normalize(c, a), to = normalize(c, b);
+            const at = tl.resolveAt(o.at), dur = o.dur ?? 0.6;
+            if (!from.ok || !to.ok || !Number.isFinite(at) || !Number.isFinite(dur) || dur < 0) {
+              errors.push(`Invalid drive for control: ${name}`);
+              return handle;
+            }
+            c.tracks.push({ a: from.value, b: to.value, at, dur, ease: easeOf(o.ease), i: c.tracks.length });
+            c.tracks.sort((a, b) => a.at - b.at || a.i - b.i);
+            tl.prevStart = at;
+            tl.extend(at + dur);
+            return handle;
+          },
+        };
+        return handle;
+      },
+      setControls(patch) {
+        const next = [];
+        for (const [name, v] of Object.entries(patch)) {
+          const c = controls.get(name), result = c && normalize(c, v);
+          if (!result?.ok) { errors.push(`Invalid control value: ${name}=${String(v)}`); return api; }
+          next.push([name, result.value]);
+        }
+        api.pause();
+        for (const [name, v] of next) {
+          overrides.set(name, v);
+          if (controls.get(name).layout) needsLayout = true;
+        }
+        resolveParams(tl.t, false, false);
+        queueParams();
+        return api;
+      },
       get reduced() { return E.reduced; },
       get stops() { return tl.stops; },
       get end() { return tl.end; },
@@ -368,6 +430,8 @@
         return E.fx[name](api, o);
       },
       layout() {
+        resolveParams(tl.t);
+        needsLayout = false;
         const tf = world.style.transform;
         world.style.transform = "none";
         for (const fn of layoutFns) fn();
@@ -375,13 +439,14 @@
         world.style.transform = tf;
         tl.seek(tl.t);
       },
-      seek(t) { api.pause(); holding = null; tl.seek(t); setIndex(stopIndexAt(tl.t)); updateHud(); return api; },
+      seek(t) { api.pause(); holding = null; tl.seek(t); setIndex(stopIndexAt(tl.t)); reachedStop(); updateHud(); return api; },
       jump(i) {
         api.pause();
         holding = null;
         i = Math.min(Math.max(i, 0), tl.stops.length - 1);
         tl.seek(tl.stops[i].t);
         setIndex(i);
+        reachedStop();
         updateHud();
         return api;
       },
@@ -399,12 +464,12 @@
         const from = tl.t, to = tl.stops[i].t;
         setIndex(i);
         anim = { to };
-        if (Math.abs(to - from) < 1e-9) { anim = null; tl.seek(to); updateHud(); return api; }
+        if (Math.abs(to - from) < 1e-9) { anim = null; tl.seek(to); reachedStop(); updateHud(); return api; }
         schedule();
         return api;
       },
       next() {
-        if (anim) { const to = anim.to; api.pause(); tl.seek(to); setIndex(stopIndexAt(to)); updateHud(); return api; }
+        if (anim) { const to = anim.to; api.pause(); tl.seek(to); setIndex(stopIndexAt(to)); reachedStop(); updateHud(); return api; }
         return api.goto(api.index + 1);
       },
       prev() { return api.goto(api.index - 1); },
@@ -441,6 +506,10 @@
         else if (qs != null) api.jump(parseInt(qs, 10));
         else if (hashStop) api.jump(hashStop.i);
         else if (opts.intro !== false) api.goto(1);
+        readControls();
+        resolveParams(tl.t, true);
+        if (controls.size) buildDock();
+        if (needsLayout) { needsLayout = false; api.layout(); }
         if (params.get("autoplay") === "1") api.play();
         api.started = true;
         window.__eidos = api;
@@ -449,6 +518,136 @@
       },
     };
 
+    function normalize(c, v, url = false) {
+      if (url) {
+        if (c.type === "range") v = v.trim() === "" ? NaN : Number(v);
+        else if (c.type === "toggle") v = v === "true" || v === "1" ? true : v === "false" || v === "0" ? false : null;
+        else {
+          const option = c.options.find((o) => String(o.value) === v);
+          return option ? { ok: true, value: option.value } : { ok: false };
+        }
+      }
+      if (c.type === "range") {
+        if (typeof v !== "number" || !Number.isFinite(v)) return { ok: false };
+        v = Math.min(Math.max(v, c.min), c.max);
+        const units = (v - c.min) / c.step;
+        v = c.min + Math.floor(units + 0.5 + Number.EPSILON * Math.max(1, Math.abs(units)) * 4) * c.step;
+        return { ok: true, value: Number(Math.min(Math.max(v, c.min), c.max).toPrecision(15)) };
+      }
+      if (c.type === "toggle") return { ok: typeof v === "boolean", value: v };
+      return { ok: c.options.some((o) => o.value === v), value: v };
+    }
+    function resolveParams(t, force = false, render = true) {
+      const stop = stopIndexAt(t), next = {};
+      if (stop !== paramStop) {
+        for (const [name, c] of controls) if (!c.sticky) overrides.delete(name);
+        paramStop = stop;
+      }
+      let changed = force;
+      for (const [name, c] of controls) {
+        let v = c.value;
+        for (const tr of c.tracks) {
+          if (t < tr.at) break;
+          const p = tr.ease(tr.dur > 0 ? clamp01((t - tr.at) / tr.dur) : 1);
+          v = c.type === "range" ? normalize(c, lerp(tr.a, tr.b, p)).value : p < 1 ? tr.a : tr.b;
+        }
+        next[name] = overrides.has(name) ? overrides.get(name) : v;
+        if (next[name] !== values[name]) {
+          changed = true;
+          if (c.layout) needsLayout = true;
+        }
+      }
+      if (changed) values = Object.freeze(next);
+      if (render && (force || [...controls.keys()].some((name) => values[name] !== renderedValues[name]))) {
+        renderedValues = values;
+        for (const fn of paramFns) fn(values);
+        dispatchEvent(new CustomEvent("eidos:params", { detail: { params: values } }));
+      }
+      updateDock(stop);
+      if (needsLayout && api.started) queueParams();
+    }
+    function queueParams() {
+      if (paramsRaf) return;
+      paramsRaf = requestAnimationFrame(() => {
+        paramsRaf = 0;
+        if (needsLayout) { needsLayout = false; api.layout(); }
+        else tl.seek(tl.t);
+      });
+    }
+    function readControls() {
+      const hash = new URLSearchParams(location.hash.slice(1).split("&").slice(1).join("&"));
+      for (const source of [params, hash]) for (const [key, v] of source) {
+        if (!key.startsWith("c.")) continue;
+        const name = key.slice(2), c = controls.get(name), result = c && normalize(c, v, true);
+        if (!result?.ok) errors.push(`Invalid URL control: ${key}=${v}`);
+        else overrides.set(name, result.value);
+      }
+    }
+    function writeControls() {
+      if (!api.started || !controls.size) return;
+      const url = new URL(location.href), i = stopIndexAt(tl.t), stop = tl.stops[i];
+      for (const key of [...url.searchParams.keys()]) if (key.startsWith("c.") || key === "t" || key === "stop") url.searchParams.delete(key);
+      if (!stop.scene) url.searchParams.set("stop", String(i));
+      const local = tl.stops.slice(0, i).filter((s) => s.scene === stop.scene).length;
+      const state = new URLSearchParams();
+      for (const [name, v] of overrides) state.set(`c.${name}`, String(v));
+      url.hash = (stop.scene ? `${stop.scene}.${stop.id ?? local}` : String(i)) + (state.size ? `&${state}` : "");
+      try { history.replaceState(null, "", url); } catch {}
+    }
+    function reachedStop() {
+      if (Math.abs(tl.t - tl.stops[stopIndexAt(tl.t)].t) < 1e-9) writeControls();
+    }
+    function updateDock(stop) {
+      if (!dock) return;
+      let visible = false;
+      for (const [name, c] of controls) {
+        const index = (v) => typeof v === "number" ? v : tl.stops.findIndex((s) => s.id === v);
+        c.row.hidden = c.when == null ? false : Array.isArray(c.when)
+          ? !(stop >= index(c.when[0]) && stop <= index(c.when[1]))
+          : tl.stops[stop].scene !== c.when;
+        visible ||= !c.row.hidden;
+        if (c.type === "toggle") c.input.checked = values[name];
+        else c.input.value = c.type === "select" ? String(c.options.findIndex((o) => o.value === values[name])) : String(values[name]);
+        if (c.output) c.output.value = String(values[name]);
+      }
+      dock.hidden = !visible;
+    }
+    function buildDock() {
+      dock = document.createElement("div");
+      dock.className = "eidos-dock";
+      dock.setAttribute("role", "group");
+      dock.setAttribute("aria-label", "Controls");
+      dock.dataset.eidosNokeys = "";
+      for (const [name, c] of controls) {
+        const row = c.row = document.createElement("label");
+        row.className = `eidos-control eidos-control-${c.type}`;
+        const label = document.createElement("span");
+        label.textContent = c.label ?? name;
+        row.appendChild(label);
+        const input = c.input = document.createElement(c.type === "select" ? "select" : "input");
+        input.id = `eidos-control-${document.querySelectorAll(".eidos-dock").length}-${dock.children.length}`;
+        row.htmlFor = input.id;
+        input.name = name;
+        if (c.type === "select") c.options.forEach((o, i) => {
+          const option = document.createElement("option");
+          option.value = String(i); option.textContent = o.label ?? String(o.value);
+          input.appendChild(option);
+        });
+        else input.type = c.type === "toggle" ? "checkbox" : "range";
+        if (c.type === "range") {
+          input.min = c.min; input.max = c.max; input.step = c.step;
+          c.output = document.createElement("output");
+          row.appendChild(c.output);
+        }
+        row.appendChild(input);
+        const edit = () => api.setControls({ [name]: c.type === "toggle" ? input.checked : c.type === "select" ? c.options[Number(input.value)].value : Number(input.value) });
+        input.addEventListener("input", edit);
+        input.addEventListener("change", () => { edit(); writeControls(); });
+        dock.appendChild(row);
+      }
+      document.body.appendChild(dock);
+      updateDock(stopIndexAt(tl.t));
+    }
     function cancel() {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
@@ -503,6 +702,7 @@
         }
         anim = null;
         setIndex(stopIndexAt(to));
+        reachedStop();
         if (playing) {
           if (api.index === tl.stops.length - 1) { finish(); break; }
           holding = tl.stops[api.index].hold;

@@ -139,6 +139,78 @@ body {
 .eidos-hud-fill { height: 100%; width: 0; background: var(--eidos-accent); }
 .eidos-hud[hidden] { display: none; }
 
+.eidos-dock {
+  position: fixed;
+  z-index: 2;
+  inset-block-start: 1.25rem;
+  inset-inline-end: 1.25rem;
+  width: min(18rem, calc(100% - 2.5rem));
+  max-height: calc(100dvh - 10rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius);
+  background: var(--eidos-surface);
+  color: var(--eidos-surface-fg);
+  box-shadow: var(--eidos-shadow);
+  font-size: 0.9rem;
+}
+.eidos-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+.eidos-control + .eidos-control { border-top: 1px solid var(--eidos-border); }
+.eidos-control > span { overflow-wrap: anywhere; font-weight: 500; }
+.eidos-control output { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
+.eidos-control input { accent-color: var(--eidos-accent); cursor: pointer; }
+.eidos-control input[type="range"] { grid-column: 1 / -1; width: 100%; min-width: 0; min-height: 44px; margin: 0; }
+.eidos-control input[type="checkbox"] { width: 1.25rem; height: 1.25rem; margin: 0.75rem 0; }
+.eidos-control-select { position: relative; }
+.eidos-control-select::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  inset-block-end: 1.75rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 1.5px solid var(--eidos-muted-fg);
+  border-block-end: 1.5px solid var(--eidos-muted-fg);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.eidos-control select {
+  appearance: none;
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 2rem 0.5rem 0.5rem;
+  border: 1px solid var(--eidos-border);
+  border-radius: var(--eidos-radius-sm);
+  background: var(--eidos-bg);
+  color: var(--eidos-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.eidos-control :is(input, select):focus-visible { outline: 2px solid var(--eidos-accent); outline-offset: 2px; }
+.eidos-dock[hidden], .eidos-control[hidden] { display: none; }
+@media (max-width: 600px) {
+  .eidos-dock {
+    inset-block-start: auto;
+    inset-block-end: calc(14vh + env(safe-area-inset-bottom));
+    inset-inline: 0.75rem;
+    width: auto;
+    max-height: 42dvh;
+    border-radius: var(--eidos-radius) var(--eidos-radius) var(--eidos-radius-sm) var(--eidos-radius-sm);
+  }
+}
+
 .eidos-card {
   background: var(--eidos-surface);
   color: var(--eidos-surface-fg);
