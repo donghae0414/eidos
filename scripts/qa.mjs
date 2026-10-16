@@ -1025,6 +1025,33 @@ function applyExpectFail(r, fixtureExpect) {
   }
 }
 
+// Startup probe: inside a seatbelt sandbox (e.g. Codex workspace-write) WebKit's XPC services
+// (com.apple.WebKit.WebContent/Networking/GPU) are blocked by mach-lookup and navigate() never
+// settles. Fail fast with a clear message instead of hanging.
+const browserTimeout = Number(process.env.EIDOS_QA_BROWSER_TIMEOUT ?? 20) * 1000;
+{
+  let timer;
+  const probe = (async () => {
+    const v = new Bun.WebView({ width: 64, height: 64 });
+    await v.navigate("data:text/html,<p>ok</p>");
+    await v.evaluate("document.body.textContent");
+    v.close();
+  })();
+  const timedOut = new Promise((r) => (timer = setTimeout(() => r("timeout"), browserTimeout)));
+  const outcome = await Promise.race([probe.then(() => "ok", (e) => e), timedOut]);
+  clearTimeout(timer);
+  if (outcome !== "ok") {
+    const why = outcome === "timeout" ? `did not start within ${browserTimeout / 1000}s` : `failed to start: ${outcome?.message ?? outcome}`;
+    console.error(
+      `BROWSER UNAVAILABLE: Bun.WebView ${why}.\n` +
+        `Likely cause: a sandbox (e.g. Codex workspace-write seatbelt) blocks the WebKit XPC services.\n` +
+        `Fallback: rerun this exact qa command with unsandboxed/escalated execution, or ask the user to run it.\n` +
+        `Do not mark the screenshot review as passed without it.`,
+    );
+    process.exit(3);
+  }
+}
+
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 if (contactDir) mkdirSync(contactDir, { recursive: true });
 const results = [];
