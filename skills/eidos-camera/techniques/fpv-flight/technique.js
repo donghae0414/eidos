@@ -76,7 +76,7 @@
     };
 
     const mix = (a, b, p) => {
-      const d = b.yaw - a.yaw, turn = d - 360 * Math.round(d / 360);
+      const turn = b.yaw - a.yaw;
       return {
         x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), z: lerp(a.z, b.z, p),
         yaw: a.yaw + turn * p, pitch: lerp(a.pitch, b.pitch, p),
@@ -128,7 +128,11 @@
         const at = tl.resolveAt(t.at);
         const dur = number(t.dur ?? 1.6, "dur");
         if (!Number.isFinite(at) || at < 0 || dur < 0) fail("at and dur must be finite and nonnegative");
-        tl.add((p) => render(mix(a, b, E.reduced ? (p < 0.5 ? 0 : 1) : p)), { at, dur, ease: t.ease ?? "inOut" });
+        tl.add((p) => {
+          // Keep the parked source stop; a zero-duration destination owns only t > at.
+          if (dur === 0 && tl.t <= at) p = 0;
+          render(mix(a, b, E.reduced ? (p < 0.5 ? 0 : 1) : p));
+        }, { at, dur, ease: t.ease ?? "inOut" });
         pose = b;
         return { start: at, end: at + dur };
       },

@@ -89,7 +89,11 @@
         const at = tl.resolveAt(t.at);
         const dur = number(t.dur ?? 1.6, "dur");
         if (!Number.isFinite(at) || at < 0 || dur < 0) fail("at and dur must be finite and nonnegative");
-        tl.add((p) => render(E.reduced ? (p < 0.5 ? a : b) : { yaw: lerp(a.yaw, b.yaw, p), pitch: lerp(a.pitch, b.pitch, p) }), { at, dur, ease: t.ease ?? "camera" });
+        tl.add((p) => {
+          // Keep the parked source stop; a zero-duration destination owns only t > at.
+          if (dur === 0 && tl.t <= at) p = 0;
+          render(E.reduced ? (p < 0.5 ? a : b) : { yaw: lerp(a.yaw, b.yaw, p), pitch: lerp(a.pitch, b.pitch, p) });
+        }, { at, dur, ease: t.ease ?? "camera" });
         pose = b;
         return { start: at, end: at + dur };
       },
