@@ -61,7 +61,7 @@ bun scripts/qa.mjs path/to/file.html    # one file
 bun scripts/qa.mjs --shots /tmp/shots   # also capture desktop/mobile x light/dark screenshots
 bun scripts/qa.mjs --only 'skills/eidos-cut/**'   # glob filter over the targets
 bun scripts/qa.mjs --contact /tmp/sheet # one contact sheet image per file, every stop
-bun scripts/qa.mjs --stop-diff          # fail when two adjacent stops look the same
+bun scripts/qa.mjs --stop-diff          # print per-boundary change counts for self-review (never changes the exit code)
 bun scripts/qa.mjs scripts/fixtures/*.html   # runtime feature fixtures (bad-*.html must fail)
 ```
 

@@ -104,7 +104,7 @@ scripts/{inline.mjs, qa.mjs}                # 한 파일로 묶기, 브라우저
 - [x] 에이전트가 HTML보다 먼저 스토리보드(`*.storyboard.md`)를 쓰고, 장면 구조와 장면 경계 전환을 정한다
 - [x] P0·P1·P2 기법 52개(camera 16, cut 14, motion 11, explainer 11)가 모두 card·technique·template을 갖고 QA를 통과한다
 - [x] 자동 재생(`P`, `?autoplay=1`), 속도(`[` `]`, `?speed=`), 휠·스와이프 한 번에 한 스톱, 슬라이더·토글 컨트롤 독이 런타임 기본 기능이다 ([runtime-api.md](runtime-api.md))
-- [x] `scripts/repro.sh`로 같은 프롬프트를 Claude Code와 Codex에서 다시 돌려 결과를 재현할 수 있다
+- [ ] `scripts/repro.sh`로 같은 프롬프트를 Claude Code와 Codex에서 다시 돌려 결과를 재현할 수 있다
 
 ---
 
