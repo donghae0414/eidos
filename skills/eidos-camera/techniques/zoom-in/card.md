@@ -1,5 +1,6 @@
 ---
 id: zoom-in
+kind: technique
 ko: 줌인
 en: Zoom In
 aka: [돌리인, 푸시인, dolly in, push-in, zoom to detail, 확대]

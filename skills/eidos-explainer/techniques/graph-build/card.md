@@ -1,5 +1,6 @@
 ---
 id: graph-build
+kind: technique
 ko: 그래프 빌드
 en: Graph Build
 aka: [의존성 그래프, 빌드 순서, 그래프 구성, dependency graph, critical path]

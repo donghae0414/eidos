@@ -1,5 +1,6 @@
 ---
 id: sequence-message
+kind: technique
 ko: 시퀀스 메시지 드로우
 en: Sequence Message Draw
 aka: [시퀀스 다이어그램, 메시지 흐름, 호출 순서, sequence diagram, message flow, swimlane]

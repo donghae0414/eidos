@@ -1,5 +1,6 @@
 ---
 id: stagger-reveal
+kind: technique
 ko: 스태거 리빌
 en: Stagger Reveal
 aka: [스태거, 순차 등장, 점진적 공개, 프로그레시브 디스클로저, stagger, cascade, sequential reveal, progressive disclosure]

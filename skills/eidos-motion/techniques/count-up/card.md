@@ -1,5 +1,6 @@
 ---
 id: count-up
+kind: technique
 ko: 카운트업
 en: Count-up
 aka: [카운트업, 숫자 롤링, 넘버 카운터, 수치 애니메이션, 카운트다운, count up, number roll, odometer, counter, number slam]

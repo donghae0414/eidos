@@ -18,4 +18,5 @@
     tl.extend(start + dur);
     return { start, end: start + dur };
   };
+  E.fx["cross-dissolve"].kind = "transition";
 })();

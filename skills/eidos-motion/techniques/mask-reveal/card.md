@@ -1,5 +1,6 @@
 ---
 id: mask-reveal
+kind: technique
 ko: 마스크 리빌
 en: Mask Reveal
 aka: [마스크 리빌, 텍스트 리빌, 라인 리빌, 클립 리빌, 와이프, mask reveal, text reveal, line reveal, clip reveal, wipe]

@@ -1,5 +1,6 @@
 ---
 id: highlight-sweep
+kind: technique
 ko: 하이라이트 스윕
 en: Highlight Sweep
 aka: [형광펜, 마커 스윕, 밑줄 강조, 서클 강조, 동그라미 치기, highlight sweep, marker, highlighter, circumscribe, circle emphasis]

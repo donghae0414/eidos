@@ -1,5 +1,6 @@
 ---
 id: tracking
+kind: technique
 ko: 트래킹
 en: Tracking
 aka: [트래킹 샷, 팔로우, 카메라 추적, 따라가기, follow, camera follow, tracking shot]

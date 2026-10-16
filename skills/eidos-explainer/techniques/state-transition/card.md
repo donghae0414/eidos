@@ -1,5 +1,6 @@
 ---
 id: state-transition
+kind: technique
 ko: 상태 전이 워크
 en: State Transition Walk
 aka: [상태 머신, 상태도, 상태 전이, 워크플로, state machine, FSM, state diagram, lifecycle]

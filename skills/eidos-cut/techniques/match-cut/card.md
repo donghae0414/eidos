@@ -1,5 +1,6 @@
 ---
 id: match-cut
+kind: transition
 ko: 매치컷
 en: Match Cut
 aka: [매치 컷, 형태 매치, 모프 매치컷, FLIP 전환, match cut, morph match cut, shape match]

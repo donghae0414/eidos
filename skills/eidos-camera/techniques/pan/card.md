@@ -1,5 +1,6 @@
 ---
 id: pan
+kind: technique
 ko: 패닝
 en: Pan
 aka: [패닝, 팬, 틸트, 수평 이동, 훑기, pan, tilt, truck, side scroll, infinite canvas pan]

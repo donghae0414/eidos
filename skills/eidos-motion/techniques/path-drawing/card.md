@@ -1,5 +1,6 @@
 ---
 id: path-drawing
+kind: technique
 ko: 패스 드로잉
 en: Path Drawing
 aka: [라인 드로우, 선 그리기, 연결선 애니메이션, 언더라인 드로우, 밑줄 긋기, line draw, path draw, stroke draw, connector draw, underline draw]

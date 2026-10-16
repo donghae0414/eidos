@@ -1,5 +1,6 @@
 ---
 id: code-diff
+kind: technique
 ko: 코드 디프 리빌
 en: Code Diff Reveal
 aka: [코드 변경, 디프 애니메이션, 코드 교체, code diff, diff reveal]

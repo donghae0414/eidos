@@ -114,7 +114,9 @@ body {
   font-size: 0.9rem;
   background: linear-gradient(to top, var(--eidos-bg) 55%, transparent);
 }
-.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
+.eidos-hud-breadcrumb { grid-column: 1 / -1; color: var(--eidos-muted-fg); font-size: 0.8rem; overflow-wrap: anywhere; }
+.eidos-hud-breadcrumb:empty { display: none; }
+.eidos-hud-caption { color: var(--eidos-fg); font-weight: 500; min-width: 0; min-height: 1.3em; word-break: keep-all; overflow-wrap: break-word; }
 .eidos-hud-count { color: var(--eidos-muted-fg); font-variant-numeric: tabular-nums; }
 .eidos-hud-transport { display: flex; align-items: center; gap: 0.75rem; pointer-events: auto; }
 .eidos-hud-play {

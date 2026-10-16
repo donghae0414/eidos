@@ -1,5 +1,6 @@
 ---
 id: establishing-shot
+kind: technique
 ko: 설정숏
 en: Establishing Shot
 aka: [설정 숏, 와이드 숏, 전체 보여주기, 크레인업, 풀백, pull back, crane up, wide shot, overview first]

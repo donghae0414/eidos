@@ -156,11 +156,11 @@
     }
     stop(label = "", o = {}) {
       const last = this.stops[this.stops.length - 1];
-      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1) {
+      if (Math.abs(last.t - this.end) < 1e-9 && this.stops.length > 1 && last.scene === (this.scene ?? null)) {
         last.label = label || last.label;
         if (o.id != null) last.id = o.id;
         last.hold = o.hold ?? Math.min(Math.max(0.9 + 0.055 * last.label.length, 1.5), 6);
-      } else this.stops.push({ t: this.end, label, id: o.id, hold: o.hold ?? Math.min(Math.max(0.9 + 0.055 * label.length, 1.5), 6), scene: null });
+      } else this.stops.push({ t: this.end, label, id: o.id, hold: o.hold ?? Math.min(Math.max(0.9 + 0.055 * label.length, 1.5), 6), scene: this.scene ?? null });
       return this;
     }
     onSeek(fn) {
@@ -324,10 +324,69 @@
     let ended = false, generation = 0;
     const controls = new Map(), overrides = new Map(), paramFns = [];
     let values = Object.freeze({}), renderedValues = values, paramStop = 0, paramsRaf = 0, needsLayout = false, dock = null;
+    const scenes = [], namedScenes = new Map(), spokes = new Map(), returns = [];
+    let currentScene = null, activeSpoke = null, shownScene = null, captions = [];
     tl.paramsAt = resolveParams;
+    tl.onSeek(updateScene);
 
     const api = {
-      el, world, tl, camera, index: 0, started: false,
+      el, world, tl, camera, scenes, index: 0, started: false,
+      scene(id, o = {}) {
+        checkScene(id, o);
+        if (activeSpoke) api.back();
+        openScene(id, o);
+        return api;
+      },
+      spoke(id, o = {}) {
+        checkScene(id, { ...o, el: o.from });
+        const hub = namedScenes.get(o.hub);
+        if (!hub) sceneError(`Unknown hub: ${o.hub}`);
+        if (activeSpoke) api.back();
+        const hubStop = tl.stops.findLast((s) => s.scene === hub.id && !String(s.id || "").startsWith("ret-"));
+        if (!hubStop) sceneError(`Hub ${hub.id} needs a stop before spoke ${id}`);
+        const record = openScene(id, { ...o, el: o.from }, hub.id);
+        activeSpoke = { id, hub, hubStop, record, via: o.via, with: o.with };
+        spokes.set(id, activeSpoke);
+        for (const origin of $all(o.from, world)) origin.dataset.eidosSpoke = id;
+        return api;
+      },
+      back(o = {}) {
+        if (!activeSpoke) return api;
+        const spoke = activeSpoke;
+        const via = o.via ?? spoke.via;
+        checkVia(via);
+        activeSpoke = null;
+        openScene(spoke.hub.id, {
+          el: spoke.hub.el, title: spoke.hub.title, via, with: o.with ?? spoke.with,
+        }, null, via === "camera" ? (c) => c.stateAt(tl.sourceTime(spoke.hubStop.t)) : undefined);
+        tl.stop(o.label ?? spoke.hubStop.label, { id: `ret-${spoke.id}` });
+        spoke.returnStop = tl.stops[tl.stops.length - 1];
+        return api;
+      },
+      enter(id) {
+        const spoke = spokes.get(id);
+        const first = tl.stops.findIndex((s) => s.scene === id);
+        if (!spoke || first < 0 || !spoke.returnStop) sceneError(`Unknown or unclosed spoke: ${id}`);
+        returns.push({ from: stopIndexAt(tl.t), stop: spoke.returnStop });
+        api.pause();
+        // Every spoke starts at the same hub state; skip unrelated branches.
+        tl.seek(spoke.record.t0);
+        return api.goto(first);
+      },
+      exit() {
+        const target = returns.pop();
+        return target ? api.goto(tl.stops.indexOf(target.stop)) : api;
+      },
+      where() {
+        const stop = tl.stops[stopIndexAt(tl.t)];
+        // The bootstrap stop is not the first authored scene stop.
+        const exact = Math.abs(stop.t - tl.t) < 1e-9;
+        const scene = exact ? stop.scene : scenes.findLast((s) => s.t0 <= tl.t)?.id ?? null;
+        const localStops = tl.stops.filter((s) => s.scene === scene);
+        const local = Math.max(0, localStops.findLastIndex((s) => s.t <= tl.t + 1e-9));
+        const hub = spokes.get(scene)?.hub.id;
+        return { scene, path: scene == null ? [] : hub ? [hub, scene] : [scene], local, of: localStops.length };
+      },
       get params() { return values; },
       onParams(fn) { paramFns.push(fn); return api; },
       control(name, o) {
@@ -490,7 +549,19 @@
         return out.join("\n");
       },
       start() {
+        if (activeSpoke) api.back();
         if (tl.stops[tl.stops.length - 1].t < tl.end - 1e-9) tl.stop("");
+        if (currentScene) currentScene.t1 = tl.end;
+        captions = [];
+        for (const stop of tl.stops) {
+          const range = scenes.find((s) => s.id === stop.scene && stop.t >= s.t0 && stop.t <= s.t1);
+          const first = range && !captions.some((c) => c.range === range);
+          const shifted = first && (range.lead != null || range.trail != null);
+          const at = shifted ? range.t0 - (range.lead ?? 0) + (range.trail ?? 0) : stop.t;
+          // A J cut replaces even later captions from the outgoing scene.
+          if (first) captions = captions.filter((c) => c.t < at);
+          captions.push({ t: Math.max(at, captions[captions.length - 1]?.t ?? 0), label: stop.label, range });
+        }
         api.layout();
         tl.seek(0);
         if (opts.hud !== false && params.get("hud") !== "0") buildHud();
@@ -518,6 +589,56 @@
       },
     };
 
+    function sceneError(message) {
+      // file:// masks errors thrown across script boundaries as "Script error.".
+      errors.push(message);
+      throw new Error(message);
+    }
+    function checkVia(via) {
+      if (!via) sceneError("Scene via is required after the first scene");
+      if (via !== "camera" && via !== "cut" && E.fx[via]?.kind !== "transition") {
+        sceneError(`Scene via "${via}" must name an fx with kind "transition"`);
+      }
+    }
+    function checkScene(id, o) {
+      if (!id || namedScenes.has(id)) sceneError(`Invalid or duplicate scene: ${id}`);
+      if (!$all(o.el, world).length) sceneError(`Scene ${id} needs an el`);
+      if (currentScene || o.via != null) checkVia(o.via);
+    }
+    function openScene(id, o, parent = null, target = o.el) {
+      const at = tl.end;
+      const previous = currentScene;
+      if (previous) previous.t1 = at;
+      const record = { ...o, id, t0: at, t1: at, parent };
+      scenes.push(record);
+      if (!namedScenes.has(id)) namedScenes.set(id, record);
+      currentScene = record;
+      tl.scene = id;
+      if (o.via === "camera") camera.to(target, { ...o.with, at });
+      else if (o.via === "cut") {
+        if (previous) tl.tween(previous.el, { opacity: [1, 0] }, { at, dur: 0 });
+        tl.tween(o.el, { opacity: [0, 1] }, { at, dur: 0 });
+      } else if (previous) {
+        const transition = E.fx[o.via](api, { ...o.with, from: previous.el, to: o.el, at });
+        tl.extend(transition.end);
+      }
+      return record;
+    }
+    function updateScene() {
+      if (!scenes.length) return;
+      const { scene, path } = api.where();
+      if (scene !== shownScene) {
+        shownScene = scene;
+        dispatchEvent(new CustomEvent("eidos:scene", { detail: { id: scene, path, title: namedScenes.get(scene)?.title ?? scene } }));
+      }
+      if (hud) {
+        hud.querySelector(".eidos-hud-breadcrumb").textContent = path.map((id) => namedScenes.get(id)?.title ?? id).join(" › ");
+        hud.querySelector(".eidos-hud-caption").textContent = captionAt();
+      }
+    }
+    function captionAt() {
+      return captions.findLast((c) => c.t <= tl.t + 1e-9)?.label ?? "";
+    }
     function normalize(c, v, url = false) {
       if (url) {
         if (c.type === "range") v = v.trim() === "" ? NaN : Number(v);
@@ -584,7 +705,7 @@
       }
     }
     function writeControls() {
-      if (!api.started || !controls.size) return;
+      if (!api.started || (!controls.size && !scenes.length)) return;
       const url = new URL(location.href), i = stopIndexAt(tl.t), stop = tl.stops[i];
       for (const key of [...url.searchParams.keys()]) if (key.startsWith("c.") || key === "t" || key === "stop") url.searchParams.delete(key);
       if (!stop.scene) url.searchParams.set("stop", String(i));
@@ -728,9 +849,10 @@
       hud = document.createElement("div");
       hud.className = "eidos-hud";
       hud.innerHTML =
-        '<div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-transport" data-eidos-noclick><button type="button" class="eidos-hud-play" data-eidos-noclick></button><span class="eidos-hud-speed"></span></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
+        '<div class="eidos-hud-breadcrumb"></div><div class="eidos-hud-caption" aria-live="polite"></div><div class="eidos-hud-transport" data-eidos-noclick><button type="button" class="eidos-hud-play" data-eidos-noclick></button><span class="eidos-hud-speed"></span></div><div class="eidos-hud-count"></div><div class="eidos-hud-bar"><div class="eidos-hud-fill"></div></div>';
       hud.querySelector("button").addEventListener("click", () => playing ? api.pause() : api.play());
       document.body.appendChild(hud);
+      updateScene();
       updateHud();
     }
     function updateHud() {
@@ -744,7 +866,7 @@
       button.textContent = playing ? "Pause" : "Play";
       button.setAttribute("aria-pressed", String(playing));
       hud.querySelector(".eidos-hud-speed").textContent = `${speed}x`;
-      hud.querySelector(".eidos-hud-caption").textContent = tl.stops[stopIndexAt(tl.t)].label || "";
+      hud.querySelector(".eidos-hud-caption").textContent = captionAt();
       hud.querySelector(".eidos-hud-count").textContent = `${api.index} / ${tl.stops.length - 1}  ·  →/Space 다음 · ← 이전 · P 재생 · 스크롤`;
       hud.querySelector(".eidos-hud-fill").style.width = `${tl.end ? (tl.t / tl.end) * 100 : 100}%`;
     }
@@ -754,7 +876,13 @@
         if (e.target.closest("input, select, textarea, [contenteditable], [data-eidos-nokeys]")) return;
         const k = e.key;
         if (e.target.closest("button") && (k === " " || k === "Enter")) return;
-        if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
+        if (/^[1-9]$/.test(k)) {
+          const id = [...spokes.keys()][Number(k) - 1];
+          if (!id) return;
+          api.enter(id);
+        }
+        else if (k === "Escape") api.exit();
+        else if (["ArrowRight", "ArrowDown", " ", "Enter", "PageDown"].includes(k)) api.next();
         else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) api.prev();
         else if (k === "Home") api.jump(0);
         else if (k === "End") api.jump(tl.stops.length - 1);
@@ -769,6 +897,11 @@
       });
       el.addEventListener("click", (e) => {
         api.pause();
+        const origin = e.target.closest("[data-eidos-spoke]");
+        if (origin && !e.target.closest("input, select, textarea, label, [data-eidos-noclick]")) {
+          api.enter(origin.dataset.eidosSpoke);
+          return;
+        }
         if (e.target.closest("a, button, input, select, textarea, label, .eidos-dock, .eidos-hud button, [data-eidos-noclick]")) return;
         api.next();
       });

@@ -1,5 +1,6 @@
 ---
 id: chart-grow
+kind: technique
 ko: 차트 성장
 en: Chart Grow
 aka: [차트 성장, 막대 성장, 선 차트, chart grow, bar chart, line chart]

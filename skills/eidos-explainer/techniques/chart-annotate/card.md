@@ -1,5 +1,6 @@
 ---
 id: chart-annotate
+kind: technique
 ko: 차트 주석
 en: Chart Annotate
 aka: [차트 주석, 데이터 주석, 변곡점 강조, chart annotate, chart callout]

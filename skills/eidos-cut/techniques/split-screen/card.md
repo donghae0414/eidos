@@ -1,5 +1,6 @@
 ---
 id: split-screen
+kind: technique
 ko: 스플릿 스크린
 en: Split Screen
 aka: [분할 화면, 나란히 비교, 좌우 비교, 스플릿 컴페어, split compare, side by side]

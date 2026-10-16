@@ -1,5 +1,6 @@
 ---
 id: rack-focus
+kind: technique
 ko: 랙 포커스
 en: Rack Focus
 aka: [랙포커스, 초점 이동, 포커스 풀, focus pull, rack focus, focus shift]

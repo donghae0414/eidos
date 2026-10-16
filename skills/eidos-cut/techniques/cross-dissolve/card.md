@@ -1,5 +1,6 @@
 ---
 id: cross-dissolve
+kind: transition
 ko: 크로스디졸브
 en: Cross Dissolve
 aka: [디졸브, 크로스페이드, 페이드 전환, 블러 디졸브, crossfade, dissolve, blur dissolve]

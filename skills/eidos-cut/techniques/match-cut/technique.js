@@ -69,4 +69,5 @@
     tl.extend(start + dur);
     return { start, end: start + dur };
   };
+  E.fx["match-cut"].kind = "transition";
 })();

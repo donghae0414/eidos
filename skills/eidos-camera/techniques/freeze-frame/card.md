@@ -1,5 +1,6 @@
 ---
 id: freeze-frame
+kind: technique
 ko: 프리즈 프레임
 en: Freeze Frame
 aka: [프리즈, 정지 화면, 일시정지, 프리즈 컷, freeze, freeze cut, pause and annotate]
