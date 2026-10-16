@@ -6,12 +6,9 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
-  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
-  const FRAME = 1 / 60;
   const durOf = (v) => {
     if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`dip-to-color: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
-    return Math.max(v, FRAME);
+    return v;
   };
   // Own keys only: inherited names such as "constructor" must not pass as an ease.
   const easeOf = (e) =>
@@ -33,6 +30,7 @@
     const ease = easeOf(o.ease ?? "inOut");
     const start = tl.resolveAt(o.at);
     const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
     const a = (1 - hold) / 2, b = a + hold; // fade in [0, a], hold [a, b], fade out [b, 1]
     const mid = (a + b) / 2;
 
@@ -67,6 +65,13 @@
     }
     if (o.from) tl.tween(o.from, { opacity: (p) => (p < mid ? 1 : 0) }, at);
     if (o.to) tl.tween(o.to, { opacity: (p) => (p >= mid ? 1 : 0) }, at);
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
+    }
     tl.prevStart = start;
     tl.extend(start + dur);
     return { start, end: start + dur };

@@ -5,12 +5,9 @@
     (window.__eidosErrors ||= []).push(msg);
     throw new Error(msg);
   };
-  // A transition never takes 0 s: a 0 s track starting at the previous stop's time would already
-  // be applied (p = 1) while the viewer is parked on that stop, showing the next scene too early.
-  const FRAME = 1 / 60;
   const durOf = (v) => {
     if (typeof v !== "number" || !Number.isFinite(v) || v < 0) fail(`smash-cut: dur must be a finite number >= 0 (got ${JSON.stringify(v)})`);
-    return Math.max(v, FRAME);
+    return v;
   };
   const layer = (cls, css) => {
     const el = document.createElement("div");
@@ -28,12 +25,12 @@
     if (o.slam != null && (typeof o.slam !== "string" || !o.slam.trim())) fail(`smash-cut: slam must be a non-empty string (got ${JSON.stringify(o.slam)})`);
     const slam = E.reduced ? null : o.slam ?? null;
     const lit = !E.reduced && flash !== false;
-    // The swap happens on the first frame after start; dur is how long the flash or slam card lasts,
-    // or a single frame for a pure cut.
+    // The swap happens right after start; dur is how long the flash or slam card lasts, 0 for a pure cut.
     const want = durOf(o.dur ?? (slam ? 1.1 : 0.45));
-    const dur = !lit && !slam ? FRAME : want;
+    const dur = !lit && !slam ? 0 : want;
     const start = tl.resolveAt(o.at);
     const at = { at: start, dur, ease: "linear" };
+    const first = tl.tracks.length;
     const cut = (p) => p > 0;
     if (o.from) tl.tween(o.from, { opacity: (p) => (cut(p) ? 0 : 1) }, at);
     if (o.to) tl.tween(o.to, { opacity: (p) => (cut(p) ? 1 : 0) }, at);
@@ -69,6 +66,13 @@
       }, at);
     } else if (lit && flash === "contrast") {
       if (o.to) tl.tween(o.to, { style: (p) => ({ filter: on(p) ? `contrast(${r3(lerp(2.2, 1, E.ease.out(p)))}) saturate(${r3(lerp(1.6, 1, E.ease.out(p)))})` : "none" }) }, at);
+    }
+    // Same rule the runtime uses for zero-duration scene entries (openScene): a track starting exactly
+    // at a stop time takes effect only for t > start, so a viewer parked on the previous stop still sees
+    // that stop's scene while dur: 0 keeps end === start.
+    for (const tr of tl.tracks.slice(first)) {
+      const fn = tr.fn;
+      tr.fn = (p) => fn(tl.t <= start ? 0 : p);
     }
     tl.prevStart = start;
     tl.extend(start + dur);
