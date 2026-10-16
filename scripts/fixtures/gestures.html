@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · gestures</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .box { width: 160px; padding: 12px; }
+  #panel { height: 160px; width: 320px; overflow: auto; }
+  #panel .tall { height: 1000px; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title">제스처</h1>
+      <div class="eidos-card box" id="box">상자</div>
+      <div class="eidos-card" id="panel"><div class="tall">스크롤 가능한 패널</div></div>
+      <input id="rng" type="range" min="0" max="10" value="5" aria-label="값">
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { gestures: true };
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#box", { opacity: [0, 1] }, { dur: 0.4 }).stop("하나");
+  tl.tween("#box", { x: [0, 120] }, { dur: 0.4 }).stop("둘");
+  tl.tween("#box", { scale: [1, 1.3] }, { dur: 0.4 }).stop("셋");
+  tl.tween("#box", { x: [120, 0] }, { dur: 0.4 }).stop("넷");
+  s.start();
+</script>
+</body>
+</html>

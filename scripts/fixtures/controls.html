@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · controls</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .box { width: 160px; padding: 12px; }
+  .chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding: 8px; }
+  .bar { width: 28px; height: 120px; background: var(--eidos-accent); transform-origin: bottom; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title" id="title">컨트롤</h1>
+      <div class="chart eidos-card" id="chart">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <p id="note">막대 수에 따라 처리량이 바뀝니다</p>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { controls: { n: [1, 4, 8], grid: [false, true], mode: ["bars", "dots"] } };
+  window.__eidosFixtureBuild = [];
+  const F = (feature, fn) => { try { return fn(); } catch (e) { window.__eidosFixtureBuild.push(feature + ": " + String((e && e.message) || e)); } };
+  const s = Eidos.stage();
+  const { tl } = s;
+  // All nodes exist before start(); params only change style values.
+  F("controls", () => s.control("n", { type: "range", min: 1, max: 8, step: 1, value: 4, label: "막대 수 (개)", sticky: true }));
+  F("controls", () => s.control("grid", { type: "toggle", value: false, label: "격자 표시" }));
+  F("controls", () => s.control("mode", { type: "select", options: ["bars", "dots"], value: "bars", label: "모양" }));
+  F("controls", () => s.onParams(({ n, grid, mode }) => {
+    document.querySelectorAll("#chart .bar").forEach((b, i) => {
+      b.style.opacity = i < n ? "1" : "0.15";
+      b.style.borderRadius = mode === "dots" ? "50%" : "0";
+    });
+    document.querySelector("#chart").style.outline = grid ? "1px dashed currentColor" : "none";
+  }));
+  tl.tween("#title", { opacity: [0, 1] }, { dur: 0.4 }).stop("막대");
+  tl.tween("#chart", { y: [20, 0], opacity: [0, 1] }, { dur: 0.5 }).stop("차트");
+  tl.tween("#note", { opacity: [0, 1] }, { dur: 0.4 }).stop("설명");
+  s.start();
+</script>
+</body>
+</html>

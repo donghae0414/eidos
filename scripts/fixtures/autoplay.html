@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · autoplay</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .box { width: 160px; padding: 12px; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title">자동 재생</h1>
+      <div class="eidos-card box" id="a">A</div>
+      <div class="eidos-card box" id="b">B</div>
+      <div class="eidos-card box" id="c">C</div>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  // Stops at t = 0, 1, 2, 3 with hold 1 s each; the checks rely on these times.
+  window.__eidosFixture = { autoplay: true };
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#a", { x: [0, 200] }, { dur: 1, ease: "linear" }).stop("A", { hold: 1 });
+  tl.tween("#b", { x: [0, 200] }, { dur: 1, ease: "linear" }).stop("B", { hold: 1 });
+  tl.tween("#c", { x: [0, 200] }, { dur: 1, ease: "linear" }).stop("C", { hold: 1 });
+  s.start();
+</script>
+</body>
+</html>

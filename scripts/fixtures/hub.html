@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · hub</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .box { width: 160px; padding: 12px; }
+  #map { position: absolute; inset: 0; }
+  .node { position: absolute; width: 360px; height: 240px; padding: 12px; }
+  #node-a { left: 8%; top: 25%; }
+  #node-b { right: 8%; top: 25%; }
+  #outro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section id="map">
+      <h1 class="eidos-title" style="position:absolute;left:8%;top:8%">허브 지도</h1>
+      <article class="node eidos-card" id="node-a"><b>A</b><p class="x">A 첫째</p><p class="y">A 둘째</p></article>
+      <article class="node eidos-card" id="node-b"><b>B</b><p class="x">B 첫째</p><p class="y">B 둘째</p></article>
+    </section>
+    <section id="outro"><h2 class="eidos-title z">끝</h2></section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { hub: true };
+  window.__eidosFixtureBuild = [];
+  const F = (feature, fn) => { try { return fn(); } catch (e) { window.__eidosFixtureBuild.push(feature + ": " + String((e && e.message) || e)); } };
+  // Fixture-local transition (dip-to-color-like) and a plain technique for the bad-kind case.
+  Eidos.fx["qa-dip"] = (stage, { from, to, at, dur = 0.6 }) => {
+    const start = stage.tl.resolveAt(at);
+    stage.tl.tween(from, { opacity: [1, 0] }, { at: start, dur: dur / 2 }).tween(to, { opacity: [0, 1] }, { at: start + dur / 2, dur: dur / 2 });
+    return { start, end: start + dur };
+  };
+  Eidos.fx["qa-dip"].kind = "transition";
+  Eidos.fx["qa-plain"] = (stage) => ({ start: stage.tl.end, end: stage.tl.end });
+  const s = Eidos.stage();
+  const { tl } = s;
+  const bad = new URLSearchParams(location.search).get("bad");
+  F("hub", () => s.scene("hub", { el: "#map", via: "cut", title: "지도" }));
+  tl.tween("#map .node", { opacity: [0, 1] }, { dur: 0.4 }).stop("지도");
+  F("hub", () => s.spoke("A", { hub: "hub", from: "#node-a", via: "camera", title: "A" }));
+  tl.tween("#node-a .x", { opacity: [0.3, 1] }, { dur: 0.4 }).stop("A1");
+  tl.tween("#node-a .y", { opacity: [0.3, 1] }, { dur: 0.4 }).stop("A2");
+  tl.tween("#node-a .x, #node-a .y", { opacity: [1, 0.3] }, { dur: 0.3 }); // undo spoke changes before returning
+  F("hub", () => s.back({ via: "camera", label: "다시 지도" }));
+  F("hub", () => s.spoke("B", { hub: "hub", from: "#node-b", via: "camera", title: "B" }));
+  tl.tween("#node-b .x", { opacity: [0.3, 1] }, { dur: 0.4 }).stop("B1");
+  tl.tween("#node-b .y", { opacity: [0.3, 1] }, { dur: 0.4 }).stop("B2");
+  tl.tween("#node-b .x, #node-b .y", { opacity: [1, 0.3] }, { dur: 0.3 });
+  F("hub", () => s.back({ via: "camera", label: "다시 지도" }));
+  F("hub", () => s.scene("outro", { el: "#outro", via: "qa-dip" }));
+  tl.tween("#outro .z", { scale: [0.9, 1] }, { dur: 0.4 }).stop("끝");
+  // Deliberately unguarded misuse for the error checks (?bad=novia / ?bad=kind).
+  if (bad === "novia") s.scene("bad", { el: "#outro" });
+  if (bad === "kind") s.scene("bad", { el: "#outro", via: "qa-plain" });
+  s.start();
+</script>
+</body>
+</html>
