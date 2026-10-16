@@ -17,6 +17,8 @@
         : fail(`dip-to-color: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
 
   E.fx["dip-to-color"] = (stage, o = {}) => {
+    const allowed = { color: 1, title: 1, dur: 1, hold: 1, ease: 1, at: 1, from: 1, to: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`dip-to-color: unknown option ${String(key)}`);
     const { tl, world } = stage;
     const { r3, clamp01 } = E.util;
     const color = o.color ?? "fg";

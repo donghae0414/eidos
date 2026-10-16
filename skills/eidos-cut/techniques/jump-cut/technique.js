@@ -10,6 +10,8 @@
   };
 
   E.fx["jump-cut"] = (stage, o = {}) => {
+    const allowed = { flash: 1, strength: 1, dur: 1, at: 1, from: 1, to: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`jump-cut: unknown option ${String(key)}`);
     const { tl, world } = stage;
     const { r3 } = E.util;
     const flash = o.flash ?? true;

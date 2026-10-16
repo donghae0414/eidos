@@ -20,6 +20,8 @@
         : fail(`wipe: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
 
   E.fx["wipe"] = (stage, o = {}) => {
+    const allowed = { dir: 1, dur: 1, soft: 1, ease: 1, at: 1, from: 1, to: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`wipe: unknown option ${String(key)}`);
     const { tl } = stage;
     const { r3, lerp } = E.util;
     const dir = o.dir ?? "left";

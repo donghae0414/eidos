@@ -23,6 +23,8 @@
   const far = (x, y, w, h) => Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y));
 
   E.fx["iris"] = (stage, o = {}) => {
+    const allowed = { mode: 1, dur: 1, ease: 1, origin: 1, color: 1, at: 1, to: 1, from: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`iris: unknown option ${String(key)}`);
     const { tl, world } = stage;
     const { r3, clamp01 } = E.util;
     const mode = o.mode ?? "reveal";

@@ -16,6 +16,8 @@
   };
 
   E.fx["infinite-zoom"] = (stage, o = {}) => {
+    const allowed = { levels: 1, min: 1, portal: 1, at: 1, from: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`unknown option ${String(key)}`);
     const { tl, world } = stage;
     const levels = select(o.levels ?? ".zoom-level", world);
     if (levels.length < 2) fail("levels must identify at least two elements");

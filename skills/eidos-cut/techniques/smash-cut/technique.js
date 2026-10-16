@@ -18,6 +18,8 @@
   };
 
   E.fx["smash-cut"] = (stage, o = {}) => {
+    const allowed = { flash: 1, slam: 1, dur: 1, at: 1, from: 1, to: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`smash-cut: unknown option ${String(key)}`);
     const { tl, world } = stage;
     const { r3, clamp01, lerp } = E.util;
     const flash = o.flash ?? "invert";

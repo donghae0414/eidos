@@ -1,5 +1,9 @@
 (() => {
   const E = window.Eidos;
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
   const { r3, clamp01 } = E.util;
   const lin = (p) => p;
   // A stop at a tween's end sees x = ((at + dur) - at) / dur, which floats can leave a hair under 1.
@@ -57,12 +61,14 @@
   };
 
   E.fx["kinetic-type"] = (stage, o = {}) => {
+    const allowed = { targets: 1, target: 1, move: 1, emMove: 1, em: 1, each: 1, beat: 1, dir: 1, dist: 1, dur: 1, scale: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`kinetic-type: unknown option ${String(key)}`);
     const { tl } = stage;
     const move = o.move ?? "sweep";
     const emMove = o.emMove ?? "slam";
-    for (const m of [move, emMove]) if (!MOVES[m]) throw new Error(`kinetic-type: unknown move "${m}" (sweep, slam, scale-in, pulse)`);
+    for (const m of [move, emMove]) if (!MOVES[m]) fail(`kinetic-type: unknown move "${m}" (sweep, slam, scale-in, pulse)`);
     const lines = E.$all(o.targets ?? o.target, stage.world);
-    if (!lines.length) throw new Error(`kinetic-type: no element for targets ${o.targets ?? o.target}`);
+    if (!lines.length) fail(`kinetic-type: no element for targets ${o.targets ?? o.target}`);
     const list = lines.flatMap(words);
     const isEm = (w, i) =>
       Array.isArray(o.em) ? o.em.includes(i) : typeof o.em === "string" ? w.matches(o.em) || !!w.querySelector(o.em) : false;

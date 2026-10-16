@@ -1,5 +1,9 @@
 (() => {
   const E = window.Eidos;
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
   const { r3, clamp01 } = E.util;
   const lin = (p) => p;
   // A stop at a tween's end sees x = ((at + dur) - at) / dur, which floats can leave a hair under 1.
@@ -9,14 +13,14 @@
   const stacks = new WeakMap();
   const one = (sel, root, what) => {
     const el = sel == null ? null : E.$all(sel, root)[0];
-    if (!el) throw new Error(`text-sandwich: no element for ${what} ${sel}`);
+    if (!el) fail(`text-sandwich: no element for ${what} ${sel}`);
     return el;
   };
 
   function stack(title, back, front) {
     const known = stacks.get(title);
     if (known) {
-      if (known.back !== back || known.front !== front) throw new Error("text-sandwich: a title keeps the back and front it started with");
+      if (known.back !== back || known.front !== front) fail("text-sandwich: a title keeps the back and front it started with");
       return known;
     }
     [back, title, front].forEach((el, i) => {
@@ -30,9 +34,11 @@
   }
 
   E.fx["text-sandwich"] = (stage, o = {}) => {
+    const allowed = { title: 1, back: 1, front: 1, move: 1, dist: 1, gap: 1, dur: 1, ease: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`text-sandwich: unknown option ${String(key)}`);
     const { tl } = stage;
     const move = o.move ?? "rise";
-    if (!MOVES.includes(move)) throw new Error(`text-sandwich: unknown move "${move}" (rise, spread, close)`);
+    if (!MOVES.includes(move)) fail(`text-sandwich: unknown move "${move}" (rise, spread, close)`);
     const title = one(o.title, stage.world, "title");
     const st = stack(title, one(o.back, stage.world, "back"), one(o.front, stage.world, "front"));
     const { back, front } = st;

@@ -1,5 +1,9 @@
 (() => {
   const E = window.Eidos;
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
   const { r3 } = E.util;
   const lin = (p) => p;
   // A stop at a tween's end sees x = ((at + dur) - at) / dur, which floats can leave a hair under 1.
@@ -9,11 +13,13 @@
   const FROM = 130, TO = -30;
 
   E.fx["light-sweep"] = (stage, o = {}) => {
+    const allowed = { targets: 1, target: 1, mode: 1, dur: 1, each: 1, ease: 1, angle: 1, width: 1, color: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`light-sweep: unknown option ${String(key)}`);
     const { tl } = stage;
     const mode = o.mode ?? "box";
-    if (mode !== "box" && mode !== "text") throw new Error(`light-sweep: unknown mode "${mode}" (box, text)`);
+    if (mode !== "box" && mode !== "text") fail(`light-sweep: unknown mode "${mode}" (box, text)`);
     const els = E.$all(o.targets ?? o.target, stage.world);
-    if (!els.length) throw new Error(`light-sweep: no element for targets ${o.targets ?? o.target}`);
+    if (!els.length) fail(`light-sweep: no element for targets ${o.targets ?? o.target}`);
     const dur = o.dur ?? 0.9;
     const each = o.each ?? 0.12;
     const ease = typeof o.ease === "function" ? o.ease : E.ease[o.ease ?? "inOut"] ?? E.ease.inOut;

@@ -9,7 +9,9 @@
   const MAX = 400;
   const systems = new WeakMap();
   const fail = (m) => {
-    throw new Error(`particle-assemble: ${m}`);
+    const text = `particle-assemble: ${m}`;
+    (window.__eidosErrors ||= []).push(text);
+    throw new Error(text);
   };
   const name = (el) => (el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`);
   const region = (svg, sel) => {
@@ -99,6 +101,8 @@
   }
 
   E.fx["particle-assemble"] = (stage, o = {}) => {
+    const allowed = { svg: 1, to: 1, count: 1, seed: 1, cloud: 1, color: 1, r: 1, order: 1, spread: 1, bend: 1, ease: 1, fade: 1, dur: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`unknown option ${String(key)}`);
     const { tl } = stage;
     const svg = E.$all(o.svg, stage.world)[0];
     if (!(svg instanceof SVGSVGElement)) fail(`svg must select an <svg> (got ${o.svg})`);

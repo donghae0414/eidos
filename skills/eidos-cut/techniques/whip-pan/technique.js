@@ -19,6 +19,8 @@
         : fail(`whip-pan: ease must be a function or one of ${Object.keys(E.ease).join(", ")} (got ${JSON.stringify(e)})`);
 
   E.fx["whip-pan"] = (stage, o = {}) => {
+    const allowed = { dir: 1, dur: 1, blur: 1, gap: 1, ease: 1, at: 1, from: 1, to: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`whip-pan: unknown option ${String(key)}`);
     const { tl, world } = stage;
     const { r3 } = E.util;
     const dir = o.dir ?? "right";

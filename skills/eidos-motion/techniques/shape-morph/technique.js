@@ -8,7 +8,9 @@
   const snap = (x) => (x > 1 - 1e-9 ? 1 : x < 1e-9 ? 0 : x);
   const shapes = new WeakMap();
   const fail = (m) => {
-    throw new Error(`shape-morph: ${m}`);
+    const text = `shape-morph: ${m}`;
+    (window.__eidosErrors ||= []).push(text);
+    throw new Error(text);
   };
   const name = (el) => (el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`);
 
@@ -245,6 +247,8 @@
   const isData = (v) => typeof v === "string" && /^\s*[Mm]\s*[-+.\d]/.test(v);
 
   E.fx["shape-morph"] = (stage, o = {}) => {
+    const allowed = { from: 1, to: 1, pairs: 1, points: 1, each: 1, dur: 1, ease: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`unknown option ${String(key)}`);
     const { tl } = stage;
     const n = Math.max(8, Math.round(o.points ?? 128));
     const dur = o.dur ?? 1.2;

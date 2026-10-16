@@ -33,6 +33,8 @@
   };
 
   E.fx["orbit"] = (stage, o = {}) => {
+    const allowed = { rig: 1, planes: 1, unit: 1, perspective: 1, yaw: 1, pitch: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`unknown option ${String(key)}`);
     const { tl, world } = stage;
     const rig = select(o.rig ?? ".orbit-rig", world)[0];
     if (!rig) fail("rig must identify an element");

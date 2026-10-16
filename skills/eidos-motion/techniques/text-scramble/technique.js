@@ -1,5 +1,9 @@
 (() => {
   const E = window.Eidos;
+  const fail = (msg) => {
+    (window.__eidosErrors ||= []).push(msg);
+    throw new Error(msg);
+  };
   const lin = (p) => p;
   // A stop at a tween's end sees x = ((at + dur) - at) / dur, which floats can leave a hair under 1.
   const snap = (x) => (x > 1 - 1e-9 ? 1 : x < 1e-9 ? 0 : x);
@@ -57,13 +61,15 @@
   }
 
   E.fx["text-scramble"] = (stage, o = {}) => {
+    const allowed = { targets: 1, target: 1, text: 1, mode: 1, order: 1, glyphs: 1, bins: 1, from: 1, keep: 1, reserve: 1, window: 1, caret: 1, rate: 1, seed: 1, dur: 1, each: 1, ease: 1, at: 1 };
+    for (const key of Reflect.ownKeys(o)) if (!Object.hasOwn(allowed, key)) fail(`text-scramble: unknown option ${String(key)}`);
     const { tl } = stage;
     const mode = o.mode ?? "scramble";
-    if (mode !== "scramble" && mode !== "type") throw new Error(`text-scramble: unknown mode "${mode}" (scramble, type)`);
+    if (mode !== "scramble" && mode !== "type") fail(`text-scramble: unknown mode "${mode}" (scramble, type)`);
     const order = o.order ?? "ltr";
-    if (order !== "ltr" && order !== "random") throw new Error(`text-scramble: unknown order "${order}" (ltr, random)`);
+    if (order !== "ltr" && order !== "random") fail(`text-scramble: unknown order "${order}" (ltr, random)`);
     const els = E.$all(o.targets ?? o.target, stage.world);
-    if (!els.length) throw new Error(`text-scramble: no element for targets ${o.targets ?? o.target}`);
+    if (!els.length) fail(`text-scramble: no element for targets ${o.targets ?? o.target}`);
     const ease = typeof o.ease === "function" ? o.ease : E.ease[o.ease ?? "linear"] ?? E.ease.linear;
     const seed = (o.seed ?? 1) | 0;
     const win = Math.min(1, Math.max(0, o.window ?? 0.35));
