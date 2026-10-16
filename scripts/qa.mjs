@@ -99,6 +99,37 @@ async function ev(view, body) {
   return r?.ok;
 }
 
+// Trusted keyboard input. WebKit's Bun.WebView press() delivers no arrow keys to a range input
+// (probed), so these steps open the page in a Chrome-backed view, whose press() sends trusted
+// keydown/input/keyup. No Chrome means the step fails: the criterion is never certified without it.
+const CHROME_MS = 20000;
+const within = (p, ms, what) => {
+  let t;
+  const late = new Promise((_, no) => {
+    t = setTimeout(() => no(new Error(`${what} timed out after ${ms / 1000}s`)), ms);
+  });
+  return Promise.race([p, late]).finally(() => clearTimeout(t));
+};
+async function trustedArrow(c, query, sel, param) {
+  let view;
+  try {
+    try {
+      view = new Bun.WebView({ backend: { type: "chrome", url: false }, width: 1280, height: 800 });
+      if (!(await within(open(view, c.file, query), CHROME_MS, "Chrome page load"))) return "stage did not start in the Chrome-backed view";
+    } catch (e) {
+      return `chrome backend unavailable: ${e?.message ?? e}`;
+    }
+    const S = JSON.stringify(sel), P = JSON.stringify(param);
+    const m = await within(ev(view, `const r = $(${S}); if (!r) return "no range input " + ${S}; if (r.disabled) return "slider is disabled"; await frames(); r.focus(); if (document.activeElement !== r) return "slider did not take focus (activeElement is " + (document.activeElement && document.activeElement.tagName) + ")"; window.__qaKey = { v0: Number(r.value), step: Number(r.step) || 1, p0: ${P} && A.params[${P}], s0: scene(), i0: A.index, up: new Promise((z) => r.addEventListener("keyup", (e) => e.key === "ArrowRight" && z(e.isTrusted))) }; return "";`), 10000, "slider setup");
+    if (m) return m;
+    await within(view.press("ArrowRight"), 10000, "press(ArrowRight)");
+    // Listeners run in registration order, so this keyup resolves after any runtime keyup handler.
+    return await within(ev(view, `const k = window.__qaKey, r = $(${S}); const up = await Promise.race([k.up, new Promise((z) => setTimeout(() => z(null), 2000))]); if (up === null) return "no ArrowRight keyup reached the slider within 2s"; if (!up) return "ArrowRight keyup was not trusted"; await frames(); const bad = [], want = k.v0 + k.step; if (Number(r.value) !== want) bad.push("slider value " + k.v0 + " -> " + r.value + " (want " + want + ")"); if (${P} && A.params[${P}] !== want) bad.push("params." + ${P} + " " + k.p0 + " -> " + A.params[${P}] + " (want " + want + ")"); if (scene() === k.s0) bad.push("visible scene unchanged"); if (A.index !== k.i0) bad.push("index " + k.i0 + " -> " + A.index); if (errs().length) bad.push("__eidosErrors: " + errs().join(" | ")); return bad.length ? "trusted ArrowRight on focused slider: " + bad.join("; ") : "";`), 10000, "slider verify");
+  } finally {
+    view?.close();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Runtime feature checks (fixtures in scripts/fixtures declare window.__eidosFixture).
 // Each check is a list of [label, step]; a step returns a failure string or "".
@@ -141,6 +172,7 @@ const FEATURES = {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const r = $("#r"); if (r.disabled) return "range input is disabled"; r.focus(); if (document.activeElement !== r) return "range input did not take focus"; const i = A.index; const untouched = key(r, "ArrowRight"); if (A.index !== i) return "ArrowRight on a focused range input changed __eidos.index " + i + " -> " + A.index; return untouched ? "" : "keydown on a focused range input was canceled (slider cannot move)";`);
       }],
+      ["focused range + trusted ArrowRight (Chrome)", (c) => trustedArrow(c, `${Q}&stop=1`, "#r", null)],
       ["click Play then ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
         return ev(c.view, `const b = $("#play"); b.focus(); click(b); if (A.index !== 1) return "click on a button navigated (index " + A.index + ")"; key(b, "ArrowRight"); return A.index === 2 ? "" : "ArrowRight with a focused button did not navigate (index " + A.index + ", want 2)";`);
@@ -340,12 +372,13 @@ const FEATURES = {
       }],
       ["focused slider + ArrowRight", async (c) => {
         await c.open(`${Q}&stop=1`);
-        // Guard only: in this WebKit, a synthetic keydown never moves a range input and Bun.WebView
-        // press() delivers no arrow keys to it (probed), so the keyboard value change cannot be observed.
-        // Asserted instead: the slider is enabled and really focused, the runtime neither cancels nor
-        // stops the key, and the stage does not navigate.
+        // Guard only: in WebKit, a synthetic keydown never moves a range input and Bun.WebView
+        // press() delivers no arrow keys to it (probed). Asserted here: the slider is enabled and really
+        // focused, the runtime neither cancels nor stops the key, and the stage does not navigate.
+        // The full keyboard outcome is checked with trusted input in the Chrome step below.
         return ev(c.view, `const r = $(".eidos-dock input[type=range]"); if (!r) return "no range input in .eidos-dock"; if (r.disabled) return "dock slider is disabled"; r.focus(); if (document.activeElement !== r) return "dock slider did not take focus (activeElement is " + (document.activeElement && document.activeElement.tagName) + ")"; let seen = false; const probe = () => (seen = true); addEventListener("keydown", probe); const e = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }); r.dispatchEvent(e); removeEventListener("keydown", probe); if (A.index !== 1) return "ArrowRight on focused dock slider changed index 1 -> " + A.index; if (e.defaultPrevented) return "keydown on focused dock slider was preventDefault()ed (slider cannot move)"; return seen ? "" : "keydown on focused dock slider was stopped before reaching window";`);
       }],
+      ["focused slider + trusted ArrowRight (Chrome)", (c) => trustedArrow(c, `${Q}&stop=1`, ".eidos-dock input[type=range]", "n")],
       ["dock slider input drives params and scene", async (c) => {
         await c.open(`${Q}&stop=1`);
         // Input wiring, not keyboard operation: the input event a slider fires must update params and the scene.
