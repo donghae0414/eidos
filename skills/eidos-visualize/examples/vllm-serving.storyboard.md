@@ -50,6 +50,8 @@ structure: hub-and-spoke (hub: map; spokes: iteration, prefill, kvcache; 그 뒤
 | map → lab | match-cut | 모양이 서로 대응함: 지도의 작은 처리량 게이지가 실험실의 큰 처리량 게이지로 이어짐 |
 | lab → outro | dip-to-color | 장이 바뀜: 실험에서 정리로 |
 
+distinct via: 4 (camera, iris, match-cut, dip-to-color)
+
 via 순서: camera, camera, iris, camera, camera, camera, match-cut, dip-to-color (같은 값 최대 3연속, iris·match-cut·dip-to-color 각 1회).
 
 ## control

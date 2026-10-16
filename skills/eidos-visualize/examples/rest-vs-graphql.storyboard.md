@@ -80,6 +80,8 @@ n = 4에서 리소스별 버림: post 84 B · user 156 B · comments 210 B.
 | whatif → cost | smash-cut | 대비·반전: GraphQL이 이기는 숫자 뒤에 대가를 붙인다 |
 | cost → verdict | dip-to-color | 장이 바뀜: 비교를 끝내고 한 문장 결론으로 |
 
+distinct via: 4 (match-cut, wipe, smash-cut, dip-to-color)
+
 전환 사용 횟수: match-cut 1, wipe 1, smash-cut 1, dip-to-color 1. 같은 via 연속 없음.
 
 ## control 표

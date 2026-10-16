@@ -48,6 +48,8 @@ structure: single-flow (scenes: flow, inside, exchange, threat, pkce, summary)
 | threat → pkce | jump-cut | 같은 그림의 나중 상태: 같은 배치에 PKCE만 더해짐 |
 | pkce → summary | dip-to-color | 장이 바뀜: 흐름에서 정리로 |
 
+distinct via: 4 (screen-dive, smash-cut, jump-cut, dip-to-color)
+
 controls: none
 
 전환 사용 횟수: screen-dive 2 (들어가기/나오기), smash-cut 1, jump-cut 1, dip-to-color 1. 같은 via 연속 최대 2회.
