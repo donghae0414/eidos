@@ -129,7 +129,8 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 
 ## 예시
 
-- [examples/oauth-flow.html](examples/oauth-flow.html): 흐름 설명. sequence-message, freeze-frame(핵심 순간 주석), stagger-reveal(요약 세 가지), highlight-sweep(결론)
-- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html): 비교 설명. split-screen, count-up(수치), highlight-sweep(결론과 대가)
+- [examples/vllm-serving.html](examples/vllm-serving.html) ([스토리보드](examples/vllm-serving.storyboard.md)): 여러 개념 묶음. hub-and-spoke(map 허브, iteration·prefill·kvcache 갈래, lab, outro). 전환 camera, iris, match-cut, dip-to-color. path-drawing, stagger-reveal, highlight-sweep. 컨트롤 max-num-seqs, users
+- [examples/oauth-flow.html](examples/oauth-flow.html) ([스토리보드](examples/oauth-flow.storyboard.md)): 흐름 설명. single-flow(flow → inside → exchange → threat → pkce → summary). 전환 screen-dive, smash-cut, jump-cut, dip-to-color. sequence-message, freeze-frame, mask-reveal, stagger-reveal, kinetic-type, highlight-sweep. 컨트롤 없음
+- [examples/rest-vs-graphql.html](examples/rest-vs-graphql.html) ([스토리보드](examples/rest-vs-graphql.storyboard.md)): 비교 설명. single-flow(trips → shape → whatif → cost → verdict). 전환 match-cut, wipe, smash-cut, dip-to-color. split-screen, count-up, path-drawing, mask-reveal, stagger-reveal, highlight-sweep. 컨트롤 fields
 
 예시는 모두 `scripts/inline.mjs`로 묶은 한 파일입니다. 마지막 `<script>` 블록이 장면 구성 코드이므로 참고하되, 전환은 예시를 따라 하지 말고 내 스토리보드의 boundary 표대로 고릅니다.
