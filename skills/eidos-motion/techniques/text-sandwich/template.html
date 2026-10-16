@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 텍스트 샌드위치 (Text Sandwich)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 2.5vh; word-break: keep-all; }
+  .hero { --ts: clamp(4rem, 17vw, 12rem); position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--eidos-radius); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .back { position: absolute; inset: 0; padding: 3.4rem 5% 28%; display: grid; grid-template-columns: repeat(4, 1fr); align-content: end; gap: 1rem; border-radius: var(--eidos-radius); background: radial-gradient(circle, color-mix(in oklab, var(--eidos-muted-fg) 45%, transparent) 1.4px, transparent 1.6px) 0 0 / 18px 18px, var(--eidos-fill-warm); }
+  .chip { aspect-ratio: 16 / 10; display: grid; place-content: center; gap: 0.2rem; text-align: center; font-family: var(--eidos-font-mono); color: var(--eidos-muted-fg); background: var(--eidos-surface); border: 1.5px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); }
+  .chip b { color: var(--eidos-fg); font-size: 1rem; }
+  .chip span { font-size: 0.8rem; }
+  .sandwich { position: relative; margin: 0; text-align: center; line-height: 1; }
+  .sandwich .word { display: block; font-size: var(--ts); font-weight: 900; letter-spacing: -0.04em; color: var(--eidos-accent); }
+  .front { position: relative; width: min(94%, 880px); margin-top: calc(var(--ts) * -0.42); }
+  .front svg { display: block; width: 100%; height: auto; }
+  .win { fill: var(--eidos-surface); stroke: var(--eidos-border); stroke-width: 2; }
+  .bar { fill: var(--eidos-fill-cool); }
+  .dot, .ln { fill: var(--eidos-border); }
+  .tag { position: absolute; left: 50%; transform: translateX(-50%); padding: 0.3rem 0.8rem; border-radius: 999px; background: var(--eidos-fg); color: var(--eidos-bg); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+  #tag-hw { top: 0.9rem; }
+  #tag-app { top: 22%; }
+  @media (max-width: 640px) {
+    .back { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    .chip b { font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">운영체제 기초</div>
+        <h1 class="eidos-title">앱은 하드웨어를 직접 만지지 않습니다</h1>
+      </header>
+      <section class="hero">
+        <div class="back" id="hw">
+          <span class="tag" id="tag-hw">하드웨어</span>
+          <div class="chip"><b>CPU</b><span>8코어</span></div>
+          <div class="chip"><b>메모리</b><span>32GB</span></div>
+          <div class="chip"><b>디스크</b><span>NVMe SSD</span></div>
+          <div class="chip"><b>NIC</b><span>10GbE</span></div>
+        </div>
+        <h2 class="sandwich" id="os"><span class="word">운영체제</span></h2>
+        <div class="front" id="apps"><svg id="wins" viewBox="0 0 800 240" aria-hidden="true"></svg><span class="tag" id="tag-app">앱</span></div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const NS = "http://www.w3.org/2000/svg";
+  const wins = document.getElementById("wins");
+  const add = (tag, attrs) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return wins.appendChild(el);
+  };
+  // 브라우저, 터미널, 에디터 창. 창 아래쪽은 SVG 밖으로 이어져 잘리고, 창 사이와 위쪽은 투명해 제목이 비칩니다.
+  for (const [x, y, w, lines] of [[30, 22, 300, [210, 150, 230, 120]], [480, 34, 290, [90, 170, 130, 190]], [250, 52, 320, [140, 210, 180, 240]]]) {
+    add("rect", { class: "win", x, y, width: w, height: 240, rx: 14 });
+    add("path", { class: "bar", d: `M${x + 1} ${y + 30}V${y + 14}a13 13 0 0 1 13-13H${x + w - 14}a13 13 0 0 1 13 13V${y + 30}Z` });
+    [20, 36, 52].forEach((dx) => add("circle", { class: "dot", cx: x + dx, cy: y + 15, r: 5 }));
+    lines.forEach((lw, i) => add("rect", { class: "ln", x: x + 22 + (i % 2) * 14, y: y + 48 + i * 24, width: lw, height: 10, rx: 5 }));
+  }
+
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#hw", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5 })
+    .stagger("#hw .chip", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.15", each: 0.08, dur: 0.4, ease: "out" })
+    .stop("맨 아래에는 하드웨어: CPU, 메모리, 디스크, 네트워크 카드");
+  s.tl.tween("#apps", { opacity: [0, 1] }, { dur: 0.5 })
+    .stop("맨 위에는 우리가 매일 쓰는 앱: 브라우저, 에디터, 터미널");
+  s.fx("text-sandwich", { title: "#os", back: "#hw", front: "#apps", move: "rise" });
+  s.tl.stop("그 사이에 운영체제가 있습니다. 평소에는 앱에 가려 잘 보이지 않을 뿐입니다");
+  s.fx("text-sandwich", { title: "#os", back: "#hw", front: "#apps", move: "spread" });
+  s.tl.tween("#tag-hw, #tag-app", { opacity: [0, 1] }, { at: "<+=0.5", dur: 0.4 });
+  s.tl.stop("앱은 시스템 콜로 커널에 부탁하고, 커널은 드라이버로 하드웨어를 움직입니다");
+  s.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 텍스트 스크램블 (Text Scramble)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 960px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 4vh; word-break: keep-all; }
+  .rows { display: grid; gap: 2.5vh; }
+  .row { display: grid; gap: 0.5rem; }
+  .key { font-size: 0.8rem; letter-spacing: 0.06em; color: var(--eidos-muted-fg); }
+  .val { display: block; font-family: var(--eidos-font-mono); font-size: clamp(1rem, 2.6vw, 1.7rem); line-height: 1.5; color: var(--eidos-fg); }
+  .val.big { font-size: clamp(1.6rem, 4.4vw, 2.8rem); font-weight: 700; }
+  .hash { max-width: 32ch; overflow-wrap: anywhere; }
+  .stat { margin: 0; font-size: clamp(1.05rem, 2vw, 1.4rem); }
+  .stat b { color: var(--eidos-accent); font-family: var(--eidos-font-mono); font-size: 1.3em; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">해시 함수</div>
+        <h1 class="eidos-title">입력이 한 글자만 바뀌어도 해시는 통째로 바뀝니다</h1>
+      </header>
+      <section class="rows">
+        <div class="row" id="row-in"><span class="key">입력 문자열</span><code class="val big" id="in">hello</code></div>
+        <div class="row" id="row-out"><span class="key">SHA-256 (16진수 64자리)</span><code class="val hash" id="out">2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824</code></div>
+      </section>
+      <p class="stat" id="stat">64자리 중 <b id="diff">61</b>자리가 달라졌습니다</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#row-in", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.3 });
+  s.fx("text-scramble", { targets: "#in", mode: "type", at: "<+=0.2" });
+  s.tl.stop("입력 문자열 hello를 SHA-256에 넣습니다");
+  s.tl.tween("#row-out", { opacity: [0, 1] }, { dur: 0.3 });
+  s.fx("text-scramble", { targets: "#out", dur: 1.6 });
+  s.tl.stop("결과는 언제나 16진수 64자리, 256비트입니다");
+  s.fx("text-scramble", { targets: "#in", text: "Hello", dur: 0.6 });
+  s.fx("text-scramble", {
+    targets: "#out",
+    text: "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+    order: "random",
+    dur: 1.8,
+    at: "<+=0.4",
+  });
+  s.tl.stop("h 하나를 대문자로 바꾸면 해시는 처음부터 끝까지 다시 뒤섞입니다");
+  s.tl.tween("#stat", { opacity: [0, 1], y: [8, 0] }, { dur: 0.4, ease: "out" });
+  s.fx("text-scramble", { targets: "#diff", dur: 0.6, at: "<+=0.1" });
+  s.tl.stop("64자리 중 61자리가 달라졌습니다. 비슷한 입력이 비슷한 해시를 만들지 않습니다");
+  s.start();
+</script>
+</body>
+</html>

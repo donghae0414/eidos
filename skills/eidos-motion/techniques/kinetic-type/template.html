@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 키네틱 타이포 (Kinetic Typography)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 1040px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; word-break: keep-all; }
+  .quote { margin: 0; }
+  .line { margin: 0; font-size: clamp(1.75rem, 5.6vw, 3.7rem); font-weight: 800; letter-spacing: -0.025em; line-height: 1.2; }
+  .hit { color: var(--eidos-accent); font-weight: 900; }
+  .who { margin: 0; font-size: clamp(0.95rem, 1.6vw, 1.15rem); color: var(--eidos-muted-fg); }
+  .take { margin: 0; max-width: 32em; font-size: clamp(1.05rem, 2vw, 1.45rem); line-height: 1.55; }
+  .take b { font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <div class="eidos-label" id="label">테스트에 대하여</div>
+      <blockquote class="quote">
+        <p class="line" id="l1">프로그램 테스트는 버그가 있음을</p>
+        <p class="line" id="l2">보여 줄 수는 있지만,</p>
+        <p class="line" id="l3"><b class="hit" id="no">없음을</b> 보여 줄 수는 없다.</p>
+      </blockquote>
+      <p class="who" id="who">에츠허르 W. 데이크스트라</p>
+      <p class="take" id="take">그래서 테스트는 개수보다 <b id="where">어디를</b> 찌르는지가 중요합니다.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("#label", { opacity: [0, 1] }, { dur: 0.4 });
+  s.fx("kinetic-type", { targets: "#l1, #l2", move: "sweep", at: "<+=0.15" });
+  s.tl.stop("테스트는 버그가 있다는 것을 보여 줄 수 있습니다");
+  s.fx("kinetic-type", { targets: "#l3", move: "sweep", em: ".hit" });
+  s.tl.stop("하지만 버그가 없다는 것은 보여 줄 수 없습니다");
+  s.fx("kinetic-type", { targets: "#who", move: "scale-in" });
+  s.tl.stop("데이크스트라의 말: 통과한 테스트는 아직 못 찾았다는 뜻일 뿐입니다");
+  s.fx("kinetic-type", { targets: "#no", move: "pulse" });
+  s.fx("kinetic-type", { targets: "#take", move: "sweep", dir: "up", dist: 18, em: "#where", at: "<+=0.2" });
+  s.tl.stop("그래서 경계값, 빈 입력, 동시성처럼 버그가 숨는 곳을 골라 찌릅니다");
+  s.start();
+</script>
+</body>
+</html>

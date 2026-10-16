@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 파티클 어셈블 (Particle Assemble)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 2vh; word-break: keep-all; }
+  #fig { flex: 1; min-height: 0; width: 100%; }
+  .ghost { fill: none; stroke: none; }
+  .net { fill: var(--eidos-fill-cool); stroke: var(--eidos-border); stroke-width: 1.5; stroke-dasharray: 6 6; }
+  .slot { fill: none; stroke: var(--eidos-border); stroke-width: 1.5; stroke-dasharray: 5 5; }
+  .zone { fill: var(--eidos-muted-fg); font: 600 20px var(--eidos-font-sans); text-anchor: middle; }
+  .seq { fill: var(--eidos-fg); font: 600 18px var(--eidos-font-mono); dominant-baseline: central; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">네트워크</div>
+        <h1 class="eidos-title">TCP는 잘라서 보내고, 받는 쪽에서 순서대로 다시 맞춥니다</h1>
+      </header>
+      <svg id="fig" viewBox="0 0 600 520" role="img" aria-label="파일이 세그먼트로 잘려 네트워크로 흩어졌다가 받는 쪽에서 순서대로 다시 모이는 그림">
+        <rect id="zone-a" class="ghost" x="10" y="56" width="170" height="410"/>
+        <rect id="net" class="net" x="200" y="64" width="200" height="392" rx="18"/>
+        <text class="zone" x="90" y="34">보내는 쪽</text>
+        <text class="zone" x="300" y="34">네트워크</text>
+        <text class="zone" x="510" y="34">받는 쪽</text>
+        <path id="doc-a" class="ghost" d="M30 70H120L150 100V450H30Z"/>
+        <path id="doc-b" class="slot" d="M450 70H540L570 100V450H450Z"/>
+        <g id="segs" class="ghost"></g>
+        <g id="seq"></g>
+      </svg>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const NS = "http://www.w3.org/2000/svg";
+  const make = (tag, attrs, parent, text) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    return parent.appendChild(el);
+  };
+  const labels = [];
+  for (let k = 0; k < 8; k++) {
+    make("rect", { x: 40, y: 70 + 48 * k, width: 120, height: 40 }, document.getElementById("segs"));
+    labels.push(make("text", { class: "seq", x: 168, y: 90 + 48 * k }, document.getElementById("seq"), `#${k + 1}`));
+  }
+
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween(".zone, #net, #doc-b", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.4 });
+  s.fx("particle-assemble", { svg: "#fig", to: "#doc-a", count: 240, r: 4.5, cloud: "#zone-a", color: "var(--eidos-muted-fg)", at: "<+=0.1" });
+  s.tl.stop("보낼 파일은 끊김 없는 바이트 흐름입니다");
+  s.fx("particle-assemble", { svg: "#fig", to: "#segs rect", color: ["var(--eidos-cat-3)", "var(--eidos-cat-2)"], dur: 1 });
+  s.tl.stagger(labels, { opacity: [0, 1] }, { at: "-=0.4", each: 0.04, dur: 0.25 });
+  s.tl.stop("TCP는 이 흐름을 MSS 크기 세그먼트로 자르고 순서 번호를 붙입니다");
+  s.tl.tween(labels, { opacity: [1, 0] }, { dur: 0.25 });
+  s.fx("particle-assemble", { svg: "#fig", to: "scatter", cloud: "#net", spread: 0.6, bend: 0.5, dur: 1.6, at: "<" });
+  s.tl.stop("세그먼트는 서로 다른 길로 가므로 도착 순서가 뒤섞일 수 있습니다");
+  s.fx("particle-assemble", { svg: "#fig", to: "#doc-b", dur: 1.6 });
+  s.tl.stop("받는 쪽은 순서 번호대로 다시 이어 붙여, 보낸 그대로의 파일을 앱에 넘깁니다");
+  s.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 라이트 스윕 (Light Sweep)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 960px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 4vh; word-break: keep-all; }
+  .release { width: min(560px, 100%); padding: 1.6rem 1.75rem; display: grid; gap: 1.25rem; border-radius: var(--eidos-radius); }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .ver { display: inline-block; font: 800 clamp(1.9rem, 6vw, 2.8rem) var(--eidos-font-mono); letter-spacing: -0.02em; color: var(--eidos-fg); }
+  .chip { display: inline-grid; font-size: 0.85rem; font-weight: 700; }
+  .chip > span { grid-area: 1 / 1; padding: 0.3rem 0.75rem; border-radius: 999px; white-space: nowrap; }
+  #chip-a { background: var(--eidos-fill-warm); color: var(--eidos-fg); }
+  #chip-b { border: 1.5px solid var(--eidos-success); color: var(--eidos-fg); }
+  #chip-b::before { content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.4rem; border-radius: 50%; background: var(--eidos-success); }
+  .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+  .checks li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.75rem; font-size: clamp(1rem, 1.8vw, 1.15rem); }
+  .mark { width: 24px; height: 24px; overflow: visible; }
+  .ring { fill: none; stroke: var(--eidos-border); stroke-width: 2; }
+  .ok { fill: var(--eidos-success); }
+  .tick { fill: none; stroke: var(--eidos-bg); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .meta { color: var(--eidos-muted-fg); font-size: 0.9em; font-variant-numeric: tabular-nums; }
+  .foot { font: 0.85rem var(--eidos-font-mono); color: var(--eidos-muted-fg); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">배포 파이프라인</div>
+        <h1 class="eidos-title">모든 검사를 통과한 빌드만 릴리스가 됩니다</h1>
+      </header>
+      <article class="release eidos-card" id="card">
+        <div class="top">
+          <span class="ver" id="ver">v2.4.0</span>
+          <span class="chip"><span id="chip-a">릴리스 후보</span><span id="chip-b">배포됨</span></span>
+        </div>
+        <ul class="checks">
+          <li id="c1"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10.5"/><circle class="ok" cx="12" cy="12" r="11.5"/><path class="tick" d="M7 12.5l3.2 3.2L17 8.8"/></svg><b>빌드</b><span class="meta">3분 12초</span></li>
+          <li id="c2"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10.5"/><circle class="ok" cx="12" cy="12" r="11.5"/><path class="tick" d="M7 12.5l3.2 3.2L17 8.8"/></svg><b>테스트</b><span class="meta">1,284개 통과</span></li>
+          <li id="c3"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10.5"/><circle class="ok" cx="12" cy="12" r="11.5"/><path class="tick" d="M7 12.5l3.2 3.2L17 8.8"/></svg><b>보안 스캔</b><span class="meta">취약점 0건</span></li>
+        </ul>
+        <div class="foot">main · a3f9c21</div>
+      </article>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#card", { opacity: [0, 1], y: [16, 0] }, { at: "<+=0.2", dur: 0.6, ease: "out" })
+    .stop("릴리스 후보 v2.4.0: 세 가지 검사를 기다립니다");
+  ["#c1", "#c2", "#c3"].forEach((id, k) => {
+    s.tl.tween(`${id} .ok`, { opacity: [0, 1], scale: [0.4, 1] }, { at: k ? "<+=0.45" : undefined, dur: 0.35, ease: "pop" })
+      .tween(`${id} .tick`, { draw: [0, 1] }, { at: "<+=0.15", dur: 0.3, ease: "out" })
+      .tween(`${id} .meta`, { opacity: [0, 1] }, { at: "<", dur: 0.3 });
+  });
+  s.tl.stop("빌드, 테스트, 보안 스캔이 차례로 통과합니다");
+  s.tl.tween("#chip-a", { opacity: [1, 0] }, { dur: 0.3 })
+    .tween("#chip-b", { opacity: [0, 1], scale: [0.85, 1] }, { at: "<", dur: 0.35, ease: "pop" });
+  s.fx("light-sweep", { targets: "#card", at: "<+=0.15" });
+  s.fx("light-sweep", { targets: "#ver", mode: "text", at: "<+=0.2" });
+  s.tl.stop("모든 검사를 통과한 이 빌드가 그대로 v2.4.0으로 확정됩니다");
+  s.start();
+</script>
+</body>
+</html>

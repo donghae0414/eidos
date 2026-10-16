@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 셰이프 모프 (Shape Morph)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 2vh; word-break: keep-all; }
+  #fig { flex: 1; min-height: 0; width: 100%; }
+  .slot { fill: var(--eidos-surface); stroke: var(--eidos-fg); stroke-width: 1.5; stroke-linejoin: round; }
+  .idx { fill: var(--eidos-muted-fg); font: 600 18px var(--eidos-font-mono); text-anchor: middle; dominant-baseline: central; }
+  .item circle { fill: var(--eidos-cat-2); }
+  .item text { fill: var(--eidos-bg); font: 700 15px var(--eidos-font-sans); text-anchor: middle; dominant-baseline: central; }
+  .tail { fill: var(--eidos-accent); }
+  .mod { fill: var(--eidos-fg); font: 600 22px var(--eidos-font-mono); text-anchor: middle; dominant-baseline: central; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">자료구조</div>
+        <h1 class="eidos-title">링 버퍼는 배열의 끝과 처음을 잇습니다</h1>
+      </header>
+      <svg id="fig" viewBox="0 0 560 440" role="img" aria-label="칸 8개짜리 배열이 링 버퍼로 휘었다가 다시 펴지는 그림">
+        <path id="buf" class="slot"/>
+        <g id="labels"></g>
+        <path id="tail" class="tail"/>
+        <g id="items"></g>
+        <text id="mod" class="mod" x="280" y="220">(i + 1) % 8</text>
+      </svg>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const tl = s.tl;
+  const NS = "http://www.w3.org/2000/svg";
+  const N = 8, CX = 280, CY = 220, R = 168, RI = 112, HEAD = 3;
+  const f = (v) => Math.round(v * 100) / 100;
+  const polar = (deg, rad) => [CX + rad * Math.cos((deg * Math.PI) / 180), CY + rad * Math.sin((deg * Math.PI) / 180)];
+  // 배열이 위로 휘어 닫히도록 0번은 왼쪽 위, 번호는 반시계 방향으로 늘어 7번이 오른쪽 위에서 0번과 만납니다.
+  const mid = (i) => -112.5 - 45 * i;
+  const rowAt = (i, y = CY) => [56 + 64 * i, y];
+
+  // 칸 하나 = 윤곽 하나. 배열은 직선 사각형, 링은 호(arc)로 된 부채꼴이라 명령 구조가 다릅니다.
+  const rowD = Array.from({ length: N }, (_, i) => `M${28 + 64 * i} 192H${84 + 64 * i}V248H${28 + 64 * i}Z`).join("");
+  const ringD = Array.from({ length: N }, (_, i) => {
+    const a0 = mid(i) - 20.5, a1 = mid(i) + 20.5;
+    const [x0, y0] = polar(a0, R), [x1, y1] = polar(a1, R), [x2, y2] = polar(a1, RI), [x3, y3] = polar(a0, RI);
+    return `M${f(x0)} ${f(y0)}A${R} ${R} 0 0 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A${RI} ${RI} 0 0 0 ${f(x3)} ${f(y3)}Z`;
+  }).join("");
+  const tri = (deg) => {
+    const a = (deg * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a), bx = CX + 88 * ux, by = CY + 88 * uy;
+    return `M${f(CX + 104 * ux)} ${f(CY + 104 * uy)}L${f(bx - 9 * uy)} ${f(by + 9 * ux)}L${f(bx + 9 * uy)} ${f(by - 9 * ux)}Z`;
+  };
+  const make = (tag, attrs, parent, text) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    return parent.appendChild(el);
+  };
+
+  document.getElementById("buf").setAttribute("d", rowD);
+  document.getElementById("tail").setAttribute("d", tri(mid(HEAD)));
+  const labels = Array.from({ length: N }, (_, i) => make("text", { class: "idx", x: rowAt(i, 276)[0], y: 276 }, document.getElementById("labels"), i));
+  const items = Array.from({ length: N }, (_, k) => {
+    const slot = (HEAD + k) % N, [x, y] = polar(mid(slot), 140);
+    const g = make("g", { class: "item" }, document.getElementById("items"));
+    return { slot, g, c: make("circle", { cx: f(x), cy: f(y), r: 14 }, g), t: make("text", { x: f(x), y: f(y) }, g, k + 1) };
+  });
+  const move = (el, [x0, y0], [x1, y1], o, [kx, ky] = ["x", "y"]) =>
+    tl.tween(el, { attr: (p) => ({ [kx]: f(x0 + (x1 - x0) * p), [ky]: f(y0 + (y1 - y0) * p) }) }, o);
+
+  tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#buf", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.45 })
+    .stagger(labels, { opacity: [0, 1] }, { at: "<+=0.15", each: 0.05, dur: 0.3 })
+    .stop("배열 8칸: 7번 칸 다음에는 더 쓸 자리가 없습니다");
+
+  const ring = s.fx("shape-morph", { from: "#buf", to: ringD, dur: 1.4 });
+  const bend = { at: ring.start, dur: ring.end - ring.start, ease: "inOut" };
+  labels.forEach((el, i) => move(el, rowAt(i, 276), polar(mid(i), 194), bend));
+  tl.tween("#mod", { opacity: [0, 1] }, { at: ring.end - 0.35, dur: 0.45 });
+  tl.stop("끝과 처음을 이으면 링 버퍼: 7번 다음은 다시 0번입니다");
+
+  tl.tween("#tail", { opacity: [0, 1] }, { dur: 0.3 });
+  items.forEach((it, k) => {
+    tl.tween(it.g, { opacity: [0, 1] }, { dur: 0.18 })
+      .tween(it.c, { attr: (p) => ({ r: f(14 * p) }) }, { at: "<", dur: 0.3, ease: "pop" })
+      .tween("#tail", { attr: (p) => ({ d: tri(mid(HEAD) - 45 * (k + p)) }) }, { at: "<+=0.12", dur: 0.26, ease: "inOut" });
+  });
+  tl.stop("tail이 3번 칸부터 한 바퀴 돌며 8개를 씁니다. 7번 다음은 0번, 다시 3번에 닿으면 가득 찬 것입니다");
+
+  const flat = s.fx("shape-morph", { from: "#buf", to: rowD, dur: 1.4 });
+  const unroll = { at: flat.start, dur: flat.end - flat.start, ease: "inOut" };
+  tl.tween("#tail", { opacity: [1, 0] }, { at: flat.start, dur: 0.3 });
+  labels.forEach((el, i) => move(el, polar(mid(i), 194), rowAt(i, 276), unroll));
+  items.forEach((it) => {
+    const a = polar(mid(it.slot), 140), b = rowAt(it.slot);
+    move(it.c, a, b, unroll, ["cx", "cy"]);
+    move(it.t, a, b, unroll);
+  });
+  tl.tween("#mod", { opacity: [1, 0] }, { at: flat.start, dur: 0.3 })
+    .tween("#mod", { attr: (p) => ({ y: p < 1 ? CY : 330 }) }, { at: flat.start + 0.3, dur: 0 })
+    .tween("#mod", { opacity: [0, 1] }, { at: flat.end - 0.2, dur: 0.4 });
+  tl.stop("메모리에서는 여전히 일자 배열입니다. 6~8번째 데이터는 0~2번 칸에 있고, 둘을 잇는 건 (i + 1) % 8입니다");
+  s.start();
+</script>
+</body>
+</html>
