@@ -5,7 +5,11 @@
 <title>EIDOS · 픽셀 디졸브</title>
 <link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
 <style>
-.scene { position:absolute; inset:0; padding:9vh 7vw 22vh; display:flex; flex-direction:column; gap:4vh; background:var(--eidos-bg); word-break:keep-all; }
+.scene { position:absolute; inset:0; padding:9vh 7vw 22vh; display:flex; flex-direction:column; gap:4vh; background:var(--eidos-bg); color:var(--eidos-fg); word-break:keep-all; }
+/* Scene-scoped themes: the two scenes must differ in luminance so each dissolving cell reads as a tile. */
+.scene.light { color-scheme:light; --eidos-bg:oklch(0.9818 0.0054 95.0986); --eidos-fg:oklch(0.3438 0.0269 95.7226); --eidos-surface:oklch(0.93 0.008 97); --eidos-surface-fg:oklch(0.1908 0.0020 106.5859); --eidos-muted-fg:oklch(0.5341 0.0078 97.4503); --eidos-accent:oklch(0.6171 0.1375 39.0427); }
+.scene.dark { color-scheme:dark; --eidos-bg:oklch(0.2679 0.0036 106.6427); --eidos-fg:oklch(0.9576 0.0027 106.4494); --eidos-surface:oklch(0.3328 0.0018 106.5092); --eidos-surface-fg:oklch(0.9818 0.0054 95.0986); --eidos-muted-fg:oklch(0.7713 0.0169 99.0657); --eidos-accent:oklch(0.6724 0.1308 38.7559); }
+.scene .eidos-title, .scene .box b { color:var(--eidos-surface-fg); }
 .layout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
 .box { padding:28px; border-radius:var(--eidos-radius); background:var(--eidos-surface); font-size:clamp(18px,2.5vw,28px); display:flex; flex-direction:column; gap:14px; }
 .box small { font:17px var(--eidos-font-mono); color:var(--eidos-muted-fg); overflow-wrap:anywhere; }
@@ -16,17 +20,17 @@
 </head>
 <body>
 <div class="eidos-stage"><div class="eidos-world">
-<section class="scene" id="old"><div class="eidos-label">원자적 교체 · 이전 버전</div><h1 class="eidos-title">캐시는 옛 스냅숏을 읽습니다</h1><div class="version">v41</div><div class="layout"><div class="box"><b>상품 목록</b><small>snapshot: 41</small></div><div class="box"><b>가격 정보</b><small>snapshot: 41</small></div><div class="box"><b>재고 수량</b><small>snapshot: 41</small></div></div><p class="note">세 데이터가 같은 세대에 속합니다. 새 스냅숏은 별도 공간에서 준비합니다.</p></section>
-<section class="scene" id="fresh"><div class="eidos-label">원자적 교체 · 새 버전</div><h1 class="eidos-title">준비된 스냅숏으로 교체합니다</h1><div class="version">v42</div><div class="layout"><div class="box"><b>상품 목록</b><small>snapshot: 42</small></div><div class="box"><b>가격 정보</b><small>snapshot: 42</small></div><div class="box"><b>재고 수량</b><small>snapshot: 42</small></div></div><p class="note">픽셀은 버전 교체를 보여주는 편집 효과입니다. 실제 포인터 교체는 원자적이며 섞인 세대를 읽지 않습니다.</p></section>
+<section class="scene light" id="old"><div class="eidos-label">같은 대시보드 · 라이트 테마</div><h1 class="eidos-title">같은 대시보드, 다른 테마</h1><div class="version">Light</div><div class="layout"><div class="box"><b>주문</b><small>--bg: light</small></div><div class="box"><b>매출</b><small>--bg: light</small></div><div class="box"><b>재고</b><small>--bg: light</small></div></div><p class="note">배치와 데이터는 그대로이고 색 토큰만 바뀝니다. 조각 교체는 편집 효과이며 실제 테마는 한 번에 적용됩니다.</p></section>
+<section class="scene dark" id="fresh"><div class="eidos-label">같은 대시보드 · 다크 테마</div><h1 class="eidos-title">같은 대시보드, 다른 테마</h1><div class="version">Dark</div><div class="layout"><div class="box"><b>주문</b><small>--bg: dark</small></div><div class="box"><b>매출</b><small>--bg: dark</small></div><div class="box"><b>재고</b><small>--bg: dark</small></div></div><p class="note">배치와 데이터는 그대로이고 색 토큰만 바뀝니다. 조각 교체는 편집 효과이며 실제 테마는 한 번에 적용됩니다.</p></section>
 </div></div>
 <script src="../../../../runtime/eidos-stage.js"></script><script src="./technique.js"></script>
 <script>
 const s = Eidos.stage();
-s.scene("old", { el:"#old", title:"스냅숏 v41" });
-s.tl.wait(0.8).stop("이전 스냅숏 v41: 모든 데이터가 같은 세대입니다");
+s.scene("old", { el:"#old", title:"라이트 테마" });
+s.tl.wait(0.8).stop("라이트 테마: 같은 대시보드의 현재 모습입니다");
 s.scene("fresh", { el:"#fresh", via:"pixel-dissolve", with:{cols:10, seed:7, dur:1.4},
-  reason:"한 세대의 완성된 스냅숏을 다음 세대로 교체", title:"스냅숏 v42" });
-s.tl.wait(0.4).stop("새 스냅숏 v42: 효과의 픽셀 순서와 실제 원자적 교체를 구분합니다");
+  reason:"같은 화면을 라이트에서 다크 테마로 조각 단위 교체", title:"다크 테마" });
+s.tl.wait(0.4).stop("다크 테마: 효과의 조각 순서와 실제 즉시 전환을 구분합니다");
 s.start();
 </script>
 </body>
