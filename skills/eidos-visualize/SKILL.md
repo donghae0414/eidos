@@ -130,6 +130,22 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 - 외부 CDN, 웹폰트, 원격 이미지를 쓰지 않습니다. 그림은 인라인 SVG로 그립니다.
 - 원칙과 체크리스트는 [references/principles.md](references/principles.md)를 따릅니다.
 
+## 기법 목록에 없는 연출
+
+사용자가 제안했거나 내가 떠올린 연출이 기법 목록에 없으면 아래 순서로 내려갑니다. 어느 단계든 위의 "반드시 지킬 것"은 그대로 적용됩니다.
+
+1. **기존 기법:** [references/decision-table.md](references/decision-table.md)와 카드의 파라미터로 되는지 먼저 확인합니다.
+2. **`tl.tween`으로 직접 그리기:** `attr: p => ({...})`, `style: p => ({...})`, `text: p => ""`는 진행률 `p`로 어떤 속성이든 계산할 수 있습니다. 궁도, 계산된 경로, clip-path 모양 변화 같은 장면 안 연출은 대부분 여기서 끝납니다.
+3. **커스텀 fx:** 2단계로 안 되는 경우에만 씁니다. 대표적인 경우는 새 장면 전환입니다. `via`에는 `kind: "transition"`으로 등록된 fx만 들어갈 수 있기 때문입니다. 같은 다요소 연출을 파라미터만 바꿔 여러 번 부르는 경우도 해당합니다.
+
+커스텀 fx 규칙:
+
+- **방법:** 장면 스크립트에서 `Eidos.stage()` 전에 `Eidos.fx["<custom-id>"] = (stage, o) => { ... }`를 정의하고 `kind`를 `"transition"` 또는 `"technique"`로 붙입니다. 몸통은 `stage.tl.tween`(필요하면 `stage.tl.add((p) => ...)`)으로 짜고 `{ start, end }`를 돌려줍니다. 전환은 `o.from`, `o.to`, `o.at`을 받고 `tl.extend(end)`를 부릅니다. 가리는 전환(clip-path 등)은 장면에 불투명 배경(`background: var(--eidos-bg)`)이 있어야 이전 장면이 비치지 않습니다. 비슷한 기존 `technique.js`(예: `eidos-cut/techniques/cross-dissolve/technique.js`)와 [ROOT/runtime/eidos-stage.js](../../runtime/eidos-stage.js)를 참고 소스로 읽어도 됩니다. 예시는 [ROOT/scripts/fixtures/custom-fx.html](../../scripts/fixtures/custom-fx.html)의 `diagonal-split` 전환입니다.
+- **불변 조건:** 렌더링은 `p`와 컨트롤 값의 순수 함수입니다. `Math.random`, `Date.now`, 트랙 안 DOM 생성, CSS transition을 쓰지 않고, `Eidos.reduced`일 때는 움직임 없이 결과 상태로 넘어갑니다. Canvas만으로 그리지 말고 SVG/DOM 속성으로 그립니다.
+- **기록:** `storyboard.md`에 `custom: <id> - 1·2단계로 안 되는 이유` 한 줄을 남깁니다. 이유를 적을 수 없으면 2단계로 돌아갑니다.
+- **검증:** 8단계 qa.mjs(seek 결정성, reduced motion 포함)를 그대로 통과해야 합니다.
+- 플러그인의 runtime과 기존 `technique.js` 파일은 고치지 않습니다. 쓸 만한 커스텀 fx는 전달할 때 정식 기법 후보로 알려 줍니다.
+
 ## 예시
 
 - [examples/vllm-serving.html](examples/vllm-serving.html) ([스토리보드](examples/vllm-serving.storyboard.md)): 여러 개념 묶음. hub-and-spoke(map 허브, iteration·prefill·kvcache 갈래, lab, outro). 전환 camera, iris, match-cut, dip-to-color. path-drawing, stagger-reveal, highlight-sweep. 컨트롤 max-num-seqs, users

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · custom transition</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; background: var(--eidos-bg); }
+  #after { background: color-mix(in oklch, var(--eidos-accent) 14%, var(--eidos-bg)); }
+  .box { width: 220px; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section id="before" class="scene">
+      <h1 class="eidos-title">요청 하나</h1>
+      <div class="eidos-card box" id="req">요청</div>
+    </section>
+    <section id="after" class="scene">
+      <h1 class="eidos-title">두 갈래로 나뉜 처리</h1>
+      <div class="eidos-card box">읽기 경로</div>
+      <div class="eidos-card box">쓰기 경로</div>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  // Custom transition: no built-in via splits the frame along a diagonal, so it is
+  // registered as an fx with kind "transition". Rendering is a pure function of p.
+  Eidos.fx["diagonal-split"] = (stage, o = {}) => {
+    const { tl } = stage;
+    const at = tl.resolveAt(o.at);
+    const dur = o.dur ?? 0.9;
+    const ease = o.ease ?? "inOut";
+    const clip = (p) => {
+      const q = Eidos.reduced ? (p < 0.5 ? 0 : 1) : p;
+      const a = (q * 200).toFixed(2);
+      return { clipPath: `polygon(0 0, ${a}% 0, ${(q * 200 - 100).toFixed(2)}% 100%, 0 100%)` };
+    };
+    if (o.to) {
+      tl.tween(o.to, { opacity: [0, 1] }, { at, dur: 0 });
+      tl.tween(o.to, { style: clip }, { at, dur, ease });
+    }
+    if (o.from) tl.tween(o.from, { opacity: [1, 0] }, { at: at + dur, dur: 0 });
+    tl.prevStart = at;
+    tl.extend(at + dur);
+    return { start: at, end: at + dur };
+  };
+  Eidos.fx["diagonal-split"].kind = "transition";
+
+  const s = Eidos.stage();
+  s.scene("before", { el: "#before", title: "요청" });
+  s.tl.tween("#req", { opacity: [0, 1] }, { dur: 0.4 }).stop("요청이 하나 들어옵니다");
+  s.scene("after", { el: "#after", via: "diagonal-split", reason: "하나가 둘로 갈라지는 관계를 사선 분할로 보여 줍니다", title: "분기" });
+  s.tl.stop("처리가 읽기와 쓰기 두 갈래로 나뉩니다");
+  s.start();
+</script>
+</body>
+</html>
