@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 토큰 쪼개기 (Token Split)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 1000px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 4.5vh; word-break: keep-all; }
+  .pair { display: grid; row-gap: 3.5vh; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 0.6rem; align-items: baseline; }
+  .lang { font-size: 0.85rem; font-weight: 600; color: var(--eidos-muted-fg); }
+  .sentence { grid-column: 1 / -1; grid-row: 2; margin: 0; font-size: clamp(1.35rem, 4.2vw, 2.6rem); font-weight: 700; line-height: 1.35; }
+  .count { justify-self: end; font-size: 0.9rem; color: var(--eidos-muted-fg); white-space: nowrap; }
+  .count b { font-size: 1.6em; color: var(--eidos-fg); font-variant-numeric: tabular-nums; }
+  .take { margin: 0; max-width: 34em; font-size: clamp(1rem, 1.9vw, 1.3rem); line-height: 1.6; }
+  .take b { font-weight: 700; }
+  .note { margin: 0; font-size: 0.85rem; color: var(--eidos-muted-fg); }
+  @media (min-width: 641px) {
+    .pair { grid-template-columns: 4.5rem minmax(0, max-content) max-content; justify-content: start; align-items: baseline; column-gap: 2rem; }
+    .row { display: contents; }
+    .sentence { grid-column: auto; grid-row: auto; }
+    .count { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">LLM 기초 · 토큰화</div>
+        <h1 class="eidos-title">모델은 글자가 아니라 토큰을 셉니다</h1>
+      </header>
+      <section class="pair" aria-label="같은 뜻의 영어 문장과 한국어 문장">
+        <div class="row">
+          <span class="lang">영어</span>
+          <p class="sentence" id="en">The cache saves time</p>
+          <span class="count" id="count-en">토큰 <b>4</b>개</span>
+        </div>
+        <div class="row">
+          <span class="lang">한국어</span>
+          <p class="sentence" id="ko">캐시가 시간을 아낀다</p>
+          <span class="count" id="count-ko">토큰 <b>6</b>개</span>
+        </div>
+      </section>
+      <p class="take" id="take">같은 뜻이어도 토큰 수는 다릅니다. API 요금과 컨텍스트 한도는 글자가 아니라 <b>토큰 단위</b>로 셉니다.</p>
+      <p class="note">조각 경계와 번호는 설명용 예시입니다. 실제 값은 토크나이저마다 다릅니다.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const rise = (px) => (Eidos.reduced ? [0, 0] : [px, 0]);
+  s.tl.tween("header", { opacity: [0, 1], y: rise(10) }, { dur: 0.5, ease: "out" })
+    .tween(".lang, .sentence, .note", { opacity: [0, 1], y: rise(8) }, { at: "<+=0.2", dur: 0.5, ease: "out" })
+    .stop("같은 뜻의 두 문장입니다. 모델이 읽는 길이도 같을까요");
+  s.fx("token-split", { targets: "#en", tokens: ["The", " cache", " saves", " time"], ids: [791, 6636, 27024, 892] });
+  s.tl.tween("#count-en", { opacity: [0, 1], y: rise(6) }, { dur: 0.35, ease: "out" });
+  s.tl.stop("영어 문장은 토큰 4개로 나뉘고, 조각마다 번호가 붙습니다");
+  s.fx("token-split", { targets: "#ko", tokens: ["캐시", "가", " 시간", "을", " 아", "낀다"], ids: [41820, 7653, 10423, 5012, 9147, 30561] });
+  s.tl.tween("#count-ko", { opacity: [0, 1], y: rise(6) }, { dur: 0.35, ease: "out" });
+  s.tl.stop("같은 뜻의 한국어 문장은 6개, 어절 중간에서도 잘립니다");
+  s.tl.tween("#take", { opacity: [0, 1], y: rise(8) }, { dur: 0.5, ease: "out" });
+  s.tl.stop("요금과 컨텍스트 한도는 글자가 아니라 토큰으로 셉니다");
+  s.start();
+</script>
+</body>
+</html>

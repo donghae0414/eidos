@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 임베딩 공간 (Embedding Space)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; padding: 6vh 5vw 14vh; display: flex; flex-direction: column; gap: 2vh; word-break: keep-all; }
+  .sub { color: var(--eidos-muted-fg); margin: 8px 0 0; font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .space { position: relative; flex: 1; min-height: 0; font-size: clamp(0.85rem, 1.3vw, 1.05rem); }
+  .note { margin: 0; min-height: 2.6em; font-size: clamp(0.9rem, 1.5vw, 1.15rem); }
+  .note strong { font-weight: 700; }
+  @media (max-aspect-ratio: 1/1) {
+    .layout { padding: 5vh 5vw 14vh; gap: 3vh; }
+    .space { font-size: 0.85rem; }
+    .note { min-height: 4em; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">RAG · 의미 검색</div>
+        <h1 class="eidos-title">비슷한 질문은 임베딩 공간에서 가까이 모입니다</h1>
+        <p class="sub">고객 문의 여섯 건을 임베딩 모델에 넣으면 문장마다 벡터 하나가 나옵니다. 아래 두 축은 설명을 위한 투영 축이며 실제 수치가 아닙니다.</p>
+      </header>
+      <section class="space" id="space" aria-label="고객 문의 여섯 건의 임베딩 공간"></section>
+      <p class="note" id="note">의미 검색은 질문 벡터에서 <strong>가장 가까운 이웃</strong>을 찾는 일입니다. 단어가 달라도 뜻이 같으면 가깝습니다.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#space", { opacity: [0, 1] }, { at: "<+=0.2", dur: 0.5, ease: "out" })
+    .stop("고객 문의 여섯 건. 나열만 해서는 어떤 문의가 비슷한지 보이지 않습니다");
+  s.fx("embedding-space", {
+    targets: "#space",
+    points: {
+      "비밀번호 재설정": [0.1, 0.15],
+      "로그인 안 됨": [0.22, 0.72],
+      "계정 잠김": [0.34, 0.42],
+      "결제 오류": [0.64, 0.55],
+      "환불 요청": [0.78, 0.84],
+      "카드 변경": [0.92, 0.3],
+    },
+    portrait: {
+      "비밀번호 재설정": [0.06, 0.95],
+      "로그인 안 됨": [0.55, 0.7],
+      "계정 잠김": [1, 1],
+      "결제 오류": [0.05, 0],
+      "환불 요청": [0.5, 0.12],
+      "카드 변경": [0.95, 0],
+    },
+    groups: {
+      "계정": ["비밀번호 재설정", "로그인 안 됨", "계정 잠김"],
+      "결제": ["결제 오류", "환불 요청", "카드 변경"],
+    },
+  });
+  s.tl.stop("임베딩 모델이 문장을 좌표로 옮기면 뜻이 비슷한 문의끼리 모입니다");
+  s.tl.tween("#note", { opacity: [0, 1], y: [8, 0] }, { dur: 0.5, ease: "out" });
+  s.tl.stop("의미 검색은 이 공간에서 질문과 가장 가까운 이웃을 찾는 일입니다");
+  s.start();
+</script>
+</body>
+</html>

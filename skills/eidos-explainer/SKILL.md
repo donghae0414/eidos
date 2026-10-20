@@ -1,11 +1,11 @@
 ---
 name: eidos-explainer
-description: "EIDOS 원리 도해·데이터 기법: chart-annotate, chart-grow, code-diff, graph-build, sequence-message, state-transition, chart-morph, exploded-view, pinned-scrollytelling, step-panel, bar-race. eidos-visualize에서 이 그룹의 기법을 고를 때 사용합니다."
+description: "EIDOS 원리 도해·데이터 기법: chart-annotate, chart-grow, code-diff, graph-build, sequence-message, state-transition, chart-morph, exploded-view, pinned-scrollytelling, step-panel, bar-race, token-split, next-token, context-window, attention-lines, embedding-space. eidos-visualize에서 이 그룹의 기법을 고를 때 사용합니다."
 ---
 
 # EIDOS 원리 도해·데이터 기법
 
-설명의 **내용 자체**를 그리는 기법입니다. 카메라와 컷이 "어떻게 보여줄지"라면, 이 그룹은 "무엇을 그릴지"를 맡습니다. 개발자 질문 대부분은 여기서 출발합니다.
+설명의 **내용 자체**를 그리는 기법 열여섯 가지입니다. 카메라와 컷이 "어떻게 보여줄지"라면, 이 그룹은 "무엇을 그릴지"를 맡습니다. 개발자 질문 대부분은 여기서 출발합니다.
 
 | id | 의미 | 언제 | kind | priority |
 |---|---|---|---|---|
@@ -20,6 +20,11 @@ description: "EIDOS 원리 도해·데이터 기법: chart-annotate, chart-grow,
 | `pinned-scrollytelling` | 읽는 속도대로 그림이 따라온다. | 설명 문단이 길고, 각 문단이 같은 그림의 한 구간을 가리킬 때 (혼잡 제어 곡선, 메모리 사용량 변화, 요청 처리 단계)<br>독자가 자기 속도로 앞뒤를 오가며 비교해야 할 때<br>발표보다 읽기 위주의 장면이 필요할 때 | technique | P1 |
 | `step-panel` | 지금 몇 번째 단계이고, 그 단계가 그림의 어디를 바꾸는가. | 배포 절차, 롤링 업데이트, 마이그레이션 순서처럼 단계 이름 자체가 중요한 절차<br>같은 그림이 단계마다 조금씩 바뀌는 설명 (파드 교체, 브랜치 이동, 요청 처리 단계)<br>청중이 "전체 몇 단계 중 어디"를 계속 알아야 할 때 | technique | P1 |
 | `bar-race` | 시간이 흐르며 누가 누구를 앞지르는가. | 5~10개 항목의 순위가 시간에 따라 뒤바뀌는 것이 이야기의 핵심일 때 (엔드포인트별 호출 수, 서비스별 비용, 언어별 사용량)<br>"언제 역전했나"를 짚어야 할 때. 그 시점에 스톱을 둡니다 | technique | P2 |
+| `token-split` | 모델은 이 문장을 이 조각들로 읽는다. | 토큰화를 처음 소개할 때<br>언어·표기에 따른 토큰 수를 비교할 때<br>attention-lines·next-token 앞에서 입력을 처리 단위로 펼칠 때. 실제 토크나이저 결과가 아니면 예시임을 밝힙니다 | technique | P0 |
+| `next-token` | 모델은 다음 자리에 올 후보마다 확률을 매기고, 그중 하나를 골라 문장에 붙인다. | 토큰 하나씩 이어 붙이는 LLM 생성 원리<br>그리디 디코딩과 샘플링의 차이<br>문맥에 따라 후보 확률이 달라지는 비교. 실제 모델 출력이 아니면 예시임을 밝힙니다 | technique | P0 |
+| `context-window` | 모델은 창 안의 토큰만 본다. | 긴 대화에서 앞 조건을 놓치는 이유<br>토큰 예산·문맥 한도와 슬라이딩 창<br>최근 N개만 남기는 버퍼. 모든 모델이 자동으로 오래된 토큰을 버린다고 단정하지 않습니다 | technique | P1 |
+| `attention-lines` | 이 토큰은 저 토큰들을 이만큼씩 본다. | 셀프 어텐션·가중치를 소개할 때<br>멀리 떨어진 관련 토큰으로 비중이 몰리는 모습<br>질의 토큰마다 보는 곳이 다름을 비교할 때. 실제 측정값이 아니면 예시임을 밝힙니다 | technique | P1 |
+| `embedding-space` | 뜻이 비슷하면 거리가 가깝다. | 임베딩·벡터 공간 소개<br>의미 검색이 같은 뜻을 찾는 원리<br>분류·클러스터링의 군집을 보일 때. 좌표는 설명용임을 밝힙니다 | technique | P2 |
 
 ## 사용법
 

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 다음 토큰 고르기 (Next-token Pick)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 880px; margin: 0 auto; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3.5vh; word-break: keep-all; }
+  .chat { display: grid; gap: 2.5vh; }
+  .msg { display: grid; gap: 0.4rem; }
+  .prompt { margin: 0; justify-self: start; font-size: clamp(1rem, 1.8vw, 1.25rem); }
+  .answer { margin: 0; font-size: clamp(1.35rem, 2.8vw, 2rem); font-weight: 600; line-height: 1.45; }
+  .note { margin: 0; font-size: 0.85rem; color: var(--eidos-muted-fg); }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">LLM 생성 원리</div>
+        <h1 class="eidos-title">모델은 다음 토큰을 하나씩 고릅니다</h1>
+      </header>
+      <section class="chat">
+        <div class="msg" id="ask">
+          <div class="eidos-label">사용자</div>
+          <p class="prompt eidos-card">배포 직후 API 응답이 느려졌어. 원인이 뭘까?</p>
+        </div>
+        <div class="msg" id="reply">
+          <div class="eidos-label">모델</div>
+          <p class="answer">원인은 DB 커넥션 풀이 <span id="t1"></span> <span id="t2"></span>.</p>
+        </div>
+      </section>
+      <p class="note">확률은 설명을 위한 예시입니다.</p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const rise = Eidos.reduced ? { opacity: [0, 1] } : { opacity: [0, 1], y: [10, 0] };
+  s.tl.tween("header", rise, { dur: 0.5, ease: "out" })
+    .tween("#ask", rise, { at: "<+=0.25", dur: 0.5, ease: "out" })
+    .tween("#reply, .note", rise, { at: "<+=0.35", dur: 0.5, ease: "out" })
+    .stop("모델은 지금까지의 문장을 읽고 빈칸에 올 토큰을 고릅니다");
+  s.fx("next-token", {
+    targets: "#t1",
+    candidates: [
+      { text: "고갈되었기", p: 0.48 },
+      { text: "부족했기", p: 0.27 },
+      { text: "막혔기", p: 0.12 },
+      { text: "작았기", p: 0.06 },
+    ],
+  });
+  s.tl.stop("후보마다 확률을 매기고 가장 높은 '고갈되었기'를 붙입니다");
+  s.fx("next-token", {
+    targets: "#t2",
+    candidates: [
+      { text: "때문입니다", p: 0.71 },
+      { text: "때문이에요", p: 0.19 },
+      { text: "탓입니다", p: 0.05 },
+    ],
+    pick: 1,
+  });
+  s.tl.stop("붙인 토큰까지 읽고 다시 고릅니다. 샘플링이면 2위도 뽑힙니다");
+  s.start();
+</script>
+</body>
+</html>

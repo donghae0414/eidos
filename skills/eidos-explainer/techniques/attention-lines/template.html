@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 어텐션 선 (Attention Lines)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 1080px; padding: 7vh 6vw 14vh; display: flex; flex-direction: column; gap: 2vh; word-break: keep-all; }
+  .eidos-title { text-wrap: balance; }
+  .sub { margin: 8px 0 0; color: var(--eidos-muted-fg); font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: min(24vw, 200px) 0 3rem; }
+  .row { display: flex; gap: clamp(8px, 1.6vw, 18px); }
+  .tok { font: 600 clamp(14px, 2.6vw, 30px)/1.2 var(--eidos-font-sans); padding: 0.3em 0.5em; border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); background: var(--eidos-surface); color: var(--eidos-surface-fg); white-space: nowrap; }
+  @media (max-width: 480px) { .tok { padding: 0.3em 0.4em; } }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">LLM · 셀프 어텐션</div>
+        <h1 class="eidos-title">토큰은 앞 토큰을 서로 다른 비중으로 본다</h1>
+        <p class="sub">선 굵기와 숫자가 어텐션 가중치입니다. 값은 설명용 예시입니다.</p>
+      </header>
+      <section class="area">
+        <div class="row">
+          <span class="tok">캐시가</span>
+          <span class="tok">가득</span>
+          <span class="tok">차서</span>
+          <span class="tok">로그를</span>
+          <span class="tok">보고</span>
+          <span class="tok">그것을</span>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .stagger(".tok", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.25", dur: 0.4, overlap: 0.6, ease: "out" })
+    .stop("토큰 여섯 개. 각 토큰은 앞 토큰을 얼마나 참고할지 정합니다");
+  s.fx("attention-lines", { targets: ".tok", from: 4, weights: [0.10, 0.05, 0.12, 0.55, 0.18, 0] });
+  s.tl.stop("'보고'는 바로 앞 목적어 '로그를'을 가장 많이 봅니다");
+  s.fx("attention-lines", { targets: ".tok", from: 5, weights: [0.46, 0.07, 0.11, 0.22, 0.04, 0.10] });
+  s.tl.stop("'그것을'은 멀리 떨어진 '캐시가'에 가장 큰 비중을 둡니다");
+  s.start();
+</script>
+</body>
+</html>

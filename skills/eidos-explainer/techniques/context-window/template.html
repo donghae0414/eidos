@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 컨텍스트 창 (Context Window)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; max-width: 1080px; margin: 0 auto; padding: 7vh 6vw 15vh; display: flex; flex-direction: column; justify-content: center; gap: 5vh; word-break: keep-all; }
+  .sub { margin: 10px 0 0; color: var(--eidos-muted-fg); font-size: clamp(0.85rem, 1.4vw, 1rem); }
+  .eidos-title, .sub { text-wrap: balance; }
+  .window { padding-top: 2.4rem; }
+  .ctx { font: 600 clamp(0.85rem, 2vw, 1.5rem)/1.3 var(--eidos-font-sans); }
+  .tag { position: absolute; bottom: calc(100% + 0.5rem); font: 500 clamp(0.75rem, 1.2vw, 0.9rem)/1.3 var(--eidos-font-sans); white-space: nowrap; }
+  .tag-in { left: 50%; transform: translateX(-50%); color: var(--eidos-fg); }
+  .tag-out { right: calc(100% + 0.5rem); color: var(--eidos-muted-fg); }
+  .seen { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; }
+  .seen p { margin: 0; font-size: clamp(1rem, 1.8vw, 1.25rem); font-weight: 500; }
+  @media (max-width: 600px) {
+    .layout { padding: 6vh 4vw 15vh; gap: 4vh; }
+  }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">LLM 기초 · 컨텍스트 창</div>
+        <h1 class="eidos-title">창 밖으로 밀려난 토큰은 모델이 보지 못한다</h1>
+        <p class="sub">6토큰 창으로 줄인 예시 · 가장 오래된 토큰부터 버리는 방식일 때 · 토큰 경계는 설명용</p>
+      </header>
+      <section class="window" id="window">
+        <div class="ctx" id="ctx"><span>내</span><span>이름</span><span>은</span><span>민지</span><span>야.</span><span>안녕!</span><span>배포</span><span>급해</span><span>내</span><span>이름?</span></div>
+      </section>
+      <div class="seen eidos-card" id="seen">
+        <span class="eidos-label">모델이 보는 입력</span>
+        <p id="seen-text">내 이름은 민지야. 안녕!</p>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const seen = (from, to, at) => s.tl.tween("#seen-text", { text: (p) => (p < 0.5 ? from : to) }, { at, dur: 0.7 });
+
+  const rise = (px) => [Eidos.reduced ? 0 : px, 0];
+  s.tl.tween("header", { opacity: [0, 1], y: rise(10) }, { dur: 0.5, ease: "out" })
+    .tween("#window, #seen", { opacity: [0, 1], y: rise(8) }, { at: "<+=0.25", dur: 0.55, ease: "out" })
+    .stop("창에는 토큰 6개만 들어갑니다. 지금은 대화 전체가 보입니다");
+
+  const first = s.fx("context-window", { targets: "#ctx", size: 6, push: 2, steps: 1 });
+  first.frame.insertAdjacentHTML("beforeend", '<span class="tag tag-in">컨텍스트 창 · 6토큰</span><span class="tag tag-out" id="gone">잊힌 토큰</span>');
+  s.tl.tween("#gone", { opacity: [0, 1] }, { at: first.start, dur: 0.4, ease: "out" });
+  seen("내 이름은 민지야. 안녕!", "은 민지야. 안녕! 배포 급해", first.start);
+  s.tl.stop("새 토큰 2개가 들어오자 가장 오래된 ‘내’ ‘이름’이 밀려났습니다");
+
+  const second = s.fx("context-window", { targets: "#ctx", size: 6, push: 2 });
+  seen("은 민지야. 안녕! 배포 급해", "야. 안녕! 배포 급해 내 이름?", second.start);
+  s.tl.stop("‘내 이름?’을 묻는 순간, 답인 ‘민지’는 이미 창 밖에 있습니다");
+  s.start();
+</script>
+</body>
+</html>
