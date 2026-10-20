@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 글자별 스태거 (Character Stagger)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 1040px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; word-break: keep-all; }
+  .title { margin: 0; font-size: clamp(1.75rem, 5.6vw, 3.7rem); font-weight: 800; letter-spacing: -0.025em; line-height: 1.2; }
+  .sub { margin: 0; max-width: 30em; font-size: clamp(1.05rem, 2vw, 1.45rem); line-height: 1.55; color: var(--eidos-muted-fg); }
+  .term { margin: 0; font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
+  .term b { color: var(--eidos-accent); font-weight: 800; }
+  .term code { font-family: var(--eidos-font-mono); font-weight: 500; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <div class="eidos-label" id="label">LLM 기초</div>
+      <h1 class="title" id="title">다음 토큰은 앞의 토큰이 정한다</h1>
+      <p class="sub" id="sub">한 번에 하나씩, 왼쪽에서 오른쪽으로</p>
+      <p class="term" id="term"><b>자기회귀</b> <code>autoregressive</code></p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("#label", { opacity: [0, 1] }, { dur: 0.4 });
+  s.fx("char-stagger", { targets: "#title", at: "<+=0.15" });
+  s.tl.stop("LLM은 다음 토큰을 한 번에 하나씩 고릅니다");
+  s.fx("char-stagger", { targets: "#sub", dur: 0.5, overlap: 0.9 });
+  s.tl.stop("앞에 놓인 토큰이 다음 토큰의 조건이 됩니다");
+  s.fx("char-stagger", { targets: "#term", dist: 20, each: 0.06 });
+  s.tl.stop("이 방식을 자기회귀(autoregressive)라고 부릅니다");
+  s.start();
+</script>
+</body>
+</html>

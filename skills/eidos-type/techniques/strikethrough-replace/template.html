@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 취소선 교체 (Strikethrough Replace)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 880px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
+  .config { margin: 0; padding: 0.9em 1.2em; background: var(--eidos-surface); color: var(--eidos-surface-fg); border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); box-shadow: var(--eidos-shadow); font-family: var(--eidos-font-mono); font-size: clamp(0.95rem, 1.9vw, 1.35rem); line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .config .cm { color: var(--eidos-muted-fg); }
+  .config .key { color: var(--eidos-cat-4); }
+  .claim { margin: 0; font-size: clamp(1.1rem, 2.2vw, 1.6rem); line-height: 1.6; }
+  .new { color: var(--eidos-accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">DB 커넥션 풀</div>
+        <h1 class="eidos-title">커넥션 풀은 클수록 좋을까</h1>
+      </header>
+      <pre class="config" id="config"><span class="cm"># hikari.yml</span>
+<span class="key">maximumPoolSize</span>: <span id="old-size">100</span><span class="new" id="new-size">20</span>
+<span class="key">connectionTimeout</span>: <span id="old-timeout">30000</span><span class="new" id="new-timeout">3000</span></pre>
+      <p class="claim" id="claim"><span id="old-claim">커넥션은 많을수록 빠르다.</span><span class="new" id="new-claim">코어 수의 2~4배일 때 가장 빠르다. 그 이상은 경합과 컨텍스트 스위칭만 늘린다.</span></p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#config", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.55, ease: "out" })
+    .tween("#claim", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.2", dur: 0.55, ease: "out" })
+    .stop("통념대로 풀을 크게 잡은 커넥션 풀 설정입니다");
+  s.fx("strikethrough-replace", { targets: "#old-size", to: "#new-size" });
+  s.tl.stop("풀 크기 100을 지우고 코어 수 기준인 20으로 바꿉니다");
+  s.fx("strikethrough-replace", { targets: "#old-timeout", to: "#new-timeout" });
+  s.tl.stop("대기 시간도 30초에서 3초로 줄여 장애를 빨리 드러냅니다");
+  s.fx("strikethrough-replace", { targets: "#old-claim", to: "#new-claim", place: "below", gap: 0.25 });
+  s.tl.stop("통념을 지우고 바른 기준을 아래에 세웁니다");
+  s.start();
+</script>
+</body>
+</html>

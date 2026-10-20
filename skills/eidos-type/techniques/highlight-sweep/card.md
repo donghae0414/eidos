@@ -4,7 +4,7 @@ kind: technique
 ko: 하이라이트 스윕
 en: Highlight Sweep
 aka: [형광펜, 마커 스윕, 밑줄 강조, 서클 강조, 동그라미 치기, highlight sweep, marker, highlighter, circumscribe, circle emphasis]
-group: eidos-motion
+group: eidos-type
 priority: P0
 ref: [awesome-ai-motion/highlight-sweep, awesome-ai-motion/circumscribe]
 ---
@@ -23,6 +23,7 @@ ref: [awesome-ai-motion/highlight-sweep, awesome-ai-motion/circumscribe]
 - 한 stop에 세 곳 넘게 칠할 때. 전부 강조하면 아무것도 강조되지 않습니다
 - 두 줄에 걸치는 긴 구절. 띠는 첫 줄과 마지막 줄의 경계 상자를 기준으로 그려져 어색해집니다. 구절을 짧게 자르거나 `white-space: nowrap`을 주세요
 - 배경이 이미 강조색인 요소(칩, 배지). 띠가 묻힙니다
+- 구절이 아니라 UI 패널이나 카드 영역 전체에 집중시킬 때. spotlight로 주변을 어둡게 하세요
 
 ## 사용법
 ```html
@@ -60,4 +61,4 @@ stage.tl.stop("대가: 쓰기 비용");
 런타임이 stop으로 즉시 건너뛰어 띠와 원이 완성된 상태로 보입니다. `scaleX`와 stroke-dashoffset만 바뀌며 블러·3D는 없습니다.
 
 ## 같이 쓰기 좋은 기법
-mask-reveal(결론 문장을 드러낸 뒤 핵심어 칠하기), rack-focus(문단 밖 요소를 흐리고 구절에 집중), freeze-frame(칠한 구절에 주석 달기)
+mask-reveal(결론 문장을 드러낸 뒤 핵심어 칠하기), rack-focus(문단 밖 요소를 흐리고 구절에 집중), freeze-frame(칠한 구절에 주석 달기), spotlight(영역 전체를 먼저 비춘 뒤 그 안의 핵심 구절에 형광펜)

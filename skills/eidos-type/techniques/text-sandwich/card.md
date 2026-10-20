@@ -3,7 +3,7 @@ id: text-sandwich
 ko: 텍스트 샌드위치
 en: Text Sandwich
 aka: [텍스트샌드위치, 레이어 사이 제목, 공간 속 제목, 깊이 타이틀, 레이어 분리, text sandwich, scene integrated title, layer separation, depth title]
-group: eidos-motion
+group: eidos-type
 priority: P2
 kind: technique
 ref: [awesome-ai-motion/scene-integrated-title, awesome-ai-motion/layer-separation]

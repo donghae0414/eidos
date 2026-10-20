@@ -3,7 +3,7 @@ id: text-scramble
 ko: 텍스트 스크램블
 en: Text Scramble
 aka: [스크램블, 디코딩 효과, 해독 효과, 타자기, 타이핑 효과, 글자 뒤섞기, text scramble, decode, typewriter, typing, glyph shuffle]
-group: eidos-motion
+group: eidos-type
 priority: P1
 kind: technique
 ref: [awesome-ai-motion/text-scramble, awesome-ai-motion/typewriter]
@@ -25,6 +25,7 @@ ref: [awesome-ai-motion/text-scramble, awesome-ai-motion/typewriter]
 - 숫자가 커지거나 줄어드는 변화. 크기 변화는 count-up이 정확합니다
 - 긴 문장이나 문단. 뒤섞인 글자는 읽을 수 없으니 몇 단어 길이의 값에만 씁니다
 - 비례폭 글꼴의 영문 긴 값. 글리프 폭이 달라 줄이 출렁입니다. 코드와 해시는 `var(--eidos-font-mono)`로 두세요 (한글 음절은 폭이 같아 괜찮습니다)
+- 입력창 상자, 따라가는 커서와 제출 박자 자체가 의미일 때. typing-caret을 쓰세요. 같은 자리에서 생성되는 글자만 필요하면 이 기법의 `mode: "type"`을 씁니다
 
 ## 사용법
 ```html
@@ -76,4 +77,4 @@ s.fx("text-scramble", { targets: "#out", text: "185f8db3…", order: "random" })
 뒤섞임 없이 시작하는 순간(onset) 최종 글자가 통째로 나타납니다. 커서도 보이지 않습니다. 시작 전에는 출발 글자(또는 빈 자리)가 그대로 있습니다. 블러와 3D는 쓰지 않습니다.
 
 ## 같이 쓰기 좋은 기법
-count-up(크기가 있는 숫자), highlight-sweep(굳은 값 속 핵심 부분 짚기), code-diff(바뀐 줄 전체를 보여 줄 때), kinetic-type(값이 아니라 문장을 강조할 때)
+count-up(크기가 있는 숫자), highlight-sweep(굳은 값 속 핵심 부분 짚기), code-diff(바뀐 줄 전체를 보여 줄 때), kinetic-type(값이 아니라 문장을 강조할 때), typing-caret(입력창·커서·제출 흐름은 그쪽, 같은 자리의 생성 글자는 이쪽)

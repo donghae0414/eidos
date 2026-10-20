@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 고정 슬롯 단어 순환 (Word Slot Cycle)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; margin: 0 auto; max-width: 900px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; word-break: keep-all; }
+  .sentence { margin: 0; font-size: clamp(1.6rem, 4.6vw, 3.3rem); font-weight: 700; line-height: 1.4; letter-spacing: -0.01em; }
+  .slot { display: inline-block; padding: 0 0.35em; border: 1px solid var(--eidos-border); border-radius: var(--eidos-radius-sm); background: var(--eidos-surface); color: var(--eidos-accent); text-align: center; }
+  .why { margin: 0; font-size: clamp(1.05rem, 2.2vw, 1.5rem); line-height: 1.6; color: var(--eidos-muted-fg); }
+  .why .note { display: inline-block; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">시스템 설계</div>
+        <h1 class="eidos-title">캐시는 어디에 두나</h1>
+      </header>
+      <p class="sentence" id="sentence">캐시는 <span class="slot" id="where">메모리</span>에 둔다</p>
+      <p class="why" id="why-line"><span class="note" id="why">가장 빠름 · 재시작하면 사라짐</span></p>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  const WHY = ["가장 빠름 · 재시작하면 사라짐", "재시작해도 남음 · 읽기는 느림", "사용자와 가까움 · 갱신이 늦음"];
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#sentence", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.25", dur: 0.55, ease: "out" })
+    .tween("#why-line", { opacity: [0, 1] }, { at: "<+=0.3", dur: 0.4 })
+    .stop("캐시를 둘 자리는 하나가 아닙니다. 한 자리의 선택지를 먼저 훑어 봅니다");
+  s.fx("word-slot-cycle", { targets: "#where", words: ["메모리", "디스크", "CDN", "메모리"] });
+  s.fx("word-slot-cycle", { targets: "#why", words: [WHY[0], WHY[1], WHY[2], WHY[0]], at: "<" });
+  s.fx("word-slot-cycle", { targets: "#where", words: ["메모리", "디스크", "CDN"], stopEach: true });
+  s.fx("word-slot-cycle", { targets: "#why", words: WHY, at: "<", each: 0 });
+  s.tl.stop("CDN: 사용자와 가까운 곳에 둡니다. 첫 메모리부터 모든 선택지에 멈출 자리가 있습니다");
+  s.start();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 스포트라이트 (Spotlight)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 800px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
+  .sub { margin: 0.6rem 0 0; color: var(--eidos-muted-fg); font-size: clamp(0.95rem, 1.7vw, 1.2rem); line-height: 1.5; }
+  .req { margin: 0; padding: 0.8rem 1.25rem; list-style: none; }
+  .req li { display: grid; grid-template-columns: minmax(7em, auto) minmax(0, 1fr); column-gap: 1.25rem; align-items: baseline; padding: 0.8rem 0; }
+  .req li + li { border-top: 1px solid var(--eidos-border); }
+  .req .k { font-family: var(--eidos-font-mono); font-size: clamp(0.85rem, 1.5vw, 1rem); color: var(--eidos-muted-fg); }
+  .req .v { font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 600; line-height: 1.4; }
+  .req .v code { font-family: var(--eidos-font-mono); font-size: 0.92em; }
+  .req .v.q { color: var(--eidos-muted-fg); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <header>
+        <div class="eidos-label">LLM API</div>
+        <h1 class="eidos-title">요청 본문의 어느 줄이 답을 바꿀까</h1>
+        <p class="sub">채팅 완성 API에 보내는 요청은 다섯 줄입니다. 그중 세 줄이 답의 성격을 정합니다.</p>
+      </header>
+      <ul class="req eidos-card" id="req">
+        <li id="mdl"><span class="k">model</span><span class="v"><code>gpt-4.1</code></span></li>
+        <li id="sys"><span class="k">system</span><span class="v">"짧게, 한국어로 답해"</span></li>
+        <li id="usr"><span class="k">user</span><span class="v q">"이 함수 왜 느려?"</span></li>
+        <li id="tmp"><span class="k">temperature</span><span class="v"><code>0.2</code></span></li>
+        <li id="max"><span class="k">max_tokens</span><span class="v"><code>400</code></span></li>
+      </ul>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("header", { opacity: [0, 1], y: [10, 0] }, { dur: 0.5, ease: "out" })
+    .tween("#req", { opacity: [0, 1], y: [10, 0] }, { at: "<+=0.15", dur: 0.45, ease: "out" })
+    .stagger("#req li", { opacity: [0, 1], y: [8, 0] }, { at: "<+=0.1", dur: 0.45, overlap: 0.7, ease: "out" })
+    .stop("채팅 완성 API에 보내는 요청 본문입니다. 다섯 줄이 모두 보입니다");
+  const light = s.fx("spotlight", { targets: "#sys" });
+  s.tl.stop("system: 모델의 역할과 말투를 정합니다");
+  s.fx("spotlight", { targets: "#tmp" });
+  s.tl.stop("temperature 0.2: 같은 질문에 거의 같은 답이 나옵니다");
+  s.fx("spotlight", { targets: "#max" });
+  s.tl.stop("max_tokens 400: 답의 길이와 비용의 상한입니다");
+  light.release();
+  s.tl.stop("이 세 줄이 답의 성격을 정하고, 나머지 두 줄은 내용입니다");
+  s.start();
+</script>
+</body>
+</html>

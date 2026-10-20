@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS · 자간 수렴 (Tracking Reveal)</title>
+<link rel="stylesheet" href="../../../../runtime/eidos-stage.css">
+<style>
+  .layout { position: absolute; inset: 0; word-break: keep-all; margin: 0 auto; max-width: 1040px; padding: 7vh 7vw 14vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 2.8vh; }
+  .hero { margin: 0; font-size: clamp(2.1rem, 7vw, 4.8rem); font-weight: 800; line-height: 1.15; }
+  .sub { margin: 0; max-width: 30em; font-size: clamp(1.05rem, 2vw, 1.4rem); color: var(--eidos-muted-fg); line-height: 1.5; }
+  .facts { list-style: none; margin: 1vh 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 14px; }
+  .facts li { display: grid; gap: 2px; min-width: 8.5em; }
+  .facts b { font-family: var(--eidos-font-mono); font-size: clamp(1.3rem, 2.6vw, 1.9rem); font-weight: 700; line-height: 1.1; }
+  .facts .em b { color: var(--eidos-accent); }
+  .facts small { color: var(--eidos-muted-fg); font-size: 0.85rem; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <main class="layout">
+      <div class="eidos-label" id="label">LLM 기초 · 3장</div>
+      <h1 class="hero" id="title">컨텍스트 윈도우</h1>
+      <p class="sub" id="sub">모델이 한 번에 읽을 수 있는 토큰의 길이입니다. 이 창 밖의 내용은 모델에게 없는 것과 같습니다.</p>
+      <ul class="facts" id="facts">
+        <li class="eidos-card"><b>1K</b><small>GPT-2 · 2019</small></li>
+        <li class="eidos-card"><b>128K</b><small>GPT-4 Turbo · 2023</small></li>
+        <li class="eidos-card em"><b>1M</b><small>Gemini 1.5 Pro · 2024</small></li>
+      </ul>
+    </main>
+  </div>
+</div>
+<script src="../../../../runtime/eidos-stage.js"></script>
+<script src="./technique.js"></script>
+<script>
+  const s = Eidos.stage();
+  s.tl.tween("#label", { opacity: [0, 1], y: [6, 0] }, { dur: 0.4, ease: "out" });
+  s.fx("tracking-reveal", { targets: "#title", at: "<+=0.1" });
+  s.tl.stop("3장의 제목이 자리를 잡습니다: 컨텍스트 윈도우");
+  s.tl.tween("#sub", { opacity: [0, 1], y: [10, 0] }, { dur: 0.55, ease: "out" });
+  s.tl.stop("모델이 한 번에 읽을 수 있는 토큰의 길이입니다");
+  s.tl.stagger(".facts li", { opacity: [0, 1], y: [14, 0] }, { dur: 0.5, overlap: 0.6, ease: "out" });
+  s.tl.stop("5년 사이 1K에서 1M으로, 천 배가 되었습니다");
+  s.start();
+</script>
+</body>
+</html>

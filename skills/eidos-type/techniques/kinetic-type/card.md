@@ -3,7 +3,7 @@ id: kinetic-type
 ko: 키네틱 타이포
 en: Kinetic Typography
 aka: [키네틱 타이포그래피, 단어 강조, 워드 슬램, 움직이는 글자, 단어별 등장, kinetic typography, kinetic type, word slam, word emphasis, type sweep]
-group: eidos-motion
+group: eidos-type
 priority: P1
 kind: technique
 ref: [awesome-ai-motion/kinetic-type-sweep, awesome-ai-motion/word-emphasis, scrolline/word-slam]
@@ -25,6 +25,7 @@ ref: [awesome-ai-motion/kinetic-type-sweep, awesome-ai-motion/word-emphasis, scr
 - 본문 문단. 단어마다 움직이면 읽기를 방해합니다. 문단은 stagger-reveal이나 페이드를 쓰세요
 - 한 장면에 slam을 두 번 넘게 쓸 때. 강세가 모두에게 가면 아무 데도 없습니다
 - 숫자가 변하는 장면(count-up), 코드나 값이 생성되는 느낌(text-scramble)
+- 단어 강세 없이 글자마다 고른 리듬으로 제목을 완성할 때는 char-stagger, 벌어진 글자가 모여 제목 하나를 정착시킬 때는 tracking-reveal을 쓰세요
 
 ## 사용법
 ```html
@@ -69,4 +70,4 @@ s.fx("kinetic-type", { targets: "#no", move: "pulse" });              // 이미 
 단어가 이동이나 크기 변화 없이 자기 차례에 바로 보입니다(불투명도만 0 → 1). `pulse`는 아무것도 바꾸지 않습니다. 런타임이 stop 사이를 즉시 건너뛰므로 보통은 완성된 문장만 보입니다. 블러와 3D는 쓰지 않습니다.
 
 ## 같이 쓰기 좋은 기법
-mask-reveal(문장 전체를 선언할 때는 그쪽, 단어 리듬은 이쪽), highlight-sweep(slam으로 박은 단어에 형광펜을 이어서), text-scramble(코드나 값이 만들어지는 느낌)
+mask-reveal(문장 전체를 선언할 때는 그쪽, 단어 리듬은 이쪽), highlight-sweep(slam으로 박은 단어에 형광펜을 이어서), text-scramble(코드나 값이 만들어지는 느낌), char-stagger(단어 강세 없이 고른 글자 리듬이 필요하면 그쪽), tracking-reveal(제목 정착은 그쪽, 문장 낭독은 이쪽)
