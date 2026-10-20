@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · bad-principles</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title" id="title">반대 단언 검증</h1>
+      <p id="note">준비 동작의 음수 진행도를 오류로 보고합니다</p>
+      <div id="arc">곡선 반대 단언</div>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = { expectFail: ["errors"] };
+  window.__eidosFixtureBuild = [];
+  if (Eidos.ease.anticipate(0.15) < 0) window.__eidosFixtureBuild.push("inverse anticipate assertion: expected nonnegative progress");
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#title", { opacity: [0, 1] }, { dur: 0.4 }).stop("제목");
+  tl.tween("#note", { opacity: [0, 1] }, { dur: 0.4 }).stop("반대 단언");
+  const arcAt = tl.end;
+  tl.tween("#arc", { x: [0, 100], y: [0, 0] }, { dur: 1, ease: "linear", arc: 40 }).stop("곡선 반대 단언");
+  s.start();
+  const savedTime = __eidos.t;
+  __eidos.seek(arcAt + 0.5);
+  const displacement = new DOMMatrix(document.querySelector("#arc").style.transform).m42;
+  if (displacement !== 0) window.__eidosFixtureBuild.push("inverse arc assertion: expected zero displacement at p=0.5, got " + displacement);
+  __eidos.seek(savedTime);
+</script>
+</body>
+</html>

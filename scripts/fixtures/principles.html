@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIDOS fixture · motion principles</title>
+<link rel="stylesheet" href="../../runtime/eidos-stage.css">
+<style>
+  .scene { position: absolute; inset: 0; padding: 8vh 6vw; display: flex; flex-direction: column; gap: 3vh; }
+  .box { width: 180px; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="eidos-stage">
+  <div class="eidos-world">
+    <section class="scene">
+      <h1 class="eidos-title">이동의 준비와 정착</h1>
+      <div class="eidos-card box" id="anticipate">준비 동작</div>
+      <div class="eidos-card box" id="overshoot">강조 착지</div>
+      <div class="eidos-card box" id="arc">곡선 이동</div>
+      <div class="i">하나</div><div class="i">둘</div><div class="i">셋</div>
+    </section>
+  </div>
+</div>
+<script src="../../runtime/eidos-stage.js"></script>
+<script>
+  window.__eidosFixture = {};
+  window.__eidosFixtureBuild = [];
+  const assert = (ok, message) => { if (!ok) window.__eidosFixtureBuild.push(message); };
+  const { anticipate, overshoot } = Eidos.ease;
+  assert(anticipate(0.15) < 0, "anticipate(0.15) must be below 0");
+  assert(anticipate(0) === 0 && anticipate(1) === 1, "anticipate endpoints must be exact");
+  assert(overshoot(0.85) > 1, "overshoot(0.85) must exceed 1");
+  assert(Math.max(...Array.from({ length: 101 }, (_, i) => overshoot(i / 100))) > 1, "overshoot must pass 1");
+  assert(overshoot(1) === 1, "overshoot(1) must equal 1");
+  const s = Eidos.stage();
+  const { tl } = s;
+  tl.tween("#anticipate", { x: [0, 100] }, { dur: 0.6, ease: "anticipate" }).stop("이동 전에 반대 방향으로 준비합니다");
+  tl.tween("#overshoot", { x: [0, 100] }, { dur: 0.6, ease: "overshoot" }).stop("목표를 지나 정착합니다");
+  const arcAt = tl.end;
+  tl.tween("#arc", { x: [0, 100], y: [0, 0] }, { at: arcAt, dur: 1, ease: "linear", arc: 40 }).stop("직선에 수직인 곡선으로 이동합니다");
+  const overlapAt = tl.end, first = tl.tracks.length;
+  tl.stagger(".i", { opacity: [0, 1] }, { dur: 0.5, overlap: 0.6 }).stop("요소들이 겹치는 시간으로 이어집니다");
+  const starts = tl.tracks.slice(first).map((track) => track.at - overlapAt);
+  assert(starts.length === 3 && starts.every((at, i) => Math.abs(at - i * 0.2) < 1e-9), "overlap 0.6 must space starts by 0.2");
+  const probe = new Eidos.Timeline();
+  probe.stagger(".i", { opacity: [0, 1] }, { dur: 0.6, overlap: 0.5 });
+  assert(probe.tracks.every((track, i) => Math.abs(track.at - i * 0.3) < 1e-9), "overlap 0.5 must start at 0, 0.3, 0.6");
+  let conflict = false;
+  try { tl.stagger(".i", { opacity: [0, 1] }, { each: 0.1, overlap: 0.5 }); }
+  catch (e) { conflict = e.message === "tl.stagger: give each or overlap, not both"; }
+  assert(conflict, "each plus overlap must throw the contract error");
+  for (const overlap of [-0.1, 1, NaN, Infinity]) {
+    let threw = false;
+    try { probe.stagger(".i", { opacity: [0, 1] }, { overlap }); } catch { threw = true; }
+    assert(threw, "invalid overlap must throw: " + overlap);
+  }
+  s.start();
+  const savedTime = __eidos.t;
+  for (const [p, x, y] of [[0, 0, 0], [0.5, 50, 40], [1, 100, 0], [0.5, 50, 40], [0, 0, 0]]) {
+    __eidos.seek(arcAt + p);
+    const transform = new DOMMatrix(document.querySelector("#arc").style.transform);
+    assert(transform.m41 === x && transform.m42 === y, "arc position must be exact at p=" + p);
+  }
+  // Detached elements exercise both stagger forwarding and a missing axis without changing the scene.
+  const arcItem = document.createElement("div");
+  const arcProbe = new Eidos.Timeline();
+  arcProbe.stagger([arcItem], { y: [0, 100] }, { arc: -40, dur: 1, ease: "linear" });
+  arcProbe.seek(0.5);
+  const midpoint = new DOMMatrix(arcItem.style.transform);
+  assert(midpoint.m41 === 40 && midpoint.m42 === 50, "stagger must forward negative arc with a missing x axis");
+  __eidos.seek(savedTime);
+</script>
+</body>
+</html>

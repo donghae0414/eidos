@@ -77,6 +77,8 @@
     camera: bezier(0.7, 0, 0.2, 1),
     pop: bezier(0.34, 1.56, 0.64, 1),
     soft: bezier(0.25, 0.1, 0.25, 1),
+    anticipate: bezier(0.36, 0, 0.66, -0.56),
+    overshoot: bezier(0.18, 1.4, 0.4, 1),
   };
   const easeOf = (e) => (typeof e === "function" ? e : E.ease[e || "inOut"] || E.ease.inOut);
 
@@ -166,13 +168,32 @@
       return this;
     }
     tween(targets, props, o = {}) {
+      const arc = o.arc ?? 0;
+      if (!Number.isFinite(arc)) throw new Error("tl.tween: arc must be a finite number");
+      if (arc) {
+        const x = props.x ?? [0, 0], y = props.y ?? [0, 0];
+        const dx = x[1] - x[0], dy = y[1] - y[0];
+        const length = Math.hypot(dx, dy);
+        if (length) {
+          const offset = (p) => p <= 0 || p >= 1 ? 0 : arc * Math.sin(Math.PI * clamp01(p));
+          props = {
+            ...props,
+            x: (p) => lerp(x[0], x[1], p) - dy / length * offset(p),
+            y: (p) => lerp(y[0], y[1], p) + dx / length * offset(p),
+          };
+        }
+      }
       return this.add(E.tween(targets, props), o);
     }
     stagger(targets, props, o = {}) {
       const els = $all(targets);
       const base = this.resolveAt(o.at);
-      const each = o.each ?? 0.08;
-      els.forEach((el, i) => this.add(E.tween(el, props), { ...o, at: base + i * each }));
+      if (o.each != null && o.overlap != null) throw new Error("tl.stagger: give each or overlap, not both");
+      if (o.overlap != null && !(Number.isFinite(o.overlap) && o.overlap >= 0 && o.overlap < 1)) {
+        throw new Error("tl.stagger: overlap must be a number from 0 (inclusive) to 1 (exclusive)");
+      }
+      const each = o.overlap != null ? (o.dur ?? 0.6) * (1 - o.overlap) : o.each ?? 0.08;
+      els.forEach((el, i) => this.tween(el, props, { ...o, at: base + i * each }));
       this.prevStart = base;
       return this;
     }

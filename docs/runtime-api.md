@@ -290,3 +290,34 @@ structure: hub-and-spoke (hub: map; spokes: scheduler, kv-cache, batching)
 
 - `window.__eidos.ready`는 `start()`가 첫 배치와 URL 상태 반영을 마치면 resolve되는 Promise입니다.
 - QA는 이 Promise를 기다리고, 없으면(예전 런타임) 기존 `__eidos.started` 확인 방식으로 돌아갑니다.
+
+## (n) 이징 토큰과 원칙 옵션
+
+`tl.tween`, `tl.stagger`, `tl.add`의 `ease`는 아래 토큰이나 진행도 함수입니다.
+
+| 토큰 | 용도 |
+| --- | --- |
+| `linear` | 일정한 속도의 값 변화 |
+| `in` | 퇴장 |
+| `out` | 등장 |
+| `inOut` | 일반적인 시작과 정착 |
+| `camera` | 카메라 이동 |
+| `pop` | 크기 중심의 팝 등장 |
+| `soft` | 부드러운 변화 |
+| `anticipate` | 상태를 바꾸는 이동 전 작은 반대 방향 준비 동작 |
+| `overshoot` | 강조 요소 하나의 위치·회전이 목표를 지나 정착하는 동작 |
+
+`anticipate`는 초반에 0 아래로, `overshoot`는 후반에 1 위로 나갔다가 끝에서 정확히 1로 돌아옵니다. `overshoot`는 `pop`과 다른 곡선(`bezier(0.18, 1.4, 0.4, 1)`)이며, `pop`은 크기 등장 토큰으로 유지합니다.
+두 새 토큰은 `x`, `y`, `rotate`, `scale`에만 씁니다. 카메라, `opacity`, `blur`, `draw`에는 쓰지 않습니다. 이 속성들은 이징 출력을 clamp하지 않습니다.
+
+### `tl.tween` / `tl.stagger`의 `arc`
+
+`tl.tween(target, { x: [x0, x1], y: [y0, y1] }, { at, dur, ease, arc: 40 })`는 직선 보간에 수직 오프셋을 더합니다. `arc`는 유한한 픽셀 수이며 기본값은 0입니다. 생략한 축은 `[0, 0]`으로 취급합니다. 이동 벡터가 `(dx, dy)`일 때 양수 방향은 왼쪽 법선 `(-dy, dx) / hypot(dx, dy)`입니다. 화면의 y축은 아래로 증가하므로 오른쪽 이동의 양수 arc는 화면 아래쪽으로 휩니다. 음수는 반대쪽으로 휩니다.
+
+오프셋 크기는 `arc * sin(PI * clamp01(p))`이며 `p`는 이징된 진행도입니다. 양 끝에서는 정확히 0이고 이동 거리가 0이면 휘지 않습니다. 따라서 `ease: "linear"`인 `[0, 100]` 가로 이동은 중간에서 y가 40이고 양 끝에서 0입니다. 두 호출 모두 같은 옵션을 지원하고 트랙은 `p`의 순수 함수입니다. 카메라 옵션이 아닙니다.
+
+### `tl.stagger`의 `overlap`
+
+`tl.stagger(target, props, { at, dur, ease, arc, overlap: 0.5 })`는 각 요소의 시작 간격을 `each = dur * (1 - overlap)`으로 정합니다. `dur` 기본값은 0.6초, `overlap` 허용 범위는 `[0, 1)`입니다. 예를 들어 `dur: 0.6, overlap: 0.5`인 세 요소의 시작은 기준 시각에 0, 0.3, 0.6초를 더한 값입니다.
+
+`each`와 `overlap`을 함께 주면 `Error("tl.stagger: give each or overlap, not both")`를 던집니다. 둘 다 없으면 기존 `each: 0.08`을 유지합니다.
