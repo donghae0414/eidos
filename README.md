@@ -47,7 +47,7 @@ Ask for a visual explanation, for example: `OAuth 2.0 인증 흐름을 시각화
 |---|---|
 | `skills/eidos-visualize/` | Entry skill: intent → storyboard → technique choice → single HTML file |
 | `skills/eidos-visualize/examples/` | Worked examples, each with an `.html` and its `.storyboard.md`: `vllm-serving`, `oauth-flow`, `rest-vs-graphql` |
-| `skills/eidos-camera/`, `eidos-cut/`, `eidos-motion/`, `eidos-explainer/` | 52 techniques (camera 16, cut 14, motion 11, explainer 11), each with `card.md`, `technique.js` and a live `template.html` |
+| `skills/eidos-camera/`, `eidos-cut/`, `eidos-motion/`, `eidos-explainer/`, `eidos-type/` | 64 techniques (camera 16, cut 14, motion 8, explainer 16, type 10), each with `card.md`, `technique.js` and a live `template.html` |
 | `runtime/` | Dependency-free stage runtime (timeline, scenes, camera, autoplay, wheel/swipe, control dock, reduced motion, design tokens). API: `docs/runtime-api.md` |
 | `scripts/inline.mjs` | Bundles a working HTML file and its local CSS/JS into one file |
 | `scripts/qa.mjs` | Browser QA with Bun.WebView: errors, seek determinism, reduced motion, screenshots, runtime fixtures in `scripts/fixtures/` |

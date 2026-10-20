@@ -66,7 +66,7 @@ EIDOS는 Claude Code / Codex용 플러그인입니다. 사용자가 무언가를
 
 ### Skill 구성 (구현됨)
 
-진입 skill 하나와 그룹 skill 넷을 두고, 기법은 그룹 안의 카드로 관리한다. 자세한 근거는 [research/visual-techniques.md](research/visual-techniques.md) 6장.
+진입 skill 하나와 그룹 skill 다섯을 두고, 기법은 그룹 안의 카드로 관리한다. 자세한 근거는 [research/visual-techniques.md](research/visual-techniques.md) 6장.
 
 ```
 skills/
@@ -74,7 +74,7 @@ skills/
 │   ├── SKILL.md
 │   ├── references/{decision-table.md, principles.md}
 │   └── examples/{vllm-serving, oauth-flow, rest-vs-graphql}.{html, storyboard.md}
-├── eidos-camera/ eidos-cut/ eidos-motion/ eidos-explainer/
+├── eidos-camera/ eidos-cut/ eidos-motion/ eidos-explainer/ eidos-type/
 │   ├── SKILL.md
 │   └── techniques/<id>/{card.md, technique.js, template.html}
 runtime/{eidos-stage.js, eidos-stage.css}   # 무의존 런타임
@@ -102,7 +102,7 @@ scripts/{inline.mjs, qa.mjs}                # 한 파일로 묶기, 브라우저
 #### 동적 기본값
 
 - [x] 에이전트가 HTML보다 먼저 스토리보드(`*.storyboard.md`)를 쓰고, 장면 구조와 장면 경계 전환을 정한다
-- [x] P0·P1·P2 기법 52개(camera 16, cut 14, motion 11, explainer 11)가 모두 card·technique·template을 갖고 QA를 통과한다
+- [x] P0·P1·P2 기법 64개(camera 16, cut 14, motion 8, explainer 16, type 10)가 모두 card·technique·template을 갖고 QA를 통과한다
 - [x] 자동 재생(`P`, `?autoplay=1`), 속도(`[` `]`, `?speed=`), 휠·스와이프 한 번에 한 스톱, 슬라이더·토글 컨트롤 독이 런타임 기본 기능이다 ([runtime-api.md](runtime-api.md))
 - [ ] `scripts/repro.sh`로 같은 프롬프트를 Claude Code와 Codex에서 다시 돌려 결과를 재현할 수 있다
 
@@ -159,6 +159,6 @@ Deck
 
 ## 열린 질문
 
-- ~~Skill을 몇 개로 시작할지~~ → 해결: P0 20개로 시작해 P1·P2까지 52개를 모두 구현했다
+- ~~Skill을 몇 개로 시작할지~~ → 해결 (과거 기록): P0 20개로 시작해 P1·P2까지 52개를 모두 구현했다
 - ~~애니메이션 구현 방식~~ → 해결: 순수 JS(무의존 런타임). 라이브러리를 인라인하지 않는다
 - Phase 2에서 발표자 노트, PDF 내보내기 지원 여부
