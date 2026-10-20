@@ -1,6 +1,6 @@
 ---
 name: eidos-visualize
-description: "Turn an explanation into an animated, self-contained HTML visualization where every scene explains with meaningful motion: cinematic camera moves, scene transitions chosen per relationship, motion graphics, explainer diagrams and interactive controls. Use when the user asks to visualize, illustrate or animate how something works (a flow, architecture, comparison, before/after, state change, trade-off, metrics or code change), says 시각화/그림으로/애니메이션으로/한눈에 보여줘, says they don't understand a concept and want it visualized (개념을 모르겠다 + 시각화해줘), or wants an HTML visual explanation instead of plain text."
+description: "Turn an explanation into an animated, self-contained HTML visualization where every scene explains with meaningful motion: cinematic camera moves, scene transitions chosen per relationship, motion graphics, explainer diagrams, typography and interactive controls. Use when the user asks to visualize, illustrate or animate how something works (a flow, architecture, comparison, before/after, state change, trade-off, metrics, LLM/AI concept, wording or code change), says 시각화/그림으로/애니메이션으로/한눈에 보여줘, says they don't understand a concept and want it visualized (개념을 모르겠다 + 시각화해줘), or wants an HTML visual explanation instead of plain text."
 ---
 
 # EIDOS: 설명을 보이는 것으로 만들기
@@ -15,13 +15,14 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 
 순서를 건너뛰지 마세요. 특히 캡션이나 HTML은 3단계 스토리보드를 파일로 쓴 다음에만 시작합니다.
 
-1. **의도 파악:** 질문이 흐름, 비교, 구조, 변화, 수치, 트레이드오프, 강조 중 무엇인지 정합니다. [references/decision-table.md](references/decision-table.md)에서 기법 후보를 고릅니다.
+1. **의도 파악:** 질문이 흐름, 비교, 구조, 변화, 수치, 트레이드오프, 강조 중 무엇인지 정합니다. 먼저 [references/recipes.md](references/recipes.md)에서 의도와 맞는 레시피가 있는지 확인하고, [references/decision-table.md](references/decision-table.md)에서 기법 후보를 고릅니다.
 2. **구조 선택:** `single-flow`(한 줄 흐름), `layered-chapters`(장으로 나눈 층), `hub-and-spoke`(전체 지도에서 갈래로 들어갔다 돌아옴) 중 하나를 고릅니다. 기준과 장면 수 권장치는 [references/structure.md](references/structure.md)에 있습니다.
 3. **모션 스토리보드 작성 (필수):** 캡션이나 HTML보다 먼저 `<최종 파일>.storyboard.md`를 씁니다. 형식은 [ROOT/docs/runtime-api.md](../../docs/runtime-api.md)의 (l)절을 따릅니다.
    - 맨 위에 `structure:` 줄과 장면 목록을 둡니다.
    - concept 표의 행마다 object(무엇이), motion(어떻게 움직이고), meaning(그 움직임이 개념에 대해 무엇을 말하는지)을 모두 채웁니다. meaning에 "나타난다", "등장", "페이드인"만 적은 행은 무효입니다.
    - boundary 표에는 장면 경계마다 `via`와 reason을 적습니다. `via` 값과 고르는 기준은 [references/transitions.md](references/transitions.md)의 장면 경계 표를 따릅니다. 같은 전환을 네 번 연속 쓰지 않습니다.
    - 장면이 4개 이상이면 boundary 표의 `via`는 서로 다른 값이 3가지 이상이어야 합니다. 두 값을 번갈아 쓰는 것도 하우스 전환입니다. 경계마다 관계를 보고 고른 결과로 3가지가 나와야 하며, 개수를 맞추려고 관계에 맞지 않는 값을 넣지 않습니다. 표 아래에 `distinct via: N (값 목록)` 한 줄을 적습니다.
+   - concept 표의 motion 칸은 [references/motion-principles.md](references/motion-principles.md)의 12원칙 규칙을 따릅니다. 이징, `arc`, `overlap`, 길이를 고를 때 해당 절을 봅니다.
    - 트레이드오프 개념(값을 바꾸면 결과가 달라지는 것)에는 [references/controls.md](references/controls.md)를 보고 control 행을 둡니다. 컨트롤이 없으면 `controls: none` 한 줄을 씁니다.
 4. **캐스트와 캡션:** `storyboard.md`의 행을 스톱으로 옮기고, 스톱마다 캡션을 한 문장으로 씁니다. 스토리보드에 없는 스톱은 만들지 않습니다.
 5. **카드 읽기:** 스토리보드에서 고른 기법의 `card.md`와 `template.html`만 읽습니다. 경로는 `ROOT/skills/<group>/techniques/<id>/`입니다.
@@ -31,19 +32,21 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
    - qa.mjs는 브라우저(Bun.WebView)가 20초 안에 뜨지 않으면 `BROWSER UNAVAILABLE`을 출력하고 종료 코드 3으로 끝납니다(`EIDOS_QA_BROWSER_TIMEOUT`로 초 단위 조정). Codex `workspace-write` 같은 샌드박스는 WebKit XPC 서비스를 막기 때문에 이렇게 됩니다. 이때는 같은 명령을 샌드박스 밖에서 다시 실행하도록 권한 상승(escalated/unsandboxed 실행 승인)을 요청합니다. 그것도 안 되면 사용자에게 이 명령을 직접 실행해 달라고 요청합니다.
 9. **자기 검토 (self-review):** 8단계가 만든 contact sheet 이미지를 직접 봅니다. 한 번에 contact sheet는 최대 2장까지만 읽고, 스톱별 개별 스크린숏을 전부 열지 않습니다. 본 내용을 `storyboard.md` 끝 `## self-review` 표 `| stop | moves | explains | fix |`에 적습니다.
    - 의미 있는 움직임이 없는 스톱, 장식 움직임뿐인 스톱, 스토리보드 행으로 거슬러 갈 수 없는 스톱은 고치고 7~9단계를 다시 합니다. 자기 검토는 최대 2회입니다.
+   - [references/principles.md](references/principles.md) 체크리스트의 원칙 세 줄(비선형 이징, stop마다 초점 하나와 보조 움직임 2개 이하, `anticipate`/`overshoot`/`arc` 허용 위치)을 [references/motion-principles.md](references/motion-principles.md) 기준으로 확인하고, 걸리는 stop은 `fix` 칸에 적습니다. 표 모양은 바꾸지 않습니다.
    - boundary 표의 `distinct via` 줄을 다시 확인합니다. 장면이 4개 이상인데 3가지 미만이면 고칩니다.
    - contact sheet를 보지 않고 self-review 표를 채우지 않습니다. 코드나 스토리보드만 읽고 moves/explains를 적는 것은 검토가 아닙니다. 8단계의 권한 상승과 사용자 실행 요청이 모두 안 되면 표 대신 `스크린샷 검토: 하지 않음 (이유)`만 적고, 전달할 때 검토를 통과한 것이 아니라 하지 않았다고 밝힙니다.
    - 스토리보드 파일은 작업 HTML 옆에 그대로 둡니다.
-10. **전달:** 파일 경로, 구조 요약 한두 줄, 조작법을 알려줍니다. 조작법은 `→`/`Space`/클릭으로 다음, `←`로 이전, 스크롤이나 스와이프로 넘기기, `P`로 자동 재생과 정지, `[` `]`로 속도 조절이고, 컨트롤이 있으면 슬라이더나 토글이 무엇을 바꾸는지도 적습니다. 갈래 구조면 숫자 키나 클릭으로 들어가고 `Esc`로 돌아온다고 알려줍니다.
+10. **전달:** 파일 경로, 구조 요약 한두 줄, 조작법을 알려줍니다. 조작법은 `→`/`Space`/클릭으로 다음, `←`로 이전, 스크롤이나 스와이프로 넘기기, `P`로 자동 재생과 정지, `[` `]`로 속도 조절이고, 컨트롤이 있으면 슬라이더나 토글이 무엇을 바꾸는지도 적습니다. 갈래 구조면 숫자 키나 클릭으로 들어가고 `Esc`로 돌아온다고 알려 줍니다.
 
 ## 기법 목록
 
 | group | 기법 |
 |---|---|
-| eidos-cut | cross-dissolve, match-cut, split-screen, wipe, iris, jump-cut, smash-cut, dip-to-color, whip-pan, screen-dive, zoom-through, cross-cutting, pixel-dissolve, cutaway |
 | eidos-camera | zoom-in, establishing-shot, pan, tracking, rack-focus, freeze-frame, crane-up, ken-burns, parallax, fly-to, speed-ramp, time-lapse, orbit, dolly-zoom, fpv-flight, infinite-zoom |
-| eidos-motion | stagger-reveal, mask-reveal, path-drawing, count-up, highlight-sweep, shape-morph, kinetic-type, text-scramble, text-sandwich, particle-assemble, light-sweep |
-| eidos-explainer | sequence-message, state-transition, graph-build, code-diff, chart-grow, chart-annotate, step-panel, pinned-scrollytelling, exploded-view, chart-morph, bar-race |
+| eidos-cut | cross-dissolve, match-cut, split-screen, wipe, iris, jump-cut, smash-cut, dip-to-color, whip-pan, screen-dive, zoom-through, cross-cutting, pixel-dissolve, cutaway |
+| eidos-motion | stagger-reveal, path-drawing, count-up, shape-morph, particle-assemble, light-sweep, focus-handoff, spotlight |
+| eidos-explainer | sequence-message, state-transition, graph-build, code-diff, chart-grow, chart-annotate, step-panel, pinned-scrollytelling, exploded-view, chart-morph, bar-race, token-split, next-token, context-window, attention-lines, embedding-space |
+| eidos-type | kinetic-type, text-scramble, highlight-sweep, mask-reveal, text-sandwich, strikethrough-replace, word-slot-cycle, char-stagger, typing-caret, tracking-reveal |
 
 `via`에 쓸 수 있는 것은 카드 프런트매터가 `kind: transition`인 기법과 내장값 `camera`, `cut`뿐입니다. 나머지는 `kind: technique`이고 장면 안에서 `s.fx()`로 부릅니다. 어느 쪽인지는 [references/transitions.md](references/transitions.md)와 각 카드에서 확인합니다.
 
@@ -101,8 +104,8 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 | API | 설명 |
 |---|---|
 | `Eidos.stage()` | `.eidos-stage > .eidos-world` 구조를 잡고 stage 객체 `s`를 돌려줍니다 |
-| `s.tl.tween(target, props, {at, dur, ease})` | `props`: `x, y, scale, scaleX, scaleY, rotate, opacity, blur, draw`(SVG 선 그리기), `style: p => ({})`, `attr: p => ({})`, `text: p => ""` |
-| `s.tl.stagger(target, props, {each})` | 여러 요소를 순서대로 |
+| `s.tl.tween(target, props, {at, dur, ease, arc})` | `props`: `x, y, scale, scaleX, scaleY, rotate, opacity, blur, draw`(SVG 선 그리기), `style: p => ({})`, `attr: p => ({})`, `text: p => ""`. `arc`: x/y 배열 이동의 왼쪽 법선 오프셋(px, 기본 0), 생략한 축은 `[0,0]`, 양 끝은 그대로 |
+| `s.tl.stagger(target, props, {at, dur, ease, arc, each, overlap})` | 여러 요소를 순서대로. `arc`는 tween과 같음. `overlap`은 0 이상 1 미만, 간격은 `dur * (1 - overlap)`(`dur` 기본 0.6초). `each`와 함께 주면 오류; 둘 다 없으면 간격 0.08초 |
 | `s.tl.stop(label, {id, hold})` | 스톱. `id`는 URL 해시용, `hold`는 자동 재생 때 머무는 초 |
 | `s.tl.wait(sec)` | 빈 시간 |
 | `s.tl.ramp({at, dur, rate})` | 시간 재매핑. `rate < 1`은 슬로모션, `0`은 정지 화면 |

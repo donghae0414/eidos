@@ -20,8 +20,9 @@ ref: [awesome-ai-motion/rack-focus, scrolline/focus-pull]
 - 비교 장면에서 "지금 말하는 쪽"을 표시할 때 (split-screen의 `focus`와 같은 역할을 겹친 배치에서)
 
 ## 피할 때
-- 대상이 셋 이상이고 빠르게 오갈 때. 흐림이 반복되면 눈이 피로합니다. highlight-sweep이나 stagger-reveal의 `disclose`를 쓰세요.
+- 대상이 셋 이상이고 빠르게 오갈 때. 흐림이 반복되면 눈이 피로합니다. 이미 보이는 나란한 항목은 focus-handoff로 테두리와 불투명도만 바꿔 짚고, 아직 보이지 않는 항목은 stagger-reveal의 `disclose`를 쓰세요.
 - 흐려진 쪽도 계속 읽어야 할 때. 랙 포커스는 다른 쪽을 일부러 못 읽게 만듭니다.
+- 블러 없이 화면 전체에서 한 영역만 남길 때. spotlight로 주변을 어둡게 하세요. 글자 몇 개만 짚으면 highlight-sweep이 맞습니다.
 
 ## 사용법
 ```js
@@ -53,4 +54,4 @@ stage.tl.stop("정리");
 런타임이 블러를 끄므로 투명도와 크기만으로 초점을 표현합니다. 정지 지점으로 즉시 이동합니다.
 
 ## 같이 쓰기 좋은 기법
-split-screen(나란히 놓인 비교), zoom-in(초점 뒤 세부로), highlight-sweep(초점이 온 쪽의 핵심 구절)
+split-screen(나란히 놓인 비교), zoom-in(초점 뒤 세부로), highlight-sweep(초점이 온 쪽의 핵심 구절), focus-handoff(블러 없이 나란한 항목을 차례로 짚을 때는 그쪽), spotlight(화면 전체의 주변을 어둡게 하고 한 영역만 남길 때는 그쪽)

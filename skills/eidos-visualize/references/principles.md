@@ -6,7 +6,7 @@
 2. **stop 하나에 주장 하나.** 캡션은 한 문장, 40자 안팎으로 씁니다. 캡션만 읽어도 흐름이 이어져야 합니다.
 3. **강조는 한 번에 하나.** `--eidos-accent`는 지금 봐야 할 곳에만 씁니다. 나머지는 `--eidos-fg`, `--eidos-muted-fg`로 둡니다.
 4. **읽을 시간을 줍니다.** 글자가 나오는 동작은 0.4~0.8초, 카메라 이동은 1~1.6초가 기본입니다. stop에서 멈추므로 별도 홀드는 필요 없습니다.
-5. **이징은 토큰을 씁니다.** 카메라는 `camera`, 등장은 `out`, 퇴장은 `in`, 팝은 `pop`입니다.
+5. **이징은 토큰을 씁니다.** 카메라는 `camera`, 등장은 `out`, 퇴장은 `in`, 크기 팝은 `pop`입니다. `anticipate`는 상태를 바꾸는 이동 전 작은 반대 방향 준비 동작, `overshoot`는 강조 요소 하나의 위치·회전 착지에 씁니다. 두 토큰은 `x/y/rotate/scale` 전용이며 카메라, `opacity`, `blur`, `draw`에는 쓰지 않습니다.
 6. **색은 권장 토큰에서 출발합니다.** 범주색 `--eidos-cat-1~5`, 의미색 `--eidos-success/danger/warning`을 씁니다. 더 필요하면 같은 톤 안에서 늘립니다(docs/design-tokens.md).
 7. **모든 stop에는 스토리보드로 추적할 수 있는 움직임이 있습니다.** 그 stop에 도착할 때 움직이는 것이 스토리보드 concept 표의 어느 행인지 말할 수 있어야 합니다. 캡션만 바뀌는 stop은 고칩니다.
 8. **stop에 멈추면 아무것도 움직이지 않습니다.** 반복 펄스, 깜빡임, 흔들리는 카메라 같은 ambient 모션은 쓰지 않습니다. 움직임은 stop 사이에서만 일어납니다.
@@ -43,3 +43,6 @@
 - [ ] 첫 stop만 보고도 무엇에 대한 설명인지 안다
 - [ ] 마지막 stop이 한 문장 결론이다
 - [ ] 모바일 폭에서 글자가 겹치거나 잘리지 않는다
+- [ ] 공간 이동(`x/y/scale/rotate`)에 비선형 이징을 썼다([motion-principles.md](motion-principles.md) 6절)
+- [ ] stop마다 초점은 하나, 보조 움직임은 2개 이하다
+- [ ] `anticipate`, `overshoot`, `arc`는 [motion-principles.md](motion-principles.md)가 허용한 곳에만 있다
