@@ -16,6 +16,9 @@
     "developerName": "donghae0414",
     "category": "Productivity",
     "capabilities": ["Workflow"],
+    "brandColor": "#B5482B",
+    "logo": "./assets/logo.png",
+    "composerIcon": "./assets/composer-icon.png",
     "defaultPrompt": [
       "OAuth 2.0 인증 흐름을 시각화해서 HTML로 저장해줘",
       "REST와 GraphQL 차이를 비교하는 시각 자료를 만들어줘",

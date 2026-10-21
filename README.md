@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="EIDOS logo" width="128" height="128">
+</p>
+
 # EIDOS
 
 Make Meaning Visible.
