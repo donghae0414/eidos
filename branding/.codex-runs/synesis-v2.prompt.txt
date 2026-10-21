@@ -1,0 +1,19 @@
+Use the imagegen skill with the built-in image_gen tool (not the CLI fallback). Use case: logo-brand, edit mode (precise-object-edit).
+
+Edit target: branding/logo/drafts/eidos-v2-epsilon.png. Load it with view_image first so it is in context.
+
+Problem being fixed: the previous Synesis drafts used a puffier tile (thicker bottom rim, larger corner radius, slightly bigger tile) than the EIDOS tile, so the family does not match. This time the tile must be IDENTICAL to the edit target.
+
+Make exactly TWO edits of the edit target, one built-in call each:
+EDIT 1: replace only the letter with a Greek capital sigma "Σ" in classical Greek inscriptional capitals, with the same stroke contrast, terminals and visual weight as the existing epsilon (elegant serif character, not a geometric math summation glyph).
+EDIT 2: replace only the letter with a Greek lowercase medial sigma "σ" (round body with a short horizontal stroke to the upper right; not the letter o, not the digit 6), with the same stroke contrast, terminals and visual weight as the existing epsilon.
+
+For both edits: the new letter is incised into the marble exactly like the existing letter and filled with matte Aegean-blue mineral pigment (#2c5f8a) instead of red; letter height about 65% of the tile, centered.
+Invariants (keep unchanged): tile shape, size, position, corner radius, rim thickness, marble color, veins, lighting, transparent background, canvas 1024x1024.
+
+Alpha requirements: final PNGs are 1024x1024 RGBA. After any background removal, keep ONLY the single largest connected non-transparent component (the tile) and set alpha to 0 for every other pixel. Verify by counting connected components of alpha>0 pixels: the count must be exactly 1. Report that count.
+
+Save as (do not overwrite existing files):
+- branding/logo/drafts/synesis-v2-sigma-upper.png
+- branding/logo/drafts/synesis-v2-sigma-lower.png
+Do not create, modify or delete any other files in the repository except temporary files you delete afterwards. In your final message, list saved paths, exact prompts, and the connected-component counts.

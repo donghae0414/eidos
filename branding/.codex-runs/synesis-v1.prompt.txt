@@ -1,0 +1,19 @@
+Use the imagegen skill with the built-in image_gen tool (not the CLI fallback). Use case: logo-brand. First load the reference image branding/logo/drafts/eidos-v1-epsilon-lower.png with view_image so it is in context, and use it as a STYLE REFERENCE (material, tile shape, lighting, carving treatment).
+
+Generate exactly TWO images, one built-in call each. They are sibling logos of the same brand family as the reference: identical tile, marble, carving and lighting; only the letter and pigment color change. Pigment: matte Aegean-blue mineral pigment (#2c5f8a).
+
+IMAGE 1: Greek capital sigma "Σ" in classical Greek inscriptional capitals (not a summation sign styled glyph, not a Latin M on its side), even stroke weight, small chiselled terminals.
+IMAGE 2: Greek lowercase sigma "σ" (medial form, round body with a short horizontal stroke to the upper right; not the letter o, not the digit 6), classical elegant letterform matching the style of the reference epsilon.
+
+Adjustments versus the reference (apply all):
+1. Flatter tile: a front-facing marble slab, not a thick cushion. Only a thin bevelled rim (about 3% of tile width) should be visible; no visible thick side wall or bottom thickness.
+2. Calmer marble: only 2-3 very faint, thin grey-gold veins; no vein should cross the letter prominently. The letter must dominate.
+3. Letter size about 65% of the tile height (slightly larger than the reference), centered.
+4. Keep everything else identical in spirit: same ivory Pentelic marble tone, same squircle (corner radius ~22%), same carved-and-pigment-filled letter treatment, same soft top-left lighting.
+
+Background / alpha requirements: final PNGs must be 1024x1024 RGBA with a genuinely transparent background. After background removal, every pixel outside the tile silhouette must have alpha exactly 0: remove all stray specks, halos and semi-transparent chroma residue outside the tile (for example by keeping only the largest connected opaque component and zeroing alpha elsewhere). Verify this and report how many non-zero-alpha pixels remain outside the tile bounding box (target: 0).
+
+Save as:
+- branding/logo/drafts/synesis-v1-sigma-upper.png (image 1)
+- branding/logo/drafts/synesis-v1-sigma-lower.png (image 2)
+Do not overwrite existing files. Do not create, modify or delete any other files in the repository except temporary files you delete afterwards. In your final message, list the saved paths, the exact prompts used, and the stray-pixel counts.

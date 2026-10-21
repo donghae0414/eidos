@@ -1,0 +1,40 @@
+Created exactly two images using two built-in `image_gen` calls:
+
+- [synesis-v1-sigma-upper.png](/Users/a451174/apps/eidos/branding/logo/drafts/synesis-v1-sigma-upper.png) — stray pixels outside tile bounding box: **0**
+- [synesis-v1-sigma-lower.png](/Users/a451174/apps/eidos/branding/logo/drafts/synesis-v1-sigma-lower.png) — stray pixels outside tile bounding box: **0**
+
+Both were visually inspected and verified as 1024×1024, 8-bit RGBA PNGs. Detached alpha components and chroma residue were removed; temporary files were deleted. No other repository files were changed.
+
+### Uppercase prompt
+
+```text
+Use case: logo-brand
+Asset type: polished square brand logo asset, 1024×1024
+Input image: use the supplied EIDOS epsilon tile only as a STYLE REFERENCE for the ivory Pentelic marble material, squircle tile geometry, carved-and-mineral-pigment-filled letter treatment, and soft top-left lighting. Do not reproduce epsilon.
+Primary request: create a sibling logo featuring the Greek capital sigma, exactly “Σ”. It must read as a classical Greek inscriptional capital sigma, not a mathematical summation-sign styled glyph and not a Latin M turned sideways. Use even stroke weight and restrained small chiselled terminals.
+Scene/backdrop: center the single marble tile on a perfectly flat, uniform solid #00ff00 chroma-key background for later background removal. The background must have no shadows, gradient, texture, reflection, floor plane, or lighting variation. Keep generous clean separation between tile and background. Do not use #00ff00 anywhere in the tile.
+Subject and composition: one front-facing, near-orthographic square marble slab with a soft squircle silhouette and corner radius about 22%. The tile fills most of the square canvas with balanced padding. The sigma is centered and about 65% of the tile height.
+Tile geometry: distinctly flatter than the reference, a front-facing slab rather than a thick cushion. Show only a thin bevelled rim about 3% of tile width; no visible thick side wall and no visible bottom thickness.
+Materials/textures: warm ivory Pentelic marble, finely polished but natural. Only 2–3 very faint, thin grey-gold veins, positioned so no vein crosses the sigma prominently. The letter is shallow-carved into the marble and filled with matte Aegean-blue mineral pigment, exact target color #2c5f8a, with subtle authentic stone-tool texture and crisp carved edges.
+Lighting/mood: soft diffuse light from the upper left, matching the reference’s restrained premium archaeological-object feel; minimal relief shading confined to the bevel and carving.
+Text (verbatim): “Σ”
+Constraints: preserve the reference’s brand-family spirit, marble tone, squircle shape, carving treatment, and lighting; the letter must dominate; single tile only; exact Greek letter; crisp silhouette; no cast shadow or contact shadow outside the tile; no extra symbols, border, typography, label, watermark, specks, or debris.
+Avoid: summation-sign proportions, sideways M appearance, excessive stroke contrast, oversized serifs, thick cushion volume, visible side wall, strong marble veining, veins through the letter, glossy blue paint, blue background, green spill, halos, shadows, reflections, and decorative additions.
+```
+
+### Lowercase prompt
+
+```text
+Use case: logo-brand
+Asset type: polished square brand logo asset, 1024×1024
+Input image: use the supplied EIDOS epsilon tile only as a STYLE REFERENCE for the ivory Pentelic marble material, squircle tile geometry, carved-and-mineral-pigment-filled letter treatment, and soft top-left lighting. Do not reproduce epsilon.
+Primary request: create a sibling logo featuring the Greek lowercase sigma, exactly “σ”, the medial form: a classical elegant round body with a distinct short horizontal stroke extending to the upper right. It must not read as the letter o, the digit 6, a final sigma “ς”, or a generic spiral. Match the graceful classical character and even visual weight of the reference epsilon.
+Scene/backdrop: center the single marble tile on a perfectly flat, uniform solid #00ff00 chroma-key background for later background removal. The background must have no shadows, gradient, texture, reflection, floor plane, or lighting variation. Keep generous clean separation between tile and background. Do not use #00ff00 anywhere in the tile.
+Subject and composition: one front-facing, near-orthographic square marble slab with a soft squircle silhouette and corner radius about 22%. The tile fills most of the square canvas with balanced padding. The lowercase sigma is centered and about 65% of the tile height.
+Tile geometry: distinctly flatter than the reference, a front-facing slab rather than a thick cushion. Show only a thin bevelled rim about 3% of tile width; no visible thick side wall and no visible bottom thickness.
+Materials/textures: warm ivory Pentelic marble, finely polished but natural. Only 2–3 very faint, thin grey-gold veins, positioned so no vein crosses the sigma prominently. The letter is shallow-carved into the marble and filled with matte Aegean-blue mineral pigment, exact target color #2c5f8a, with subtle authentic stone-tool texture and crisp carved edges.
+Lighting/mood: soft diffuse light from the upper left, matching the reference’s restrained premium archaeological-object feel; minimal relief shading confined to the bevel and carving.
+Text (verbatim): “σ”
+Constraints: preserve the reference’s brand-family spirit, marble tone, squircle shape, carving treatment, and lighting; the letter must dominate; single tile only; exact Greek medial lowercase sigma; crisp silhouette; no cast shadow or contact shadow outside the tile; no extra symbols, border, typography, label, watermark, specks, or debris.
+Avoid: letter o, digit 6, final sigma ς, spiral, closed ring without the upper-right horizontal stroke, excessive stroke contrast, oversized serifs, thick cushion volume, visible side wall, strong marble veining, veins through the letter, glossy blue paint, blue background, green spill, halos, shadows, reflections, and decorative additions.
+```

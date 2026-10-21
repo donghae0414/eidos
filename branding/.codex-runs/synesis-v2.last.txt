@@ -1,0 +1,34 @@
+Created both assets with exactly two built-in `image_gen` edit calls.
+
+- [synesis-v2-sigma-upper.png](/Users/a451174/apps/eidos/branding/logo/drafts/synesis-v2-sigma-upper.png) — 1024×1024 RGBA; alpha components: **1**
+- [synesis-v2-sigma-lower.png](/Users/a451174/apps/eidos/branding/logo/drafts/synesis-v2-sigma-lower.png) — 1024×1024 RGBA; alpha components: **1**
+
+Counts use 4-connected `alpha > 0` pixels. Temporary files were removed.
+
+Exact prompt — uppercase:
+
+```text
+Use case: precise-object-edit
+Asset type: logo-brand tile asset
+Input image: Image 1 is the sole edit target.
+Primary request: Replace only the incised epsilon letter in Image 1 with the Greek capital sigma “Σ”.
+Letterform: Classical Greek inscriptional capital, an elegant serif character with the same stroke contrast, carved terminals, and visual weight as the existing epsilon. It must read as the Greek letter Σ, not as a geometric mathematical summation glyph.
+Material and color: The new Σ is incised into the marble exactly like the existing letter, with the same carving depth, bevel, edge highlights, and inset shadow behavior. Fill only the incised letter with matte Aegean-blue mineral pigment, exact target color #2c5f8a, replacing the existing red pigment.
+Composition: Letter height about 65% of the tile, centered exactly as the existing letter is centered.
+Canvas: 1024 × 1024.
+Strict invariants: Change only the letter and its pigment color. The tile itself must remain IDENTICAL pixel-for-pixel in perceived shape and design to Image 1: same tile shape, size, position, corner radius, rim thickness, marble color, marble veins, surface texture, lighting, shadows, crop, and transparent background. Do not enlarge, puff, round, reshape, recolor, relight, regenerate, or reposition the tile. Preserve the original single isolated tile and all transparent pixels outside it. No extra objects, text, marks, border, halo, background, or watermark.
+```
+
+Exact prompt — lowercase:
+
+```text
+Use case: precise-object-edit
+Asset type: logo-brand tile asset
+Input image: Image 1 is the sole edit target.
+Primary request: Replace only the incised epsilon letter in Image 1 with the Greek lowercase medial sigma “σ”.
+Letterform: Classical Greek lowercase medial sigma with a round body and a short horizontal stroke extending to the upper right. It must unmistakably read as σ, not the letter o and not the digit 6. Use the same elegant serif treatment, stroke contrast, carved terminals, and visual weight as the existing epsilon.
+Material and color: The new σ is incised into the marble exactly like the existing letter, with the same carving depth, bevel, edge highlights, and inset shadow behavior. Fill only the incised letter with matte Aegean-blue mineral pigment, exact target color #2c5f8a, replacing the existing red pigment.
+Composition: Letter height about 65% of the tile, centered exactly as the existing letter is centered.
+Canvas: 1024 × 1024.
+Strict invariants: Change only the letter and its pigment color. The tile itself must remain IDENTICAL pixel-for-pixel in perceived shape and design to Image 1: same tile shape, size, position, corner radius, rim thickness, marble color, marble veins, surface texture, lighting, shadows, crop, and transparent background. Do not enlarge, puff, round, reshape, recolor, relight, regenerate, or reposition the tile. Preserve the original single isolated tile and all transparent pixels outside it. No extra objects, text, marks, border, halo, background, or watermark.
+```

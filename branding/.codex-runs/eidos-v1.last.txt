@@ -1,0 +1,50 @@
+Generated with exactly two built-in `image_gen` calls and saved as 1024×1024 RGBA PNGs with transparent backgrounds:
+
+- [eidos-v1-epsilon-lower.png](/Users/a451174/apps/eidos/branding/logo/drafts/eidos-v1-epsilon-lower.png)
+- [eidos-v1-epsilon-upper.png](/Users/a451174/apps/eidos/branding/logo/drafts/eidos-v1-epsilon-upper.png)
+
+No other repository files were created, modified, or deleted.
+
+Exact prompt for image 1:
+
+```text
+Use case: logo-brand
+Asset type: square 1024×1024 app-icon logo, final output intended as a transparent-background PNG after chroma-key removal.
+
+Scene/backdrop: Create the logo on a perfectly flat, solid #00ff00 chroma-key background for clean background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the logo. No cast shadow, no contact shadow, and no reflection outside the tile.
+
+Primary request: A single app-icon logo, centered, front view.
+
+Object: A squircle-shaped tile, a rounded square with smooth continuous iOS-style corners and a corner radius about 22% of its width, carved from warm Pentelic marble. Use soft ivory-cream stone in the #efe8d8 range, with very faint, sparse grey-gold veins and a subtle polished-stone sheen. The tile edges are slightly bevelled like a cut stone block, giving a thin natural light-and-shadow rim. The tile fills about 90% of the 1024×1024 canvas. Keep the silhouette crisp, fully separated from the chroma background, and generously padded.
+
+Letter: Exactly one Greek lowercase epsilon "ε", not a Latin E and not the digit 3. Make it large and centered, occupying about 60% of the tile height. The letter is deeply incised into the marble with a crisp V-cut chisel groove, exactly like an ancient Greek temple inscription, and the groove is filled with matte cinnabar-red mineral pigment, #b5482b. Use a classical inscriptional letterform with even stroke weight, small chiselled terminals, elegant and restrained.
+
+Style/medium: Minimal, timeless, premium; ancient Greek temple and philosophy; realistic carved polished stone suitable for a refined app icon.
+Composition/framing: One centered tile only, front view, square 1024×1024 composition.
+Lighting/mood: Soft, even studio lighting from the top-left, limited to the tile itself.
+Text (verbatim): "ε"
+Constraints: Exactly one Greek lowercase epsilon; preserve clean outer tile edges for alpha extraction.
+Avoid: Any other text, any other symbols, Latin E, digit 3, border ornaments, drop shadow outside the tile, background scene, watermark, extra objects, and any green within the logo.
+```
+
+Exact prompt for image 2:
+
+```text
+Use case: logo-brand
+Asset type: square 1024×1024 app-icon logo, final output intended as a transparent-background PNG after chroma-key removal.
+
+Scene/backdrop: Create the logo on a perfectly flat, solid #00ff00 chroma-key background for clean background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the logo. No cast shadow, no contact shadow, and no reflection outside the tile.
+
+Primary request: A single app-icon logo, centered, front view.
+
+Object: A squircle-shaped tile, a rounded square with smooth continuous iOS-style corners and a corner radius about 22% of its width, carved from warm Pentelic marble. Use soft ivory-cream stone in the #efe8d8 range, with very faint, sparse grey-gold veins and a subtle polished-stone sheen. The tile edges are slightly bevelled like a cut stone block, giving a thin natural light-and-shadow rim. The tile fills about 90% of the 1024×1024 canvas. Keep the silhouette crisp, fully separated from the chroma background, and generously padded.
+
+Letter: Exactly one Greek capital epsilon "Ε" in classical Greek inscriptional capitals, not a Latin-styled modern sans-serif E. Make it large and centered, occupying about 60% of the tile height. The letter is deeply incised into the marble with a crisp V-cut chisel groove, exactly like a 5th-century BC Athenian temple inscription, and the groove is filled with matte cinnabar-red mineral pigment, #b5482b. Use even stroke weight, small chiselled terminals, elegant and restrained.
+
+Style/medium: Minimal, timeless, premium; ancient Greek temple and philosophy; realistic carved polished stone suitable for a refined app icon.
+Composition/framing: One centered tile only, front view, square 1024×1024 composition.
+Lighting/mood: Soft, even studio lighting from the top-left, limited to the tile itself.
+Text (verbatim): "Ε"
+Constraints: Exactly one Greek capital epsilon in classical Greek inscriptional capitals; preserve clean outer tile edges for alpha extraction.
+Avoid: Any other text, any other symbols, lowercase epsilon, border ornaments, drop shadow outside the tile, background scene, watermark, extra objects, and any green within the logo.
+```

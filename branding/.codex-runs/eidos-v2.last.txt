@@ -1,0 +1,26 @@
+Created exactly one image using the built-in `image_gen` tool.
+
+- Saved: [branding/logo/drafts/eidos-v2-epsilon.png](/Users/a451174/apps/eidos/branding/logo/drafts/eidos-v2-epsilon.png)
+- Format: 1024×1024 RGBA PNG
+- Non-zero-alpha pixels outside tile bounding box: **0**
+- Connected non-zero-alpha components: **1**
+- Temporary files: deleted
+
+Exact prompt used:
+
+```text
+Use case: logo-brand
+Asset type: EIDOS brand lettermark, square raster logo asset
+Primary request: Generate one front-facing marble tile bearing the Greek lowercase epsilon “ε”. Preserve the exact elegant lowercase epsilon letterform language of the supplied reference image: it must unmistakably be Greek lowercase epsilon ε, not a Latin E and not the digit 3.
+Input images: Image 1 is a STYLE REFERENCE only for the ivory Pentelic marble material, squircle tile shape, soft top-left lighting, and deeply incised carving filled with mineral pigment. Do not copy its thick cushion-like slab proportions.
+Scene/backdrop: Perfectly flat, uniform solid #00ff00 chroma-key background for later removal. No shadows, gradients, texture, reflections, floor plane, lighting variation, cast shadow, contact shadow, or stray objects in the background. Do not use #00ff00 anywhere on the tile.
+Subject: A single ivory Pentelic marble squircle tile with corner radius about 22%. A centered Greek lowercase epsilon “ε”, about 65% of the tile height, deeply incised into the marble and filled flush with matte cinnabar-red mineral pigment, exact pigment color #b5482b. The ε must dominate.
+Style/medium: Elegant, refined, tactile carved-stone brand mark; same spirit, material realism, carving depth, and pigment treatment as the reference.
+Composition/framing: Orthographic front-facing square view, tile centered with generous even padding. The tile is a flat slab, not a thick cushion. Only a thin bevelled rim about 3% of tile width may be visible; no visible thick side wall and no visible bottom thickness.
+Lighting/mood: Soft restrained illumination from the top left, matching the reference; subtle relief shading inside the incision, otherwise calm and premium.
+Color palette: Warm ivory Pentelic marble, matte cinnabar-red #b5482b, only faint grey-gold veining.
+Materials/textures: Fine natural marble grain. Exactly 2–3 very faint, thin grey-gold veins, placed so none crosses the epsilon prominently.
+Text (verbatim): “ε”
+Constraints: One tile only. Greek lowercase epsilon only. Center the letter precisely. Keep the ε around 65% of tile height. Preserve a clean silhouette suitable for alpha extraction. The complete tile must be fully opaque and clearly separated from the chroma background with crisp edges.
+Avoid: Latin E, digit 3, mirrored epsilon, extra letters, extra symbols, thick cushion form, thick side wall, bottom thickness, dramatic perspective, busy marble, strong veins, veins over the letter, glossy red enamel, bright red, orange pigment, green anywhere on the subject, shadows or halos outside the tile, border debris, specks, watermark, captions, mockup scenery.
+```

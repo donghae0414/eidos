@@ -1,0 +1,24 @@
+Use the imagegen skill with the built-in image_gen tool (not the CLI fallback). Use case: logo-brand. Generate exactly TWO separate images, one built-in call each, both with a genuinely transparent background (preserve alpha), square 1024x1024.
+
+IMAGE 1 prompt:
+A single app-icon logo, centered, front view, on a fully transparent background.
+
+Object: a squircle-shaped tile (rounded square with smooth continuous iOS-style corners, corner radius about 22% of width) carved from warm Pentelic marble - soft ivory-cream stone (#efe8d8 range) with very faint, sparse grey-gold veins and a subtle polished-stone sheen. The tile edges are slightly bevelled like a cut stone block, giving a thin natural light/shadow rim. The tile fills about 90% of the canvas.
+
+Letter: exactly one Greek lowercase epsilon "ε" (not a Latin E, not the digit 3), large, centered, occupying about 60% of the tile height. The letter is deeply incised into the marble with a crisp V-cut chisel groove, exactly like an ancient Greek temple inscription, and the groove is filled with matte cinnabar-red mineral pigment (#b5482b). Classical inscriptional letterform: even stroke weight, small chiselled terminals, elegant and restrained.
+
+Style: minimal, timeless, premium, ancient Greek temple and philosophy. Soft even studio lighting from the top-left. No other text, no other symbols, no border ornaments, no drop shadow outside the tile, no background scene.
+
+IMAGE 2 prompt:
+A single app-icon logo, centered, front view, on a fully transparent background.
+
+Object: a squircle-shaped tile (rounded square with smooth continuous iOS-style corners, corner radius about 22% of width) carved from warm Pentelic marble - soft ivory-cream stone (#efe8d8 range) with very faint, sparse grey-gold veins and a subtle polished-stone sheen. The tile edges are slightly bevelled like a cut stone block, giving a thin natural light/shadow rim. The tile fills about 90% of the canvas.
+
+Letter: exactly one Greek capital epsilon "Ε" in classical Greek inscriptional capitals, large, centered, occupying about 60% of the tile height. The letter is deeply incised into the marble with a crisp V-cut chisel groove, exactly like a 5th-century BC Athenian temple inscription, and the groove is filled with matte cinnabar-red mineral pigment (#b5482b). Even stroke weight, small chiselled terminals, elegant and restrained.
+
+Style: minimal, timeless, premium, ancient Greek temple and philosophy. Soft even studio lighting from the top-left. No other text, no other symbols, no border ornaments, no drop shadow outside the tile, no background scene.
+
+After generating, copy (do not move) the outputs into this workspace as:
+- branding/logo/drafts/eidos-v1-epsilon-lower.png  (image 1)
+- branding/logo/drafts/eidos-v1-epsilon-upper.png  (image 2)
+Do not create, modify or delete any other files in the repository. In your final message, list the two saved paths and the exact prompts used.
