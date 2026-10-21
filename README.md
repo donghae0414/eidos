@@ -2,13 +2,57 @@
   <img src="assets/logo.png" alt="EIDOS logo" width="128" height="128">
 </p>
 
-# EIDOS
+<p align="center"><strong>EIDOS</strong></p>
 
-Make Meaning Visible.
+<h1 align="center"><em>Make Meaning Visible.</em></h1>
 
-EIDOS is a Claude Code plugin that answers "how does this work?" with an animated, self-contained HTML file instead of a wall of text. It borrows from film and motion graphics: camera moves, cuts, motion graphics and explainer diagrams. You step through the result with `→`, `Space`, `Enter`, a click, a mouse wheel burst or a swipe. `P` plays and pauses, `[` and `]` change the speed (0.5 / 1 / 1.5 / 2), and some explainers add sliders or toggles in a control dock so you can change an input and watch the scene react.
+<p align="center">
+  Ask how something works. Get an animated, self-contained HTML scene you can step through.
+</p>
 
-## Install
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-B5482B" alt="Version 0.1.0">
+  <img src="https://img.shields.io/badge/Claude%20Code-plugin-B5482B" alt="Claude Code plugin">
+  <img src="https://img.shields.io/badge/Codex-plugin-B5482B" alt="Codex plugin">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-B5482B" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <b>English</b> | <a href="README.ko.md">한국어</a>
+</p>
+
+<p align="center">
+  <img src="assets/demo.gif" alt="EIDOS demo: the camera moves from a vLLM serving map into the KV cache, where blocks fill up, a request is preempted and memory is released" width="100%">
+</p>
+<p align="center">
+  <sub>From <code>skills/eidos-visualize/examples/vllm-serving.html</code>: the camera dives from the system map into the KV cache, blocks fill, a request is preempted, and memory comes back.</sub>
+</p>
+
+## Make Meaning Visible
+
+*Eidos* (εἶδος) is the Greek word Plato used for *form*: what a thing truly is, grasped as something seen. EIDOS takes the word literally. Ask it how something works and the answer comes back as a scene you watch and step through, not a wall of text you have to picture in your head.
+
+Three principles shape every scene:
+
+- **Understanding over information.** The goal is that you understand, not that more gets said.
+- **Show, don't tell.** Camera moves, cuts and diagrams carry the explanation. Text only labels it.
+- **Human pace.** You decide when the next idea arrives.
+
+## Highlights
+
+**How meaning becomes visible**
+
+- The grammar of film and motion graphics: camera moves, cuts, motion and explainer diagrams such as sequence diagrams, state machines, code diffs and charts.
+- 64 techniques, each with a card, an implementation and a live template. See [Technique library](#technique-library).
+- One self-contained HTML file. No server and no dependencies: open it in a browser or send it to someone.
+
+**You set the pace**
+
+- Step through the explanation one idea at a time, or let it autoplay at 0.5× to 2×.
+- Some explainers add a control dock with sliders and toggles. Change an input and watch the scene react.
+- Reduced motion is respected, and light and dark themes are built in.
+
+## Quick start
 
 **Claude Code**
 
@@ -29,6 +73,46 @@ codex plugin marketplace add donghae0414/eidos   # or a local checkout path
 codex plugin add eidos@eidos
 ```
 
+Then ask for a visual explanation and open the file it writes:
+
+```text
+Visualize the OAuth 2.0 authorization code flow and save it as oauth.html
+```
+
+## Controls
+
+| Input | Action |
+|---|---|
+| `→` `↓` `Space` `Enter` `PageDown`, click, mouse wheel burst, swipe | Next step |
+| `←` `↑` `Backspace` `PageUp` | Previous step |
+| `Home` / `End` | First / last step |
+| `R` | Replay from the start |
+| `P` | Play / pause |
+| `[` / `]` | Slower / faster (0.5, 1, 1.5, 2) |
+| `1`-`9` / `Esc` | Enter a numbered detail / return to the overview, when a scene offers them |
+
+## Examples
+
+Each example is a single HTML file with the storyboard it was built from, in [`skills/eidos-visualize/examples/`](skills/eidos-visualize/examples/). Download one and open it in a browser. The example content is written in Korean.
+
+| Example | What it explains |
+|---|---|
+| [`vllm-serving`](skills/eidos-visualize/examples/vllm-serving.html) | How vLLM serves requests: scheduler, prefill and decode, KV cache, and a lab with sliders for concurrency and throughput |
+| [`oauth-flow`](skills/eidos-visualize/examples/oauth-flow.html) | The OAuth 2.0 authorization code flow, why the client secret matters, and how PKCE replaces it |
+| [`rest-vs-graphql`](skills/eidos-visualize/examples/rest-vs-graphql.html) | Round trips and response shape in REST and GraphQL, with controls for the number of fields |
+
+## Technique library
+
+| Group | Count | Examples |
+|---|---:|---|
+| Camera | 16 | `zoom-in`, `dolly-zoom`, `orbit`, `fly-to`, `rack-focus`, `ken-burns` |
+| Cut | 14 | `match-cut`, `whip-pan`, `iris`, `smash-cut`, `split-screen`, `zoom-through` |
+| Motion | 8 | `path-drawing`, `shape-morph`, `particle-assemble`, `count-up`, `spotlight` |
+| Explainer | 16 | `sequence-message`, `state-transition`, `code-diff`, `chart-morph`, `next-token`, `context-window` |
+| Type | 10 | `kinetic-type`, `text-scramble`, `typing-caret`, `highlight-sweep`, `mask-reveal` |
+
+Each technique lives in `skills/eidos-<group>/techniques/<name>/` with a `card.md`, a `technique.js` and a `template.html` you can open directly.
+
 ## Update
 
 The version stays `0.1.0`, so an existing install won't pick up new skills on its own. Reinstall to refresh it:
@@ -41,32 +125,10 @@ codex plugin remove eidos@eidos && codex plugin add eidos@eidos
 claude plugin uninstall eidos@eidos && claude plugin install eidos@eidos
 ```
 
-## Usage
+## Contributing
 
-Ask for a visual explanation, for example: `OAuth 2.0 인증 흐름을 시각화해서 oauth.html로 저장해줘`.
+Repository layout, QA commands and pull request guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## What is inside
+## License
 
-| Path | Contents |
-|---|---|
-| `skills/eidos-visualize/` | Entry skill: intent → storyboard → technique choice → single HTML file |
-| `skills/eidos-visualize/examples/` | Worked examples, each with an `.html` and its `.storyboard.md`: `vllm-serving`, `oauth-flow`, `rest-vs-graphql` |
-| `skills/eidos-camera/`, `eidos-cut/`, `eidos-motion/`, `eidos-explainer/`, `eidos-type/` | 64 techniques (camera 16, cut 14, motion 8, explainer 16, type 10), each with `card.md`, `technique.js` and a live `template.html` |
-| `runtime/` | Dependency-free stage runtime (timeline, scenes, camera, autoplay, wheel/swipe, control dock, reduced motion, design tokens). API: `docs/runtime-api.md` |
-| `scripts/inline.mjs` | Bundles a working HTML file and its local CSS/JS into one file |
-| `scripts/qa.mjs` | Browser QA with Bun.WebView: errors, seek determinism, reduced motion, screenshots, runtime fixtures in `scripts/fixtures/` |
-| `docs/` | Roadmap, technique research and design tokens |
-
-## Development
-
-```bash
-bun scripts/qa.mjs                      # every technique template
-bun scripts/qa.mjs path/to/file.html    # one file
-bun scripts/qa.mjs --shots /tmp/shots   # also capture desktop/mobile x light/dark screenshots
-bun scripts/qa.mjs --only 'skills/eidos-cut/**'   # glob filter over the targets
-bun scripts/qa.mjs --contact /tmp/sheet # one contact sheet image per file, every stop
-bun scripts/qa.mjs --stop-diff          # print per-boundary change counts for self-review (never changes the exit code)
-bun scripts/qa.mjs scripts/fixtures/*.html   # runtime feature fixtures (bad-*.html must fail)
-```
-
-Open any `template.html` directly in a browser. Query parameters: `?stop=N`, `?t=seconds`, `?autoplay=1`, `?speed=1.5`, `?c.<name>=value`, `?motion=reduce`, `?theme=dark|light`, `?hud=0`. A hash like `#scene.2` jumps to a step inside a scene.
+[MIT](LICENSE)
