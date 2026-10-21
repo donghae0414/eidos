@@ -115,14 +115,20 @@ Each technique lives in `skills/eidos-<group>/techniques/<name>/` with a `card.m
 
 ## Update
 
-The version stays `0.1.0`, so an existing install won't pick up new skills on its own. Reinstall to refresh it:
+Each release bumps the plugin version. Refresh the marketplace, then update the plugin:
+
+**Claude Code**
 
 ```bash
-# Codex
-codex plugin remove eidos@eidos && codex plugin add eidos@eidos
+claude plugin marketplace update eidos
+claude plugin update eidos@eidos   # restart Claude Code to apply
+```
 
-# Claude Code
-claude plugin uninstall eidos@eidos && claude plugin install eidos@eidos
+**Codex**
+
+```bash
+codex plugin marketplace upgrade eidos
+codex plugin remove eidos@eidos && codex plugin add eidos@eidos
 ```
 
 ## Contributing

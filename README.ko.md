@@ -115,14 +115,20 @@ OAuth 2.0 인증 흐름을 시각화해서 oauth.html로 저장해줘
 
 ## 업데이트
 
-버전이 `0.1.0`으로 고정되어 있어서, 이미 설치한 플러그인은 새 스킬을 자동으로 받지 않습니다. 다시 설치해서 갱신하세요.
+릴리스마다 플러그인 버전이 올라갑니다. 마켓플레이스를 새로 고친 뒤 플러그인을 업데이트하세요.
+
+**Claude Code**
 
 ```bash
-# Codex
-codex plugin remove eidos@eidos && codex plugin add eidos@eidos
+claude plugin marketplace update eidos
+claude plugin update eidos@eidos   # restart Claude Code to apply
+```
 
-# Claude Code
-claude plugin uninstall eidos@eidos && claude plugin install eidos@eidos
+**Codex**
+
+```bash
+codex plugin marketplace upgrade eidos
+codex plugin remove eidos@eidos && codex plugin add eidos@eidos
 ```
 
 ## 기여하기
