@@ -1,3 +1,5 @@
 .omc/
 .omo/
 .DS_Store
+.senpi/
+branding/.codex-runs/*.log
