@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-B5482B" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/Claude%20Code-plugin-B5482B" alt="Claude Code plugin">
   <img src="https://img.shields.io/badge/Codex-plugin-B5482B" alt="Codex plugin">
+  <img src="https://img.shields.io/badge/pi-package-B5482B" alt="pi package">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-B5482B" alt="MIT License"></a>
 </p>
 
@@ -73,6 +74,18 @@ codex plugin marketplace add donghae0414/eidos   # or a local checkout path
 codex plugin add eidos@eidos
 ```
 
+**pi / omo**
+
+EIDOS는 [pi package](https://pi.dev)이기도 해서 pi와, omo(senpi) 같은 pi 기반 하네스에서도 쓸 수 있습니다. skill이 `node`와 `bun`을 실행하므로 두 명령이 PATH에 있어야 합니다.
+
+```bash
+pi install git:github.com/donghae0414/eidos    # or: omo install git:github.com/donghae0414/eidos
+# add -l to install for the current project only
+
+# or try it for one session without installing
+pi -e git:github.com/donghae0414/eidos
+```
+
 그다음 시각 자료를 요청하고, 만들어진 파일을 브라우저로 엽니다.
 
 ```text
@@ -129,6 +142,14 @@ claude plugin update eidos@eidos   # restart Claude Code to apply
 ```bash
 codex plugin marketplace upgrade eidos
 codex plugin remove eidos@eidos && codex plugin add eidos@eidos
+```
+
+**pi / omo**
+
+ref 없이 git으로 설치하면 기본 브랜치를 따라가므로, 업데이트하면 최신 버전을 받습니다.
+
+```bash
+pi update --extensions    # or: omo update --extensions
 ```
 
 ## 기여하기

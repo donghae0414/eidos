@@ -29,7 +29,7 @@ description: "Turn an explanation into an animated, self-contained HTML visualiz
 6. **HTML 작성:** 아래 뼈대로 작업 파일을 만듭니다. 장면은 `s.scene`, 갈래는 `s.spoke`/`s.back`, 컨트롤은 `s.control`로 만들고, 각 호출의 `reason`에는 `storyboard.md` boundary 표의 reason을 그대로 옮깁니다. 런타임과 technique 파일은 **절대 경로**로 참조합니다.
 7. **한 파일로 묶기:** `node ROOT/scripts/inline.mjs work.html <최종 파일>.html`을 실행합니다. CSS와 JS가 모두 파일 안으로 들어가고, 외부 참조가 남으면 실패합니다.
 8. **검증:** `bun ROOT/scripts/qa.mjs <최종 파일>.html --contact <디렉터리> --stop-diff`를 실행합니다. 오류 없이 통과해야 하고, 실패하면 메시지대로 고친 뒤 7단계부터 다시 합니다.
-   - qa.mjs는 브라우저(Bun.WebView)가 20초 안에 뜨지 않으면 `BROWSER UNAVAILABLE`을 출력하고 종료 코드 3으로 끝납니다(`EIDOS_QA_BROWSER_TIMEOUT`로 초 단위 조정). Codex `workspace-write` 같은 샌드박스는 WebKit XPC 서비스를 막기 때문에 이렇게 됩니다. 이때는 같은 명령을 샌드박스 밖에서 다시 실행하도록 권한 상승(escalated/unsandboxed 실행 승인)을 요청합니다. 그것도 안 되면 사용자에게 이 명령을 직접 실행해 달라고 요청합니다.
+   - qa.mjs는 브라우저(Bun.WebView)가 20초 안에 뜨지 않으면 `BROWSER UNAVAILABLE`을 출력하고 종료 코드 3으로 끝납니다(`EIDOS_QA_BROWSER_TIMEOUT`로 초 단위 조정). 에이전트가 실행을 샌드박스 안에 가두면(예: Codex `workspace-write`) WebKit XPC 서비스가 막혀 이렇게 됩니다. 이때 현재 환경에 샌드박스 밖 실행이나 권한 상승을 요청하는 방법이 있으면 그 방법으로 같은 명령을 다시 실행합니다. 샌드박스가 없는 환경(예: pi, omo)에서는 보통 이 문제가 생기지 않습니다. 그래도 안 되면 사용자에게 이 명령을 직접 실행해 달라고 요청합니다.
 9. **자기 검토 (self-review):** 8단계가 만든 contact sheet 이미지를 직접 봅니다. 한 번에 contact sheet는 최대 2장까지만 읽고, 스톱별 개별 스크린숏을 전부 열지 않습니다. 본 내용을 `storyboard.md` 끝 `## self-review` 표 `| stop | moves | explains | fix |`에 적습니다.
    - 의미 있는 움직임이 없는 스톱, 장식 움직임뿐인 스톱, 스토리보드 행으로 거슬러 갈 수 없는 스톱은 고치고 7~9단계를 다시 합니다. 자기 검토는 최대 2회입니다.
    - [references/principles.md](references/principles.md) 체크리스트의 원칙 세 줄(비선형 이징, stop마다 초점 하나와 보조 움직임 2개 이하, `anticipate`/`overshoot`/`arc` 허용 위치)을 [references/motion-principles.md](references/motion-principles.md) 기준으로 확인하고, 걸리는 stop은 `fix` 칸에 적습니다. 표 모양은 바꾸지 않습니다.

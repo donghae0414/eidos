@@ -1,0 +1,17 @@
+{
+  "name": "eidos",
+  "version": "0.1.0",
+  "description": "Make Meaning Visible. Turns explanations into animated, self-contained HTML using cinematic camera moves, cuts, motion graphics and explainer diagrams.",
+  "license": "MIT",
+  "author": "donghae0414",
+  "homepage": "https://github.com/donghae0414/eidos",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/donghae0414/eidos.git"
+  },
+  "keywords": ["pi-package", "visualization", "html", "motion", "explainer", "presentation"],
+  "private": true,
+  "pi": {
+    "skills": ["./skills"]
+  }
+}

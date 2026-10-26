@@ -12,6 +12,9 @@ Thanks for helping make meaning visible. This page covers how the repository is 
 | `runtime/` | Dependency-free stage runtime (timeline, scenes, camera, autoplay, wheel/swipe, control dock, reduced motion, design tokens). API: [`docs/runtime-api.md`](docs/runtime-api.md) |
 | `scripts/inline.mjs` | Bundles a working HTML file and its local CSS/JS into one file |
 | `scripts/qa.mjs` | Browser QA with Bun.WebView: errors, seek determinism, reduced motion, screenshots, runtime fixtures in `scripts/fixtures/` |
+| `scripts/check-versions.mjs` | Fails when `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json` and `package.json` disagree on the version |
+| `scripts/pi-smoke.mjs` | Checks that pi or omo loads every skill from this checkout as a pi package (no model call; skips when neither is installed) |
+| `package.json` | pi package manifest (`pi.skills`). Keep skills under `skills/`, and do not add a top-level `extensions/`, `prompts/` or `themes/` directory unless it is meant to ship to pi users |
 | `docs/` | Roadmap, technique research and design tokens |
 | `branding/` | Brand DNA, logo system and asset specs |
 
@@ -34,5 +37,6 @@ Open any `template.html` directly in a browser. Query parameters: `?stop=N`, `?t
 ## Pull requests
 
 - Run `bun scripts/qa.mjs` (or the subset you touched) and make sure it passes.
+- For a release, bump `version` in `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json` and `package.json` together, then run `node scripts/check-versions.mjs`. If you changed `skills/` or `package.json`, also run `bun scripts/pi-smoke.mjs`.
 - Keep commits small and use [Conventional Commits](https://www.conventionalcommits.org/) with a scope, for example `feat(cut): ...` or `fix(runtime): ...`.
 - By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE).

@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-B5482B" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/Claude%20Code-plugin-B5482B" alt="Claude Code plugin">
   <img src="https://img.shields.io/badge/Codex-plugin-B5482B" alt="Codex plugin">
+  <img src="https://img.shields.io/badge/pi-package-B5482B" alt="pi package">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-B5482B" alt="MIT License"></a>
 </p>
 
@@ -73,6 +74,18 @@ codex plugin marketplace add donghae0414/eidos   # or a local checkout path
 codex plugin add eidos@eidos
 ```
 
+**pi / omo**
+
+EIDOS is also a [pi package](https://pi.dev), so it works in pi and in pi-based harnesses such as omo (senpi). The skills call `node` and `bun`, so both need to be on your PATH.
+
+```bash
+pi install git:github.com/donghae0414/eidos    # or: omo install git:github.com/donghae0414/eidos
+# add -l to install for the current project only
+
+# or try it for one session without installing
+pi -e git:github.com/donghae0414/eidos
+```
+
 Then ask for a visual explanation and open the file it writes:
 
 ```text
@@ -129,6 +142,14 @@ claude plugin update eidos@eidos   # restart Claude Code to apply
 ```bash
 codex plugin marketplace upgrade eidos
 codex plugin remove eidos@eidos && codex plugin add eidos@eidos
+```
+
+**pi / omo**
+
+A git install without a ref follows the default branch, so updating pulls the latest version:
+
+```bash
+pi update --extensions    # or: omo update --extensions
 ```
 
 ## Contributing
